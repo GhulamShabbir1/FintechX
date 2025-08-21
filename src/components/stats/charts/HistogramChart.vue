@@ -1,19 +1,19 @@
 <template>
   <q-card class="q-pa-md lime-glow">
-    <div class="text-subtitle1 q-mb-sm">Transaction Trends</div>
-    <canvas ref="el" height="120"></canvas>
+    <div class="text-subtitle1 q-mb-sm">Distribution</div>
+    <canvas ref="el" height="130"></canvas>
   </q-card>
 </template>
 
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js'
+import { Chart, BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js'
 
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend)
+Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip, Legend)
 
 const props = defineProps({
   labels: { type: Array, default: () => [] },
-  datasets: { type: Array, default: () => [] } // [{label, data, color}]
+  data: { type: Array, default: () => [] }
 })
 
 const el = ref(null)
@@ -24,22 +24,24 @@ const draw = () => {
   if (chart) chart.destroy()
   const ctx = el.value.getContext('2d')
 
-  const sets = props.datasets.map(ds => ({
-    label: ds.label || 'Series',
-    data: ds.data || [],
-    borderColor: ds.color || '#22d3ee',
-    tension: 0.35,
-    borderWidth: 2.5,
-    pointRadius: 0
-  }))
-
   chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: props.labels, datasets: sets },
+    type: 'bar',
+    data: {
+      labels: props.labels,
+      datasets: [{
+        label: 'Frequency',
+        data: props.data,
+        backgroundColor: 'rgba(189, 240, 0, 0.35)',
+        borderColor: '#bdf000',
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
     options: {
+      indexAxis: 'x',
       responsive: true,
-      animation: { duration: 1000, easing: 'easeOutCubic' },
-      plugins: { legend: { display: true }, tooltip: { enabled: true } },
+      animation: { duration: 1000, easing: 'easeOutQuart' },
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
       scales: {
         x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#9ca3af' } },
         y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#9ca3af' } }
@@ -49,7 +51,7 @@ const draw = () => {
 }
 
 onMounted(draw)
-watch(() => [props.labels, props.datasets], draw, { deep: true })
+watch(() => [props.labels, props.data], draw, { deep: true })
 </script>
 
 <style scoped>

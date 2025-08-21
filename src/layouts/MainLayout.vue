@@ -24,174 +24,183 @@
       </q-toolbar>
     </q-header>
 
-    <!-- Hero (text left, 3D image right) -->
-    <section class="hero-section row items-center">
-      <div class="col-12 col-md-6 q-pa-lg">
-        <h2 class="text-h2 text-lime text-bold">Next-Gen Payments with FinteckX</h2>
-        <p class="text-subtitle1 q-mt-md">
-          Secure. Fast. Scalable. Empowering merchants and users with future-ready payment infrastructure.
-        </p>
-        <div class="q-mt-lg">
-          <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
-          <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Learn More" to="/" />
-        </div>
-      </div>
-      <div class="col-12 col-md-6 text-center">
-        <q-img :src="heroImg" alt="Fintech 3D" class="hero-img floating" fit="contain" ratio="16/10"
-          crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('hero')" />
-      </div>
-    </section>
-
-    <!-- Advantages (Row 1: card left + 3D image right; Row 2: 3D image left + card right) -->
-    <section id="advantages" class="q-pa-xl">
-      <div class="row items-center q-my-xl">
-        <div class="col-12 col-md-6">
-          <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
-            <div class="text-h5 text-lime text-bold">Global Reach</div>
-            <p class="q-mt-sm">
-              Expand your business with our cross-border payment solutions trusted by thousands of merchants worldwide.
+    <!-- Page container with conditional home content and router view -->
+    <q-page-container>
+      <div v-if="isHome">
+        <!-- Hero (text left, 3D image right) -->
+        <section class="hero-section row items-center">
+          <div class="col-12 col-md-6 q-pa-lg">
+            <h2 class="text-h2 text-lime text-bold">Next-Gen Payments with FinteckX</h2>
+            <p class="text-subtitle1 q-mt-md">
+              Secure. Fast. Scalable. Empowering merchants and users with future-ready payment infrastructure.
             </p>
-            <div class="text-h4 text-lime q-mt-md">+200K</div>
-            <div class="text-caption">Active Merchants</div>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6 text-center">
-          <q-img :src="reachImg" alt="Global Reach" class="section-img floating" fit="contain" ratio="16/10"
-            crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('reach')" />
-        </div>
-      </div>
-
-      <div class="row items-center q-my-xl">
-        <div class="col-12 col-md-6 text-center q-mb-lg q-mb-none-md">
-          <q-img :src="securityImg" alt="Security" class="section-img floating" fit="contain" ratio="16/10"
-            crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('security')" />
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
-            <div class="text-h5 text-lime text-bold">Bank-Grade Security</div>
-            <p class="q-mt-sm">
-              Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and
-              customers.
-            </p>
-            <div class="text-h4 text-lime q-mt-md">99.99%</div>
-            <div class="text-caption">System Uptime</div>
-          </q-card>
-        </div>
-      </div>
-    </section>
-
-    <!-- Services -->
-    <section id="services" class="q-pa-xl">
-      <div class="text-center q-mb-xl">
-        <h2 class="text-h4 text-lime text-bold">Our Services</h2>
-        <p class="text-subtitle2">All-in-one fintech platform for payments, analytics, and growth.</p>
-      </div>
-      <div class="row q-col-gutter-xl">
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-icon name="credit_card" size="40px" class="text-lime q-mb-md" />
-            <div class="text-h6 text-lime text-bold">Smart Checkout</div>
-            <p>Fast and seamless checkout experience with multiple payment methods.</p>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-icon name="stacked_bar_chart" size="40px" class="text-lime q-mb-md" />
-            <div class="text-h6 text-lime text-bold">Analytics</div>
-            <p>Track and optimize your performance with real-time insights and reporting tools.</p>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-icon name="support" size="40px" class="text-lime q-mb-md" />
-            <div class="text-h6 text-lime text-bold">24/7 Support</div>
-            <p>Always-on support system to resolve issues instantly and keep business running.</p>
-          </q-card>
-        </div>
-      </div>
-    </section>
-
-    <!-- How It Works (extra attractive section) -->
-    <section id="how-it-works" class="q-pa-xl">
-      <div class="text-center q-mb-xl">
-        <h2 class="text-h4 text-lime text-bold">How It Works</h2>
-        <p class="text-subtitle2">From onboarding to growth — start accepting payments in minutes.</p>
-      </div>
-      <div class="row q-col-gutter-xl">
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-img :src="how1" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-              referrerpolicy="no-referrer" @error="onHowImgError(1)" />
-            <div class="text-h6 text-lime text-bold">Sign Up</div>
-            <p>Create your merchant profile and upload required documents.</p>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-img :src="how2" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-              referrerpolicy="no-referrer" @error="onHowImgError(2)" />
-            <div class="text-h6 text-lime text-bold">Integrate</div>
-            <p>Use our hosted checkout or API to start processing securely.</p>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-4">
-          <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-            <q-img :src="how3" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-              referrerpolicy="no-referrer" @error="onHowImgError(3)" />
-            <div class="text-h6 text-lime text-bold">Grow</div>
-            <p>Analyze performance and scale with insights and automation.</p>
-          </q-card>
-        </div>
-      </div>
-    </section>
-
-    <!-- Metrics -->
-    <section id="metrics" class="q-pa-xl">
-      <q-card class="q-pa-xl card-dark lime-glow">
-        <div class="row text-center items-stretch">
-          <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-            <div class="text-h4 text-lime">120K+</div>
-            <div class="text-caption">Users</div>
+            <div class="q-mt-lg">
+              <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
+              <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Learn More" to="/" />
+            </div>
           </div>
-          <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-            <div class="text-h4 text-lime">48</div>
-            <div class="text-caption">Countries</div>
+          <div class="col-12 col-md-6 text-center">
+            <q-img :src="heroImg" alt="Fintech 3D" class="hero-img floating" fit="contain" ratio="16/10"
+              crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('hero')" />
           </div>
-          <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-            <div class="text-h4 text-lime">$2.3B</div>
-            <div class="text-caption">Amount Processed</div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="text-h4 text-lime">99.98%</div>
-            <div class="text-caption">Uptime</div>
-          </div>
-        </div>
-      </q-card>
-    </section>
+        </section>
 
-    <!-- Partners (gapless continuous marquee) -->
-    <section id="partners" class="q-pa-xl">
-      <div class="text-center q-mb-md">
-        <h2 class="text-h5 text-lime text-bold">Official Partners</h2>
-      </div>
-      <div class="partners-marquee">
-        <div class="track">
-          <img v-for="(logo, i) in doubleLogos" :key="i" :src="logo" :alt="'logo-' + i" />
-        </div>
-      </div>
-    </section>
+        <!-- Advantages (Row 1: card left + 3D image right; Row 2: 3D image left + card right) -->
+        <section id="advantages" class="q-pa-xl">
+          <div class="row items-center q-my-xl">
+            <div class="col-12 col-md-6">
+              <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
+                <div class="text-h5 text-lime text-bold">Global Reach</div>
+                <p class="q-mt-sm">
+                  Expand your business with our cross-border payment solutions trusted by thousands of merchants
+                  worldwide.
+                </p>
+                <div class="text-h4 text-lime q-mt-md">+200K</div>
+                <div class="text-caption">Active Merchants</div>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-6 text-center">
+              <q-img :src="reachImg" alt="Global Reach" class="section-img floating" fit="contain" ratio="16/10"
+                crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('reach')" />
+            </div>
+          </div>
 
-    <!-- CTA Banner -->
-    <section class="q-pa-xl text-center">
-      <q-card class="q-pa-xl card-dark lime-glow">
-        <div class="text-h5 text-lime text-bold">Ready to scale with FinteckX?</div>
-        <div class="q-mt-sm">Onboard in minutes and start accepting secure payments.</div>
-        <div class="q-mt-md">
-          <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
-          <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Talk to Sales" to="/" />
-        </div>
-      </q-card>
-    </section>
+          <div class="row items-center q-my-xl">
+            <div class="col-12 col-md-6 text-center q-mb-lg q-mb-none-md">
+              <q-img :src="securityImg" alt="Security" class="section-img floating" fit="contain" ratio="16/10"
+                crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('security')" />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
+                <div class="text-h5 text-lime text-bold">Bank-Grade Security</div>
+                <p class="q-mt-sm">
+                  Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and
+                  customers.
+                </p>
+                <div class="text-h4 text-lime q-mt-md">99.99%</div>
+                <div class="text-caption">System Uptime</div>
+              </q-card>
+            </div>
+          </div>
+        </section>
+
+        <!-- Services -->
+        <section id="services" class="q-pa-xl">
+          <div class="text-center q-mb-xl">
+            <h2 class="text-h4 text-lime text-bold">Our Services</h2>
+            <p class="text-subtitle2">All-in-one fintech platform for payments, analytics, and growth.</p>
+          </div>
+          <div class="row q-col-gutter-xl">
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-icon name="credit_card" size="40px" class="text-lime q-mb-md" />
+                <div class="text-h6 text-lime text-bold">Smart Checkout</div>
+                <p>Fast and seamless checkout experience with multiple payment methods.</p>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-icon name="stacked_bar_chart" size="40px" class="text-lime q-mb-md" />
+                <div class="text-h6 text-lime text-bold">Analytics</div>
+                <p>Track and optimize your performance with real-time insights and reporting tools.</p>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-icon name="support" size="40px" class="text-lime q-mb-md" />
+                <div class="text-h6 text-lime text-bold">24/7 Support</div>
+                <p>Always-on support system to resolve issues instantly and keep business running.</p>
+              </q-card>
+            </div>
+          </div>
+        </section>
+
+        <!-- How It Works (extra attractive section) -->
+        <section id="how-it-works" class="q-pa-xl">
+          <div class="text-center q-mb-xl">
+            <h2 class="text-h4 text-lime text-bold">How It Works</h2>
+            <p class="text-subtitle2">From onboarding to growth — start accepting payments in minutes.</p>
+          </div>
+          <div class="row q-col-gutter-xl">
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-img :src="how1" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
+                  referrerpolicy="no-referrer" @error="onHowImgError(1)" />
+                <div class="text-h6 text-lime text-bold">Sign Up</div>
+                <p>Create your merchant profile and upload required documents.</p>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-img :src="how2" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
+                  referrerpolicy="no-referrer" @error="onHowImgError(2)" />
+                <div class="text-h6 text-lime text-bold">Integrate</div>
+                <p>Use our hosted checkout or API to start processing securely.</p>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-4">
+              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
+                <q-img :src="how3" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
+                  referrerpolicy="no-referrer" @error="onHowImgError(3)" />
+                <div class="text-h6 text-lime text-bold">Grow</div>
+                <p>Analyze performance and scale with insights and automation.</p>
+              </q-card>
+            </div>
+          </div>
+        </section>
+
+        <!-- Metrics -->
+        <section id="metrics" class="q-pa-xl">
+          <q-card class="q-pa-xl card-dark lime-glow">
+            <div class="row text-center items-stretch">
+              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
+                <div class="text-h4 text-lime">120K+</div>
+                <div class="text-caption">Users</div>
+              </div>
+              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
+                <div class="text-h4 text-lime">48</div>
+                <div class="text-caption">Countries</div>
+              </div>
+              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
+                <div class="text-h4 text-lime">$2.3B</div>
+                <div class="text-caption">Amount Processed</div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="text-h4 text-lime">99.98%</div>
+                <div class="text-caption">Uptime</div>
+              </div>
+            </div>
+          </q-card>
+        </section>
+
+        <!-- Partners (gapless continuous marquee) -->
+        <section id="partners" class="q-pa-xl">
+          <div class="text-center q-mb-md">
+            <h2 class="text-h5 text-lime text-bold">Official Partners</h2>
+          </div>
+          <div class="partners-marquee">
+            <div class="track">
+              <img v-for="(logo, i) in doubleLogos" :key="i" :src="logo" :alt="'logo-' + i" />
+            </div>
+          </div>
+        </section>
+
+        <!-- CTA Banner -->
+        <section class="q-pa-xl text-center">
+          <q-card class="q-pa-xl card-dark lime-glow">
+            <div class="text-h5 text-lime text-bold">Ready to scale with FinteckX?</div>
+            <div class="q-mt-sm">Onboard in minutes and start accepting secure payments.</div>
+            <div class="q-mt-md">
+              <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
+              <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Talk to Sales" to="/" />
+            </div>
+          </q-card>
+        </section>
+      </div>
+
+      <!-- Non-home routes render here (e.g., /register, /login) -->
+      <router-view v-else />
+    </q-page-container>
 
     <!-- Footer -->
     <footer class="custom-footer q-pa-xl">
@@ -247,6 +256,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const isAuthed = ref(false)
 const drawerOpen = ref(false)
+const isHome = computed(() => route.path === '/' || route.name === 'home')
 
 /**
  * Multi-tier image fallbacks to ensure visibility:
