@@ -1,98 +1,156 @@
 <template>
-  <div class="row q-col-gutter-md">
-    <div class="col-12 col-md-8">
-      <RevenueChart :labels="revenue.labels" :datasets="revenue.datasets" />
+  <q-page class="q-pa-md">
+    <!-- Page Title -->
+    <div class="text-h5 q-mb-md">📊 Stats & Analytics</div>
+
+    <!-- Summary Stats -->
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col-12 col-md-4">
+        <q-card class="bg-primary text-white">
+          <q-card-section>
+            <div class="text-subtitle1">Total Revenue</div>
+            <div class="text-h6">$120,000</div>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col-12 col-md-4">
+        <q-card class="bg-secondary text-white">
+          <q-card-section>
+            <div class="text-subtitle1">Total Transactions</div>
+            <div class="text-h6">4,523</div>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col-12 col-md-4">
+        <q-card class="bg-accent text-white">
+          <q-card-section>
+            <div class="text-subtitle1">Active Customers</div>
+            <div class="text-h6">1,245</div>
+          </q-card-section>
+        </q-card>
+      </div>
     </div>
-    <div class="col-12 col-md-4">
-      <MethodsDistributionCharts :labels="methods.labels" :data="methods.data" />
+
+    <!-- Charts Section -->
+    <div class="row q-col-gutter-md">
+      <!-- Revenue Trend -->
+      <div class="col-12 col-md-6">
+        <q-card>
+          <q-card-section>
+            <div class="text-subtitle1">Revenue Trend</div>
+          </q-card-section>
+          <q-card-section style="height: 300px;">
+            <LineChart :data="revenueData" :options="chartOptions" />
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Transaction Status -->
+      <div class="col-12 col-md-6">
+        <q-card>
+          <q-card-section>
+            <div class="text-subtitle1">Transaction Status</div>
+          </q-card-section>
+          <q-card-section style="height: 300px;">
+            <BarChart :data="statusData" :options="chartOptions" />
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="col-12 col-md-6">
+        <q-card>
+          <q-card-section>
+            <div class="text-subtitle1">Payment Methods</div>
+          </q-card-section>
+          <q-card-section style="height: 300px;">
+            <PieChart :data="paymentData" :options="chartOptions" />
+          </q-card-section>
+        </q-card>
+      </div>
     </div>
-    <div class="col-12">
-      <TransactionTrendsChart :labels="trends.labels" :datasets="trends.datasets" />
-    </div>
-    <div class="col-12">
-      <HistogramChart :labels="hist.labels" :data="hist.data" />
-    </div>
-  </div>
+  </q-page>
 </template>
 
 <script setup>
-import { ref, toRefs, watch } from 'vue'
-import api from '../../boot/axios'
-import RevenueChart from './charts/RevenueChart.vue'
-import MethodsDistributionCharts from './charts/MethodsDistributionCharts.vue'
-import TransactionTrendsChart from './charts/TransactionTrendsChart.vue'
-import HistogramChart from './charts/HistogramChart.vue'
+import { Line as LineChart, Bar as BarChart, Pie as PieChart } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  BarElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+  Filler   // ✅ Add this
+} from 'chart.js'
 
-const props = defineProps({ filters: { type: Object, default: () => ({}) } })
-const { filters } = toRefs(props)
+// ✅ Register Filler plugin too
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  BarElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+  Filler
+)
 
-const revenue = ref({ labels: [], datasets: [] })
-const methods = ref({ labels: [], data: [] })
-const trends = ref({ labels: [], datasets: [] })
-const hist = ref({ labels: [], data: [] })
-const palette = ['#bdf000', '#22d3ee', '#f59e0b', '#a78bfa', '#34d399', '#f87171']
-
-const fetchAll = async () => {
-  const params = {
-    startDate: filters.value.startDate,
-    endDate: filters.value.endDate,
-    merchantId: filters.value.merchantId,
-    businessId: filters.value.businessId
-  }
-  const [r, m, t] = await Promise.allSettled([
-    api.get('/stats/revenue', { params }),
-    api.get('/stats/methods', { params }),
-    api.get('/stats/transactions', { params })
-  ])
-
-  // Revenue
-  {
-    const data = r.status === 'fulfilled' ? r.value.data : []
-    if (Array.isArray(data)) {
-      revenue.value.labels = data.map(d => d.date)
-      revenue.value.datasets = [{ label: 'Revenue', data: data.map(d => d.amount), color: palette[0] }]
-    } else if (data?.labels && Array.isArray(data.datasets)) {
-      revenue.value.labels = data.labels
-      revenue.value.datasets = data.datasets.map((ds, i) => ({ ...ds, color: ds.color || palette[i % palette.length] }))
+// Dummy Data for Charts
+const revenueData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [
+    {
+      label: 'Revenue ($)',
+      data: [12000, 15000, 10000, 18000, 22000, 20000],
+      borderColor: '#42A5F5',
+      backgroundColor: 'rgba(66,165,245,0.4)',
+      fill: true, // ✅ Now works fine
+      tension: 0.3
     }
-  }
-
-  // Methods (pie)
-  {
-    const data = m.status === 'fulfilled' ? m.value.data : []
-    if (Array.isArray(data)) {
-      methods.value.labels = data.map(d => d.method)
-      methods.value.data = data.map(d => d.value)
-    } else if (data?.labels && Array.isArray(data.data)) {
-      methods.value.labels = data.labels
-      methods.value.data = data.data
-    }
-  }
-
-  // Trends
-  {
-    const data = t.status === 'fulfilled' ? t.value.data : []
-    if (Array.isArray(data)) {
-      trends.value.labels = data.map(d => d.date)
-      trends.value.datasets = [{ label: 'Transactions', data: data.map(d => d.count), color: palette[1] }]
-    } else if (data?.labels && Array.isArray(data.datasets)) {
-      trends.value.labels = data.labels
-      trends.value.datasets = data.datasets.map((ds, i) => ({ ...ds, color: ds.color || palette[i % palette.length] }))
-    }
-  }
-
-  // Histogram
-  {
-    const data = (t.status === 'fulfilled' ? t.value.data : {})?.buckets
-    if (Array.isArray(data)) {
-      hist.value.labels = data.map(b => b.label)
-      hist.value.data = data.map(b => b.count)
-    } else {
-      hist.value.labels = trends.value.labels
-      hist.value.data = trends.value.datasets[0]?.data || []
-    }
-  }
+  ]
 }
 
-watch(filters, fetchAll, { deep: true, immediate: true })
+const statusData = {
+  labels: ['Completed', 'Pending', 'Failed'],
+  datasets: [
+    {
+      label: 'Transactions',
+      data: [3200, 900, 423],
+      backgroundColor: ['#66BB6A', '#FFA726', '#EF5350']
+    }
+  ]
+}
+
+const paymentData = {
+  labels: ['Credit Card', 'PayPal', 'Bank Transfer'],
+  datasets: [
+    {
+      label: 'Payment Methods',
+      data: [2500, 1500, 523],
+      backgroundColor: ['#42A5F5', '#AB47BC', '#FF7043']
+    }
+  ]
+}
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'bottom' }
+  }
+}
 </script>
+
+
+<style scoped>
+.text-subtitle1 {
+  font-weight: 600;
+}
+</style>
