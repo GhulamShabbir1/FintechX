@@ -1,35 +1,69 @@
 <template>
-  <q-card class="lime-glow q-pa-md">
-    <div class="text-subtitle1 q-mb-sm">{{ title }}</div>
-    <canvas ref="el" height="140"></canvas>
-  </q-card>
+  <div class="chart-container">
+    <canvas ref="chartCanvas" height="300"></canvas>
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { Chart, registerables } from 'chart.js'
 
+Chart.register(...registerables)
+
+// Props
 const props = defineProps({
-  title: { type: String, default: '' },
-  labels: { type: Array, default: () => [] },
-  data: { type: Array, default: () => [] }
+  data: {
+    type: Array,
+    default: () => []
+  },
+  labels: {
+    type: Array,
+    default: () => []
+  },
+  title: {
+    type: String,
+    default: 'Data Distribution'
+  }
 })
 
-const el = ref(null)
-let chart
+// Template refs
+const chartCanvas = ref(null)
+let chartInstance = null
 
-const build = () => {
-  if (!el.value) return
-  if (chart) chart.destroy()
-  chart = new Chart(el.value.getContext('2d'), {
+// Methods
+const createChart = () => {
+  if (!chartCanvas.value) return
+
+  const ctx = chartCanvas.value.getContext('2d')
+  
+  // Demo data if no data provided
+  const chartData = props.data.length > 0 ? props.data : [45, 32, 28, 22, 18]
+  const chartLabels = props.labels.length > 0 ? props.labels : ['United States', 'United Kingdom', 'Canada', 'Germany', 'Australia']
+  
+  chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: props.labels,
+      labels: chartLabels,
       datasets: [{
         label: props.title,
-        data: props.data,
-        backgroundColor: '#a78bfa'
+        data: chartData,
+        backgroundColor: [
+          'rgba(189, 240, 0, 0.8)',
+          'rgba(76, 175, 80, 0.8)',
+          'rgba(255, 152, 0, 0.8)',
+          'rgba(156, 39, 176, 0.8)',
+          'rgba(33, 150, 243, 0.8)'
+        ],
+        borderColor: [
+          '#bdf000',
+          '#4CAF50',
+          '#FF9800',
+          '#9C27B0',
+          '#2196F3'
+        ],
+        borderWidth: 1,
+        borderRadius: 4,
+        borderSkipped: false
       }]
     },
     options: {
@@ -37,29 +71,82 @@ const build = () => {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false, labels: { color: '#a0a0a0' } },
-        tooltip: { callbacks: { label: (ctx) => ctx.raw?.toLocaleString?.() ?? ctx.raw } }
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#121212',
+          titleColor: '#ffffff',
+          bodyColor: '#bdf000',
+          borderColor: 'rgba(189, 240, 0, 0.2)',
+          borderWidth: 1,
+          cornerRadius: 8,
+          displayColors: false,
+          callbacks: {
+            label: function(context) {
+              return `${context.parsed.x}%`
+            }
+          }
+        }
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#a0a0a0' } },
-        y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#a0a0a0' } }
+        x: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: '#ccc',
+            callback: function(value) {
+              return value + '%'
+            }
+          }
+        },
+        y: {
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: '#ccc',
+            font: {
+              size: 12
+            }
+          }
+        }
       },
-      animation: { duration: 700 }
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      }
     }
   })
 }
 
-watch(() => [props.labels, props.data], build, { deep: true })
-onMounted(build)
-onBeforeUnmount(() => { if (chart) chart.destroy() })
+// Watch for data changes
+watch(() => props.data, () => {
+  if (chartInstance) {
+    chartInstance.destroy()
+    createChart()
+  }
+}, { deep: true })
+
+// Lifecycle
+onMounted(() => {
+  createChart()
+})
+
+onBeforeUnmount(() => {
+  if (chartInstance) {
+    chartInstance.destroy()
+  }
+})
 </script>
 
 <style scoped>
-.lime-glow {
-  border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 1px rgba(189,240,0,0.28), 0 0 24px rgba(189,240,0,0.18);
-  background: linear-gradient(135deg, #000000 0%, #121018 100%);
-  color: #fff;
-  height: 320px;
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
 }
 </style>

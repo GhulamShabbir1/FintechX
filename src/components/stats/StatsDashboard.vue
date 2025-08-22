@@ -1,284 +1,308 @@
-src/components/stats/StatsDashboard.vue
 <template>
   <div class="stats-dashboard">
-    <div class="row items-center q-mb-md">
-      <div class="text-h6 text-lime">Analytics</div>
-      <q-space />
-      <FiltersPanel v-model="filters" />
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="row q-col-gutter-sm q-mb-md">
-      <div class="col-12 col-sm-6 col-md-3" v-for="k in kpis" :key="k.label">
-        <q-card class="kpi-card lime-glow">
-          <div class="kpi-top">
-            <div class="kpi-label">{{ k.label }}</div>
-            <q-chip dense :color="k.trendColor" text-color="white" square>{{ k.change }}</q-chip>
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+      <!-- Revenue Chart -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Revenue Trends</h3>
+          <div class="chart-actions">
+            <q-btn flat round dense icon="refresh" color="lime" @click="refreshData" />
+            <q-btn flat round dense icon="more_vert" color="lime" />
           </div>
-          <div class="kpi-value">{{ k.value }}</div>
-          <div class="kpi-sub">{{ k.sub }}</div>
-        </q-card>
+        </div>
+        <div class="chart-container">
+          <RevenueChart :data="revenueData" />
+        </div>
+      </div>
+
+      <!-- Payment Methods Distribution -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Payment Methods</h3>
+          <div class="chart-actions">
+            <q-btn flat round dense icon="refresh" color="lime" @click="refreshData" />
+            <q-btn flat round dense icon="more_vert" color="lime" />
+          </div>
+        </div>
+        <div class="chart-container">
+          <MethodsDistributionCharts :data="methodsData" />
+        </div>
+      </div>
+
+      <!-- Transaction Trends -->
+      <div class="chart-card full-width">
+        <div class="card-header">
+          <h3 class="card-title">Transaction Trends</h3>
+          <div class="chart-actions">
+            <q-btn flat round dense icon="refresh" color="lime" @click="refreshData" />
+            <q-btn flat round dense icon="more_vert" color="lime" />
+          </div>
+        </div>
+        <div class="chart-container">
+          <TransactionTrendsChart :data="trendsData" />
+        </div>
+      </div>
+
+      <!-- Average Checkout Time -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Checkout Time</h3>
+          <div class="chart-actions">
+            <q-btn flat round dense icon="refresh" color="lime" @click="refreshData" />
+            <q-btn flat round dense icon="more_vert" color="lime" />
+          </div>
+        </div>
+        <div class="chart-container">
+          <AvgCheckoutTimeChart :data="checkoutTimeData" :labels="checkoutTimeLabels" />
+        </div>
+      </div>
+
+      <!-- Top Geographies -->
+      <div class="chart-card">
+        <div class="card-header">
+          <h3 class="card-title">Top Geographies</h3>
+          <div class="chart-actions">
+            <q-btn flat round dense icon="refresh" color="lime" @click="refreshData" />
+            <q-btn flat round dense icon="more_vert" color="lime" />
+          </div>
+        </div>
+        <div class="chart-container">
+          <HorizontalBarChart 
+            :data="geographyData" 
+            :labels="geographyLabels"
+            title="Geographic Distribution"
+          />
+        </div>
       </div>
     </div>
 
-    <!-- Row 1 -->
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col-12 col-md-8">
-        <RevenueChart :labels="revenue.labels" :datasets="revenue.datasets" />
-      </div>
-      <div class="col-12 col-md-4">
-        <MethodsDistributionCharts :labels="methods.labels" :data="methods.data" />
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-overlay">
+      <q-spinner-dots color="lime" size="50px" />
+      <p class="loading-text">Loading analytics data...</p>
     </div>
-
-    <!-- Row 2 -->
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col-12">
-        <TransactionTrendsChart :labels="trends.labels" :datasets="trends.datasets" />
-      </div>
-    </div>
-
-    <!-- Row 3 -->
-    <div class="row q-col-gutter-md">
-      <div class="col-12 col-md-6">
-        <AvgCheckoutTimeChart :labels="avgCheckout.labels" :data="avgCheckout.data" />
-      </div>
-      <div class="col-12 col-md-6">
-        <HorizontalBarChart title="Top Geographies" :labels="topGeos.labels" :data="topGeos.data" />
-      </div>
-      <div class="col-12 q-mt-md">
-        <HorizontalBarChart title="Top Customers" :labels="topCustomers.labels" :data="topCustomers.data" />
-      </div>
-    </div>
-
-    <q-inner-loading :showing="loading" class="loader">
-      <q-spinner color="lime" size="lg" />
-    </q-inner-loading>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, toRefs, onMounted } from 'vue'
 import api from '../../boot/axios'
-import FiltersPanel from './FiltersPanel.vue'
 import RevenueChart from './charts/RevenueChart.vue'
 import MethodsDistributionCharts from './charts/MethodsDistributionCharts.vue'
 import TransactionTrendsChart from './charts/TransactionTrendsChart.vue'
 import AvgCheckoutTimeChart from './charts/AvgCheckoutTimeChart.vue'
 import HorizontalBarChart from './charts/HorizontalBarChart.vue'
 
-const loading = ref(false)
-const filters = ref({
-  interval: 'daily',
-  startDate: '',
-  endDate: '',
-  merchantId: null
+// Props
+const props = defineProps({ 
+  filters: { 
+    type: Object, 
+    default: () => ({}) 
+  } 
 })
 
-const kpis = ref([
-  { label: 'Revenue', value: '$0.00', change: '+0%', trendColor: 'blue', sub: 'vs prev period' },
-  { label: 'Transactions', value: '0', change: '+0%', trendColor: 'blue', sub: 'vs prev period' },
-  { label: 'Success Rate', value: '0%', change: '+0%', trendColor: 'blue', sub: 'completion' },
-  { label: 'Chargebacks', value: '0', change: '-0%', trendColor: 'green', sub: 'lower is better' }
-])
+const { filters } = toRefs(props)
 
-const revenue = ref({ labels: [], datasets: [] })
-const methods = ref({ labels: [], data: [] })
-const trends = ref({ labels: [], datasets: [] })
-const avgCheckout = ref({ labels: [], data: [] })
-const topGeos = ref({ labels: [], data: [] })
-const topCustomers = ref({ labels: [], data: [] })
+// Reactive data
+const loading = ref(false)
+const revenueData = ref([])
+const methodsData = ref([])
+const trendsData = ref([])
+const checkoutTimeData = ref([])
+const checkoutTimeLabels = ref([])
+const geographyData = ref([])
+const geographyLabels = ref([])
 
-const fetchStats = async () => {
+// Methods
+const fetchAll = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    const params = {
-      interval: filters.value.interval,
-      start: filters.value.startDate,
-      end: filters.value.endDate,
-      merchantId: filters.value.merchantId
+    const params = { 
+      startDate: filters.value.startDate, 
+      endDate: filters.value.endDate, 
+      merchantId: filters.value.merchantId 
     }
-    const { data } = await api.get('/stats/overview', { params })
-    mapData(data)
-  } catch {
-    // fallback demo data
-    demoData()
+    
+    const [r, m, t, c, g] = await Promise.all([
+      api.get('/stats/revenue', { params }),
+      api.get('/stats/methods', { params }),
+      api.get('/stats/transactions', { params }),
+      api.get('/stats/checkout-time', { params }),
+      api.get('/stats/geography', { params })
+    ])
+    
+    revenueData.value = r.data
+    methodsData.value = m.data
+    trendsData.value = t.data
+    checkoutTimeData.value = c.data.values || []
+    checkoutTimeLabels.value = c.data.labels || []
+    geographyData.value = g.data.values || []
+    geographyLabels.value = g.data.labels || []
+  } catch (error) {
+    console.error('Failed to fetch stats data:', error)
+    // Use demo data on error
+    loadDemoData()
   } finally {
     loading.value = false
   }
 }
 
-const mapData = (data) => {
-  // KPI
-  kpis.value = [
-    {
-      label: 'Revenue',
-      value: fmtCurrency(data.kpis?.revenue || 0),
-      change: deltaToStr(data.kpis?.revenue_delta || 0),
-      trendColor: (data.kpis?.revenue_delta || 0) >= 0 ? 'green' : 'red',
-      sub: 'vs prev period'
-    },
-    {
-      label: 'Transactions',
-      value: (data.kpis?.transactions || 0).toLocaleString(),
-      change: deltaToStr(data.kpis?.transactions_delta || 0),
-      trendColor: (data.kpis?.transactions_delta || 0) >= 0 ? 'green' : 'red',
-      sub: 'vs prev period'
-    },
-    {
-      label: 'Success Rate',
-      value: `${Math.round(data.kpis?.success_rate || 0)}%`,
-      change: deltaToStr(data.kpis?.success_delta || 0),
-      trendColor: (data.kpis?.success_delta || 0) >= 0 ? 'green' : 'red',
-      sub: 'completion'
-    },
-    {
-      label: 'Chargebacks',
-      value: (data.kpis?.chargebacks || 0).toLocaleString(),
-      change: deltaToStr(-(data.kpis?.chargebacks_delta || 0)),
-      trendColor: 'green',
-      sub: 'lower is better'
-    }
+const loadDemoData = () => {
+  // Demo revenue data
+  revenueData.value = [
+    { month: 'Jan', revenue: 45000 },
+    { month: 'Feb', revenue: 52000 },
+    { month: 'Mar', revenue: 48000 },
+    { month: 'Apr', revenue: 61000 },
+    { month: 'May', revenue: 55000 },
+    { month: 'Jun', revenue: 68000 }
   ]
-
-  revenue.value = {
-    labels: data.revenue?.labels || [],
-    datasets: (data.revenue?.series || []).map((s, i) => ({
-      label: s.name || `Series ${i + 1}`,
-      data: s.data || [],
-      borderColor: s.color || palette[i % palette.length],
-      backgroundColor: (ctx) => gradient(ctx, s.color || palette[i % palette.length], 0.18),
-      tension: 0.35,
-      fill: true,
-      pointRadius: 0
-    }))
-  }
-
-  methods.value = {
-    labels: data.methods?.labels || [],
-    data: data.methods?.data || []
-  }
-
-  trends.value = {
-    labels: data.trends?.labels || [],
-    datasets: (data.trends?.series || []).map((s, i) => ({
-      label: s.name || `Series ${i + 1}`,
-      data: s.data || [],
-      backgroundColor: s.color || palette[i % palette.length],
-      borderColor: s.color || palette[i % palette.length],
-      borderWidth: 1,
-      stack: 'total'
-    }))
-  }
-
-  avgCheckout.value = {
-    labels: data.avg_checkout?.labels || [],
-    data: data.avg_checkout?.data || []
-  }
-
-  topGeos.value = {
-    labels: (data.top_geographies || []).map(g => g.name),
-    data: (data.top_geographies || []).map(g => g.value)
-  }
-
-  topCustomers.value = {
-    labels: (data.top_customers || []).map(c => c.name),
-    data: (data.top_customers || []).map(c => c.value)
-  }
-}
-
-const demoData = () => {
-  const labels = genDates(filters.value.startDate, filters.value.endDate, filters.value.interval)
-  revenue.value = {
-    labels,
-    datasets: [
-      {
-        label: 'Revenue',
-        data: labels.map(() => rnd(1200, 5200)),
-        borderColor: '#bdf000',
-        backgroundColor: (ctx) => gradient(ctx, '#bdf000', 0.2),
-        tension: 0.35,
-        fill: true,
-        pointRadius: 0
-      }
-    ]
-  }
-  methods.value = {
-    labels: ['Card', 'Apple Pay', 'Google Pay', 'PayPal', 'Bank'],
-    data: [45, 20, 15, 12, 8]
-  }
-  trends.value = {
-    labels,
-    datasets: [
-      { label: 'Successful', data: labels.map(() => rnd(70, 100)), backgroundColor: '#22c55e', stack: 'total' },
-      { label: 'Failed', data: labels.map(() => rnd(5, 20)), backgroundColor: '#ef4444', stack: 'total' }
-    ]
-  }
-  avgCheckout.value = { labels, data: labels.map(() => rnd(12, 28)) }
-  topGeos.value = { labels: ['US', 'UK', 'DE', 'IN', 'CA'], data: [52000, 33000, 28000, 25000, 22000] }
-  topCustomers.value = { labels: ['Acme Inc', 'Globex', 'Wayne', 'Stark', 'Wonka'], data: [14000, 12000, 9800, 9200, 8800] }
-  kpis.value = [
-    { label: 'Revenue', value: fmtCurrency(382200), change: '+8.2%', trendColor: 'green', sub: 'vs prev period' },
-    { label: 'Transactions', value: '12,483', change: '+3.1%', trendColor: 'green', sub: 'vs prev period' },
-    { label: 'Success Rate', value: '96%', change: '+1.2%', trendColor: 'green', sub: 'completion' },
-    { label: 'Chargebacks', value: '12', change: '-5.0%', trendColor: 'green', sub: 'lower is better' }
+  
+  // Demo methods data
+  methodsData.value = [
+    { method: 'Credit Card', percentage: 45 },
+    { method: 'Debit Card', percentage: 28 },
+    { method: 'Digital Wallet', percentage: 18 },
+    { method: 'Bank Transfer', percentage: 9 }
   ]
+  
+  // Demo trends data
+  trendsData.value = [
+    { month: 'Jan', successful: 120, failed: 8 },
+    { month: 'Feb', successful: 135, failed: 6 },
+    { month: 'Mar', successful: 142, failed: 12 },
+    { month: 'Apr', successful: 158, failed: 9 },
+    { month: 'May', successful: 165, failed: 7 },
+    { month: 'Jun', successful: 184, failed: 11 }
+  ]
+  
+  // Demo checkout time data
+  checkoutTimeData.value = [2.3, 2.1, 2.5, 2.0, 1.8, 2.2, 1.9]
+  checkoutTimeLabels.value = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  
+  // Demo geography data
+  geographyData.value = [45, 32, 28, 22, 18]
+  geographyLabels.value = ['United States', 'United Kingdom', 'Canada', 'Germany', 'Australia']
 }
 
-const gradient = (ctx, color, alpha = 0.2) => {
-  const canvas = ctx.chart.ctx
-  const g = canvas.createLinearGradient(0, 0, 0, 180)
-  g.addColorStop(0, hexToRgba(color, alpha))
-  g.addColorStop(1, 'rgba(0,0,0,0)')
-  return g
-}
-const hexToRgba = (hex, a) => {
-  const c = hex.replace('#', '')
-  const bigint = parseInt(c, 16)
-  const r = (bigint >> 16) & 255
-  const g = (bigint >> 8) & 255
-  const b = bigint & 255
-  return `rgba(${r},${g},${b},${a})`
-}
-const palette = ['#bdf000', '#22d3ee', '#f59e0b', '#a78bfa', '#34d399', '#f87171']
-
-const fmtCurrency = (cents) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((cents || 0) / 100)
-const deltaToStr = (n) => `${n >= 0 ? '+' : ''}${(Math.abs(n) * 100).toFixed(1)}%`
-const rnd = (min, max) => Math.round(Math.random() * (max - min) + min)
-
-const genDates = (start, end, interval) => {
-  const result = []
-  const s = start ? new Date(start) : new Date(Date.now() - 29 * 86400000)
-  const e = end ? new Date(end) : new Date()
-  const d = new Date(s)
-  while (d <= e) {
-    if (interval === 'monthly') result.push(d.toLocaleString('en-US', { month: 'short', year: '2-digit' }))
-    else result.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
-    d.setDate(d.getDate() + (interval === 'weekly' ? 7 : interval === 'monthly' ? 30 : 1))
-  }
-  return result
+const refreshData = () => {
+  fetchAll()
 }
 
-watch(filters, fetchStats, { deep: true })
-onMounted(fetchStats)
+// Watch for filter changes
+watch(filters, fetchAll, { deep: true, immediate: true })
+
+// Initialize
+onMounted(() => {
+  fetchAll()
+})
 </script>
 
 <style scoped>
-.stats-dashboard { position: relative; }
-.text-lime { color: #bdf000; }
-.lime-glow {
-  border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.35), 0 0 0 1px rgba(189,240,0,0.28), 0 0 24px rgba(189,240,0,0.18);
-  background: linear-gradient(135deg, #000000 0%, #121018 100%);
-  color: #fff;
+.stats-dashboard {
+  position: relative;
+  min-height: 400px;
 }
-.kpi-card { padding: 16px; }
-.kpi-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.kpi-label { color: #a0a0a0; font-size: 0.85rem; }
-.kpi-value { font-size: 1.8rem; font-weight: 800; }
-.kpi-sub { color: #8b8b8b; font-size: 0.75rem; }
-.loader {
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.chart-card {
+  background: #121212;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(189, 240, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  border-color: rgba(189, 240, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.chart-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 10, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.loading-text {
+  color: #bdf000;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-card {
+    padding: 20px;
+  }
+  
+  .card-title {
+    font-size: 16px;
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card {
+    padding: 16px;
+  }
+  
+  .chart-container {
+    height: 200px;
+  }
 }
 </style>

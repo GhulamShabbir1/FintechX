@@ -65,8 +65,22 @@
 import { ref } from 'vue'
 import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
 
-const illustration = ref('https://source.unsplash.com/900x700/?fintech,3d,banking')
-const onImgError = () => { illustration.value = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
+// Using a more reliable image source with fallbacks
+const illustrationSources = [
+  'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
+  'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
+  'https://placehold.co/900x700/121018/bdf000?text=FinteckX+Onboarding'
+]
+
+const illustration = ref(illustrationSources[0])
+let imgErrorCount = 0
+
+const onImgError = () => { 
+  imgErrorCount++
+  if (imgErrorCount < illustrationSources.length) {
+    illustration.value = illustrationSources[imgErrorCount]
+  }
+}
 </script>
 
 <style scoped>
@@ -99,7 +113,8 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
 }
 
 .full-height {
-  height: 600px;
+  min-height: 600px;
+  height: auto;
 }
 
 .left-pane {
@@ -142,17 +157,20 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
   font-size: 0.9rem;
 }
 
+/* FIXED: Right pane now has proper dark background */
 .right-pane {
-  background: rgba(10, 10, 10, 0.7);
+  background: rgba(8, 8, 8, 0.95) !important;
+  border-left: 1px solid rgba(189, 240, 0, 0.1);
 }
 
 .form-container {
   width: 100%;
   max-width: 360px;
+  background: transparent;
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(18, 18, 18, 0.7);
   border: 1px solid rgba(189, 240, 0, 0.14);
   backdrop-filter: blur(8px);
   border-radius: 16px;
@@ -240,6 +258,8 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
 .hero-illustration {
   border-radius: 16px;
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+  max-width: 100%;
+  height: auto;
 }
 
 /* Background elements animation */
@@ -258,6 +278,7 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
   border: 1px solid rgba(189, 240, 0, 0.1);
   border-radius: 50%;
   animation: floatElement 20s infinite linear;
+  will-change: transform;
 }
 
 .square {
@@ -334,11 +355,14 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
   
   .left-pane {
     padding: 40px 24px;
-    height: 300px;
+    min-height: 300px;
+    height: auto;
   }
   
   .right-pane {
     padding: 40px 24px;
+    border-left: none;
+    border-top: 1px solid rgba(189, 240, 0, 0.1);
   }
   
   .text-content {
@@ -351,6 +375,24 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
   
   .features-list {
     display: none;
+  }
+  
+  .onboarding-card {
+    margin: 20px 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .left-pane, .right-pane {
+    padding: 24px 16px;
+  }
+  
+  .text-content .text-h4 {
+    font-size: 1.3rem;
+  }
+  
+  .glass-panel {
+    padding: 16px;
   }
 }
 </style>
