@@ -1,51 +1,356 @@
 <template>
-  <q-page class="q-pa-md flex flex-center">
-    <q-card class="q-pa-lg shadow-2 lime-glow rounded-borders" style="width:980px; max-width:95%;">
-      <div class="row items-stretch">
-        <div class="col-12 col-md-5 bg-dark q-pa-md flex flex-center">
-          <q-img :src="illustration" fit="contain" ratio="4/3" class="floating" @error="onImgError" />
+  <q-page class="q-pa-md flex flex-center fintech-bg">
+    <q-card class="onboarding-card glass-surface elevate-on-hover">
+      <div class="row items-stretch full-height">
+        <!-- Left Pane - Illustration -->
+        <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
+          <div class="illustration-container">
+            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1" 
+                   class="floating hero-illustration" @error="onImgError" />
+            <div class="text-content text-center">
+              <div class="text-h4 text-bold text-white">Join FinteckX</div>
+              <div class="text-subtitle1 q-mt-md text-soft">Start your journey to financial innovation</div>
+              <div class="q-mt-lg features-list">
+                <div class="feature-item">
+                  <q-icon name="check_circle" color="lime-7" size="sm" />
+                  <span class="q-ml-sm">Fast verification process</span>
+                </div>
+                <div class="feature-item">
+                  <q-icon name="check_circle" color="lime-7" size="sm" />
+                  <span class="q-ml-sm">Secure transactions</span>
+                </div>
+                <div class="feature-item">
+                  <q-icon name="check_circle" color="lime-7" size="sm" />
+                  <span class="q-ml-sm">24/7 customer support</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="col-12 col-md-7 q-pa-md">
-          <div class="text-h6 text-center text-lime">Merchant Onboarding</div>
-          <div class="text-subtitle2 text-center q-mb-lg">Create your account and complete verification</div>
-          <OnBoardWizard />
-          <div class="q-mt-md text-center">
-            <q-btn flat label="Already have an account? Login" @click="$router.push('/login')" />
+        
+        <!-- Right Pane - Onboarding Form -->
+        <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
+          <div class="form-container">
+            <div class="text-center q-mb-lg">
+              <div class="text-h4 text-bold text-lime heading-animate">Get Started</div>
+              <div class="text-subtitle1 q-mt-sm text-soft">Complete your merchant account setup</div>
+            </div>
+            
+            <div class="glass-panel q-pa-lg rounded-borders form-inner">
+              <OnBoardWizard />
+            </div>
+            
+            <div class="q-mt-xl text-center">
+              <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
+              <q-btn outline class="btn-lime-outline" label="Login to your account" 
+                     @click="$router.push('/login')" no-caps />
+            </div>
           </div>
         </div>
       </div>
     </q-card>
+    
+    <!-- Animated Background Elements -->
+    <div class="bg-elements">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+      <div class="circle circle-3"></div>
+      <div class="square square-1"></div>
+      <div class="square square-2"></div>
+    </div>
   </q-page>
 </template>
+
 <script setup>
+import { ref } from 'vue'
 import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
-const illustration = 'https://source.unsplash.com/900x700/?fintech,3d,banking'
-const onImgError = (e) => { e.target.src = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
+
+const illustration = ref('https://source.unsplash.com/900x700/?fintech,3d,banking')
+const onImgError = () => { illustration.value = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
 </script>
+
 <style scoped>
+.fintech-bg {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.onboarding-card {
+  width: 980px; 
+  max-width: 95%;
+  border-radius: 24px;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(189, 240, 0, 0.14);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 
+              0 0 0 1px rgba(189, 240, 0, 0.24), 
+              0 0 40px rgba(189, 240, 0, 0.22);
+  transition: all 0.4s ease;
+  overflow: hidden;
+}
+
+.onboarding-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 
+              0 0 0 1px rgba(189, 240, 0, 0.28), 
+              0 0 48px rgba(189, 240, 0, 0.28);
+}
+
+.full-height {
+  height: 600px;
+}
+
+.left-pane {
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(15, 14, 18, 0.95) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.left-pane::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(189, 240, 0, 0.08) 0%, transparent 70%);
+  animation: rotate 30s linear infinite;
+}
+
+.illustration-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.text-content {
+  margin-top: 32px;
+}
+
+.features-list {
+  text-align: left;
+  display: inline-block;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  margin: 12px 0;
+  color: #cfcfcf;
+  font-size: 0.9rem;
+}
+
+.right-pane {
+  background: rgba(10, 10, 10, 0.7);
+}
+
+.form-container {
+  width: 100%;
+  max-width: 360px;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(189, 240, 0, 0.14);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(189, 240, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.form-inner {
+  animation: fadeInUp 0.8s ease;
+}
+
 .text-lime {
   color: #BDF000;
 }
-.lime-glow {
-  border-radius: 14px;
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(189, 240, 0, 0.28),
-    0 0 24px rgba(189, 240, 0, 0.18);
+
+.text-soft {
+  color: #cfcfcf;
 }
-.bg-dark {
-  background: #000;
+
+.btn-lime-outline {
+  color: #BDF000;
+  border: 1px solid rgba(189, 240, 0, 0.6);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
-.floating {
-  animation: float 4s ease-in-out infinite;
+
+.btn-lime-outline:hover {
+  background: rgba(189, 240, 0, 0.08);
+  transform: translateY(-2px);
 }
-@keyframes float {
-  0%,
+
+.heading-animate {
+  animation: pop-in 0.8s cubic-bezier(.2, .8, .2, 1) both;
+  transform-origin: center;
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
   100% {
-    transform: translateY(0)
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateY(-12px)
+    transform: translateY(-16px) rotate(2deg);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-illustration {
+  border-radius: 16px;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
+}
+
+/* Background elements animation */
+.bg-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.circle, .square {
+  position: absolute;
+  border: 1px solid rgba(189, 240, 0, 0.1);
+  border-radius: 50%;
+  animation: floatElement 20s infinite linear;
+}
+
+.square {
+  border-radius: 8px;
+}
+
+.circle-1 {
+  width: 80px;
+  height: 80px;
+  top: 15%;
+  left: 15%;
+  animation-duration: 25s;
+}
+
+.circle-2 {
+  width: 120px;
+  height: 120px;
+  top: 65%;
+  left: 80%;
+  animation-duration: 30s;
+  animation-delay: -10s;
+}
+
+.circle-3 {
+  width: 60px;
+  height: 60px;
+  top: 75%;
+  left: 10%;
+  animation-duration: 20s;
+  animation-delay: -5s;
+}
+
+.square-1 {
+  width: 70px;
+  height: 70px;
+  top: 20%;
+  left: 80%;
+  animation-duration: 35s;
+  animation-delay: -15s;
+}
+
+.square-2 {
+  width: 100px;
+  height: 100px;
+  top: 60%;
+  left: 20%;
+  animation-duration: 28s;
+  animation-delay: -7s;
+}
+
+@keyframes floatElement {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(0) rotate(180deg);
+  }
+  75% {
+    transform: translateY(20px) rotate(270deg);
+  }
+  100% {
+    transform: translateY(0) rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1023px) {
+  .full-height {
+    height: auto;
+  }
+  
+  .left-pane {
+    padding: 40px 24px;
+    height: 300px;
+  }
+  
+  .right-pane {
+    padding: 40px 24px;
+  }
+  
+  .text-content {
+    margin-top: 24px;
+  }
+  
+  .text-content .text-h4 {
+    font-size: 1.5rem;
+  }
+  
+  .features-list {
+    display: none;
   }
 }
 </style>

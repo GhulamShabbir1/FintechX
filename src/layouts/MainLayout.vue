@@ -1,26 +1,30 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="lHh Lpr lFf" class="fintech-layout">
     <!-- Header -->
-    <q-header elevated class="text-white header-gradient" reveal>
-      <q-toolbar class="q-py-sm">
+    <q-header elevated class="text-white header-glass" reveal>
+      <q-toolbar class="header-toolbar">
         <q-btn v-if="isAuthed" flat round dense icon="menu" @click="drawerOpen = !drawerOpen" class="q-mr-sm lt-md" />
-        <q-toolbar-title class="row items-center no-wrap">
-          <q-icon name="payments" class="q-mr-sm text-lime" />
-          <span class="text-weight-bold text-lime">FinteckX</span>
+        <q-toolbar-title class="row items-center no-wrap header-title">
+          <div class="logo-container">
+            <q-img :src="appLogo" alt="FinteckX Logo" width="32px" height="32px" fit="contain" class="app-logo"
+              @error="onLogoError" />
+            <span class="text-weight-bold text-lime brand-text">FinteckX</span>
+          </div>
         </q-toolbar-title>
 
-        <div class="gt-sm">
-          <q-btn flat icon="home" label="Home" to="/" class="q-mx-xs" />
-          <q-btn flat icon="star" label="Advantages" to="/" @click.prevent="scrollTo('advantages')" class="q-mx-xs" />
-          <q-btn flat icon="diversity_3" label="Services" to="/" @click.prevent="scrollTo('services')"
-            class="q-mx-xs" />
-          <q-btn flat icon="group" label="Users" to="/" @click.prevent="scrollTo('metrics')" class="q-mx-xs" />
-          <q-btn flat icon="handshake" label="Partners" to="/" @click.prevent="scrollTo('partners')" class="q-mx-xs" />
+        <div class="gt-sm header-links">
+          <q-btn flat dense label="Home" to="/" class="nav-btn" />
+          <q-btn flat dense label="Advantages" to="/" @click.prevent="scrollTo('advantages')" class="nav-btn" />
+          <q-btn flat dense label="Services" to="/" @click.prevent="scrollTo('services')" class="nav-btn" />
+          <q-btn flat dense label="Users" to="/" @click.prevent="scrollTo('metrics')" class="nav-btn" />
+          <q-btn flat dense label="Partners" to="/" @click.prevent="scrollTo('partners')" class="nav-btn" />
         </div>
 
         <q-space />
-        <q-btn flat rounded class="btn-gradient" to="/register" icon="rocket_launch" label="Get Started" />
-        <q-btn flat class="q-ml-sm btn-outline-light" to="/login" icon="login" label="Access Account" />
+        <div class="header-actions">
+          <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started" to="/register" />
+          <q-btn rounded dense class="btn-secondary" to="/login" icon="login" label="Access" />
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -29,154 +33,141 @@
       <div v-if="isHome">
         <!-- Hero (text left, 3D image right) -->
         <section class="hero-section row items-center">
-          <div class="col-12 col-md-6 q-pa-lg">
-            <h2 class="text-h2 text-lime text-bold">Next-Gen Payments with FinteckX</h2>
-            <p class="text-subtitle1 q-mt-md">
+          <div class="col-12 col-md-6 q-pa-xl hero-content">
+            <div class="hero-badge">Next Generation Platform</div>
+            <h1 class="text-h2 text-lime text-bold hero-title">Next-Gen Payments <span class="text-white">with FinteckX</span></h1>
+            <p class="text-subtitle1 q-mt-md hero-description">
               Secure. Fast. Scalable. Empowering merchants and users with future-ready payment infrastructure.
             </p>
-            <div class="q-mt-lg">
-              <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
-              <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Learn More" to="/" />
+            <div class="q-mt-xl hero-actions">
+              <q-btn rounded class="btn-primary q-mr-md" icon="rocket_launch" label="Get Started" to="/register" />
+              <q-btn flat rounded class="btn-outline" icon="play_circle" label="Watch Demo" to="/" />
+            </div>
+            <div class="q-mt-xl hero-stats">
+              <div class="stat-item">
+                <div class="stat-value">200K+</div>
+                <div class="stat-label">Active Merchants</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">99.99%</div>
+                <div class="stat-label">Uptime</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">48</div>
+                <div class="stat-label">Countries</div>
+              </div>
             </div>
           </div>
-          <div class="col-12 col-md-6 text-center">
-            <q-img :src="heroImg" alt="Fintech 3D" class="hero-img floating" fit="contain" ratio="16/10"
+          <div class="col-12 col-md-6 text-center hero-visual">
+            <q-img :src="heroImg" alt="Fintech 3D" class="hero-img floating-3d" fit="contain" ratio="16/10"
               crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('hero')" />
+            <div class="hero-glow"></div>
           </div>
         </section>
 
         <!-- Advantages (Row 1: card left + 3D image right; Row 2: 3D image left + card right) -->
-        <section id="advantages" class="q-pa-xl">
-          <div class="row items-center q-my-xl">
-            <div class="col-12 col-md-6">
-              <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
-                <div class="text-h5 text-lime text-bold">Global Reach</div>
-                <p class="q-mt-sm">
-                  Expand your business with our cross-border payment solutions trusted by thousands of merchants
-                  worldwide.
+        <section id="advantages" class="section-advantages q-px-xl q-pt-xl q-pb-lg">
+          <div class="text-center q-mb-xl section-header">
+            <div class="text-h4 text-lime text-bold">Why Choose FinteckX</div>
+            <p class="text-subtitle2 section-subtitle">Powerful features designed for growth</p>
+          </div>
+          
+          <div class="row items-center q-mb-xl advantage-item">
+            <div class="col-12 col-md-6 advantage-content">
+              <q-card class="advantage-card card-glass lime-glow">
+                <div class="advantage-icon">
+                  <q-icon name="public" size="32px" class="text-lime" />
+                </div>
+                <div class="text-h5 text-lime text-bold q-mt-md">Global Reach</div>
+                <p class="q-mt-sm advantage-description">
+                  Expand your business with our cross-border payment solutions trusted by thousands of merchants worldwide.
                 </p>
-                <div class="text-h4 text-lime q-mt-md">+200K</div>
-                <div class="text-caption">Active Merchants</div>
+                <div class="text-h3 text-lime q-mt-lg">+200K</div>
+                <div class="text-caption advantage-stat-label">Active Merchants</div>
               </q-card>
             </div>
-            <div class="col-12 col-md-6 text-center">
-              <q-img :src="reachImg" alt="Global Reach" class="section-img floating" fit="contain" ratio="16/10"
+            <div class="col-12 col-md-6 text-center advantage-visual">
+              <q-img :src="reachImg" alt="Global Reach" class="advantage-img floating" fit="contain" ratio="16/10"
                 crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('reach')" />
             </div>
           </div>
 
-          <div class="row items-center q-my-xl">
-            <div class="col-12 col-md-6 text-center q-mb-lg q-mb-none-md">
-              <q-img :src="securityImg" alt="Security" class="section-img floating" fit="contain" ratio="16/10"
+          <div class="row items-center q-mb-xl advantage-item advantage-reverse">
+            <div class="col-12 col-md-6 text-center advantage-visual">
+              <q-img :src="securityImg" alt="Security" class="advantage-img floating" fit="contain" ratio="16/10"
                 crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('security')" />
             </div>
-            <div class="col-12 col-md-6">
-              <q-card class="q-pa-lg card-dark lime-glow tall-card card-with-margins">
-                <div class="text-h5 text-lime text-bold">Bank-Grade Security</div>
-                <p class="q-mt-sm">
-                  Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and
-                  customers.
+            <div class="col-12 col-md-6 advantage-content">
+              <q-card class="advantage-card card-glass lime-glow">
+                <div class="advantage-icon">
+                  <q-icon name="security" size="32px" class="text-lime" />
+                </div>
+                <div class="text-h5 text-lime text-bold q-mt-md">Bank-Grade Security</div>
+                <p class="q-mt-sm advantage-description">
+                  Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and customers.
                 </p>
-                <div class="text-h4 text-lime q-mt-md">99.99%</div>
-                <div class="text-caption">System Uptime</div>
+                <div class="text-h3 text-lime q-mt-lg">99.99%</div>
+                <div class="text-caption advantage-stat-label">System Uptime</div>
               </q-card>
             </div>
           </div>
         </section>
 
         <!-- Services -->
-        <section id="services" class="q-pa-xl">
-          <div class="text-center q-mb-xl">
-            <h2 class="text-h4 text-lime text-bold">Our Services</h2>
-            <p class="text-subtitle2">All-in-one fintech platform for payments, analytics, and growth.</p>
+        <section id="services" class="section-services q-px-xl q-py-lg">
+          <div class="text-center q-mb-xl section-header">
+            <div class="text-h4 text-lime text-bold">Our Services</div>
+            <p class="text-subtitle2 section-subtitle">All-in-one fintech platform for payments, analytics, and growth</p>
           </div>
           <div class="row q-col-gutter-xl">
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-icon name="credit_card" size="40px" class="text-lime q-mb-md" />
-                <div class="text-h6 text-lime text-bold">Smart Checkout</div>
-                <p>Fast and seamless checkout experience with multiple payment methods.</p>
-              </q-card>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-icon name="stacked_bar_chart" size="40px" class="text-lime q-mb-md" />
-                <div class="text-h6 text-lime text-bold">Analytics</div>
-                <p>Track and optimize your performance with real-time insights and reporting tools.</p>
-              </q-card>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-icon name="support" size="40px" class="text-lime q-mb-md" />
-                <div class="text-h6 text-lime text-bold">24/7 Support</div>
-                <p>Always-on support system to resolve issues instantly and keep business running.</p>
+            <div class="col-12 col-md-4" v-for="(service, index) in services" :key="index">
+              <q-card class="service-card card-glass text-center" :class="{'lime-glow': index === 1}">
+                <div class="service-icon">
+                  <q-icon :name="service.icon" size="40px" :class="index === 1 ? 'text-lime' : 'text-white'" />
+                </div>
+                <div class="text-h6 text-bold q-mt-md" :class="index === 1 ? 'text-lime' : 'text-white'">{{ service.title }}</div>
+                <p class="q-mt-sm service-description">{{ service.description }}</p>
+                <q-btn flat :color="index === 1 ? 'lime' : 'white'" label="Learn more" class="q-mt-md" />
               </q-card>
             </div>
           </div>
         </section>
 
-        <!-- How It Works (extra attractive section) -->
-        <section id="how-it-works" class="q-pa-xl">
-          <div class="text-center q-mb-xl">
-            <h2 class="text-h4 text-lime text-bold">How It Works</h2>
-            <p class="text-subtitle2">From onboarding to growth — start accepting payments in minutes.</p>
+        <!-- How It Works -->
+        <section id="how-it-works" class="section-how-it-works q-px-xl q-py-lg">
+          <div class="text-center q-mb-xl section-header">
+            <div class="text-h4 text-lime text-bold">How It Works</div>
+            <p class="text-subtitle2 section-subtitle">From onboarding to growth — start accepting payments in minutes</p>
           </div>
           <div class="row q-col-gutter-xl">
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-img :src="how1" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-                  referrerpolicy="no-referrer" @error="onHowImgError(1)" />
-                <div class="text-h6 text-lime text-bold">Sign Up</div>
-                <p>Create your merchant profile and upload required documents.</p>
-              </q-card>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-img :src="how2" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-                  referrerpolicy="no-referrer" @error="onHowImgError(2)" />
-                <div class="text-h6 text-lime text-bold">Integrate</div>
-                <p>Use our hosted checkout or API to start processing securely.</p>
-              </q-card>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-card class="q-pa-lg card-dark lime-glow text-center tall-card card-with-margins">
-                <q-img :src="how3" ratio="1" fit="contain" class="q-mb-md floating" crossorigin="anonymous"
-                  referrerpolicy="no-referrer" @error="onHowImgError(3)" />
-                <div class="text-h6 text-lime text-bold">Grow</div>
-                <p>Analyze performance and scale with insights and automation.</p>
+            <div class="col-12 col-md-4" v-for="(step, index) in howItWorks" :key="index">
+              <q-card class="how-card card-glass text-center">
+                <div class="step-number">{{ index + 1 }}</div>
+                <q-img :src="step.image" ratio="1" fit="contain" class="q-mb-md floating-slow" crossorigin="anonymous"
+                  referrerpolicy="no-referrer" @error="onHowImgError(index + 1)" />
+                <div class="text-h6 text-lime text-bold">{{ step.title }}</div>
+                <p class="q-mt-sm how-description">{{ step.description }}</p>
               </q-card>
             </div>
           </div>
         </section>
 
         <!-- Metrics -->
-        <section id="metrics" class="q-pa-xl">
-          <q-card class="q-pa-xl card-dark lime-glow">
-            <div class="row text-center items-stretch">
-              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-                <div class="text-h4 text-lime">120K+</div>
-                <div class="text-caption">Users</div>
-              </div>
-              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-                <div class="text-h4 text-lime">48</div>
-                <div class="text-caption">Countries</div>
-              </div>
-              <div class="col-6 col-md-3 q-mb-md q-mb-none-md">
-                <div class="text-h4 text-lime">$2.3B</div>
-                <div class="text-caption">Amount Processed</div>
-              </div>
-              <div class="col-6 col-md-3">
-                <div class="text-h4 text-lime">99.98%</div>
-                <div class="text-caption">Uptime</div>
+        <section id="metrics" class="section-metrics q-px-xl q-py-lg">
+          <q-card class="metrics-card card-glass lime-glow">
+            <div class="row text-center items-stretch metrics-container">
+              <div class="col-6 col-md-3 metric-item" v-for="(metric, index) in metrics" :key="index">
+                <div class="metric-value">{{ metric.value }}</div>
+                <div class="metric-label">{{ metric.label }}</div>
               </div>
             </div>
           </q-card>
         </section>
 
-        <!-- Partners (gapless continuous marquee) -->
-        <section id="partners" class="q-pa-xl">
-          <div class="text-center q-mb-md">
-            <h2 class="text-h5 text-lime text-bold">Official Partners</h2>
+        <!-- Partners -->
+        <section id="partners" class="section-partners q-px-xl q-py-lg">
+          <div class="text-center q-mb-lg section-header">
+            <div class="text-h5 text-lime text-bold">Trusted by Industry Leaders</div>
           </div>
           <div class="partners-marquee">
             <div class="track">
@@ -186,13 +177,17 @@
         </section>
 
         <!-- CTA Banner -->
-        <section class="q-pa-xl text-center">
-          <q-card class="q-pa-xl card-dark lime-glow">
-            <div class="text-h5 text-lime text-bold">Ready to scale with FinteckX?</div>
-            <div class="q-mt-sm">Onboard in minutes and start accepting secure payments.</div>
-            <div class="q-mt-md">
-              <q-btn rounded class="btn-gradient q-mx-sm" icon="rocket_launch" label="Get Started" to="/register" />
-              <q-btn flat rounded class="btn-outline-light q-mx-sm" icon="info" label="Talk to Sales" to="/" />
+        <section class="section-cta q-px-xl q-py-lg">
+          <q-card class="cta-card card-glass lime-glow">
+            <div class="row items-center">
+              <div class="col-12 col-md-8">
+                <div class="text-h5 text-lime text-bold">Ready to scale with FinteckX?</div>
+                <div class="q-mt-sm cta-description">Onboard in minutes and start accepting secure payments.</div>
+              </div>
+              <div class="col-12 col-md-4 text-right">
+                <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started" to="/register" />
+                <q-btn flat rounded class="btn-outline" icon="info" label="Talk to Sales" to="/" />
+              </div>
             </div>
           </q-card>
         </section>
@@ -203,46 +198,29 @@
     </q-page-container>
 
     <!-- Footer -->
-    <footer class="custom-footer q-pa-xl">
+    <footer class="custom-footer q-px-xl q-pt-xl q-pb-lg">
       <div class="row q-col-gutter-xl">
-        <div class="col-12 col-md-3">
-          <h5 class="text-lime">FinteckX</h5>
-          <p>A complete fintech ecosystem designed to scale your payments securely and globally.</p>
-        </div>
-        <div class="col-6 col-md-2">
-          <h6 class="text-bold">Company</h6>
-          <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="#">Newsroom</a></li>
-          </ul>
-        </div>
-        <div class="col-6 col-md-2">
-          <h6 class="text-bold">Resources</h6>
-          <ul>
-            <li><a href="#">Help Center</a></li>
-            <li><a href="#">API Docs</a></li>
-            <li><a href="#">Blog</a></li>
-          </ul>
-        </div>
-        <div class="col-6 col-md-2">
-          <h6 class="text-bold">Legal</h6>
-          <ul>
-            <li><a href="#">Privacy</a></li>
-            <li><a href="#">Terms</a></li>
-            <li><a href="#">Cookies</a></li>
-          </ul>
-        </div>
-        <div class="col-12 col-md-3">
-          <h6 class="text-bold">Follow Us</h6>
-          <div class="row q-gutter-sm">
-            <q-btn round flat icon="public" />
-            <q-btn round flat icon="code" />
-            <q-btn round flat icon="business" />
+        <div class="col-12 col-md-4">
+          <div class="footer-brand">
+            <q-img :src="appLogo" alt="FinteckX Logo" width="40px" height="40px" fit="contain" class="q-mr-sm footer-logo"
+              @error="onLogoError" />
+            <h5 class="text-lime">FinteckX</h5>
+          </div>
+          <p class="q-mt-md footer-description">A complete fintech ecosystem designed to scale your payments securely and globally.</p>
+          <div class="row q-gutter-sm q-mt-md">
+            <q-btn round flat icon="facebook" class="social-btn" />
+            <q-btn round flat icon="code" class="social-btn" />
+            <q-btn round flat icon="business" class="social-btn" />
           </div>
         </div>
+        <div class="col-6 col-md-2" v-for="(group, index) in footerLinks" :key="index">
+          <h6 class="text-bold footer-heading">{{ group.title }}</h6>
+          <ul class="footer-links">
+            <li v-for="(link, i) in group.links" :key="i"><a :href="link.url">{{ link.label }}</a></li>
+          </ul>
+        </div>
       </div>
-      <div class="text-center q-mt-lg text-caption">
+      <div class="text-center q-mt-xl text-caption footer-copyright">
         © {{ new Date().getFullYear() }} FinteckX. All Rights Reserved.
       </div>
     </footer>
@@ -258,6 +236,77 @@ const isAuthed = ref(false)
 const drawerOpen = ref(false)
 const isHome = computed(() => route.path === '/' || route.name === 'home')
 
+// Data for dynamic content
+const services = ref([
+  {
+    icon: 'credit_card',
+    title: 'Smart Checkout',
+    description: 'Fast and seamless checkout experience with multiple payment methods.'
+  },
+  {
+    icon: 'stacked_bar_chart',
+    title: 'Analytics',
+    description: 'Track and optimize your performance with real-time insights and reporting tools.'
+  },
+  {
+    icon: 'support',
+    title: '24/7 Support',
+    description: 'Always-on support system to resolve issues instantly and keep business running.'
+  }
+])
+
+const howItWorks = ref([
+  {
+    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/sign-up-3d-illustration-9727193-7887060.png',
+    title: 'Sign Up',
+    description: 'Create your merchant profile and upload required documents.'
+  },
+  {
+    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/payment-gateway-3d-illustration-8470841-6716425.png',
+    title: 'Integrate',
+    description: 'Use our hosted checkout or API to start processing securely.'
+  },
+  {
+    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/growth-3d-illustration-5930862-4918115.png',
+    title: 'Grow',
+    description: 'Analyze performance and scale with insights and automation.'
+  }
+])
+
+const metrics = ref([
+  { value: '120K+', label: 'Users' },
+  { value: '48', label: 'Countries' },
+  { value: '$2.3B', label: 'Amount Processed' },
+  { value: '99.98%', label: 'Uptime' }
+])
+
+const footerLinks = ref([
+  {
+    title: 'Company',
+    links: [
+      { label: 'About Us', url: '#' },
+      { label: 'Careers', url: '#' },
+      { label: 'Newsroom', url: '#' }
+    ]
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'Help Center', url: '#' },
+      { label: 'API Docs', url: '#' },
+      { label: 'Blog', url: '#' }
+    ]
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy', url: '#' },
+      { label: 'Terms', url: '#' },
+      { label: 'Cookies', url: '#' }
+    ]
+  }
+])
+
 /**
  * Multi-tier image fallbacks to ensure visibility:
  * - Primary: 3D illustration source
@@ -268,7 +317,7 @@ const imageSources = {
   hero: [
     'https://cdn3d.iconscout.com/3d/premium/thumb/online-payment-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--ecommerce-finance-cashless-transaction-pack-illustrations-7517833.png',
     'https://images.unsplash.com/photo-1556742400-b5d3f1b2a9f9?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=FinteckX'
+    'https://dummyimage.com/1200x675/121018/bdf000.png&text=FinteckX+Payments'
   ],
   reach: [
     'https://cdn3d.iconscout.com/3d/premium/thumb/global-network-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--world-map-connections-earth-business-pack-illustrations-6303322.png',
@@ -278,7 +327,7 @@ const imageSources = {
   security: [
     'https://cdn3d.iconscout.com/3d/premium/thumb/secure-payment-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--security-finance-cashless-transaction-pack-illustrations-7517831.png',
     'https://images.unsplash.com/photo-1605901309584-818e25960a8b?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Security'
+    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Bank+Grade+Security'
   ]
 }
 
@@ -304,9 +353,7 @@ const heroImg = ref(imageSources.hero[0])
 const reachImg = ref(imageSources.reach[0])
 const securityImg = ref(imageSources.security[0])
 
-const how1 = ref(howSources[1][0])
-const how2 = ref(howSources[2][0])
-const how3 = ref(howSources[3][0])
+const appLogo = ref('https://dummyimage.com/200x200/121018/bdf000.png&text=FX')
 
 const imageRefs = {
   hero: heroImg,
@@ -327,14 +374,18 @@ const onImgError = (key) => {
 
 const onHowImgError = (index) => {
   const list = howSources[index] || []
-  const map = { 1: how1, 2: how2, 3: how3 }
+  const map = { 1: howItWorks.value[0], 2: howItWorks.value[1], 3: howItWorks.value[2] }
   const currentRef = map[index]
   if (!currentRef) return
-  const currentIdx = list.indexOf(currentRef.value)
+  const currentIdx = list.indexOf(currentRef.image)
   const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
   if (nextIdx < list.length) {
-    currentRef.value = list[nextIdx]
+    currentRef.image = list[nextIdx]
   }
+}
+
+const onLogoError = () => {
+  appLogo.value = 'https://dummyimage.com/200x200/121018/bdf000.png&text=F'
 }
 
 const logos = [
@@ -357,153 +408,529 @@ watch(() => route.fullPath, refreshAuth)
 </script>
 
 <style scoped>
-/* Float animation */
-.floating {
-  animation: float 4s ease-in-out infinite;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0)
-  }
-
-  50% {
-    transform: translateY(-12px)
-  }
-}
-
-/* Hero */
-.hero-section {
-  min-height: 80vh;
-  padding: 40px;
-}
-
-.hero-img {
-  max-width: 92%;
-  height: auto;
-  border-radius: 12px;
-}
-
-/* Section images */
-.section-img {
-  max-width: 85%;
-  height: auto;
-  border-radius: 12px;
-}
-
-/* Cards */
-.card-dark {
-  background: #000;
+/* Global Styles */
+.fintech-layout {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   color: #fff;
-  border-radius: 14px;
+}
+
+/* Header Styles */
+.header-glass {
+  background: rgba(10, 10, 10, 0.85) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(189, 240, 0, 0.15);
+}
+
+.header-toolbar {
+  padding: 8px 16px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.app-logo {
+  border-radius: 10px;
+}
+
+.brand-text {
+  font-size: 1.4rem;
+  margin-left: 10px;
+}
+
+.nav-btn {
+  color: #cfcfcf !important;
+  font-weight: 500;
+}
+
+.nav-btn:hover {
+  color: #bdf000 !important;
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, #bdf000, #a0d000);
+  color: #09050d;
+  font-weight: 700;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(189, 240, 0, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(189, 240, 0, 0.1);
+  color: #bdf000;
+  border: 1px solid rgba(189, 240, 0, 0.4);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(189, 240, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Card Styles */
+.card-glass {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.card-glass:hover {
+  border-color: rgba(189, 240, 0, 0.3);
+  transform: translateY(-5px);
 }
 
 .lime-glow {
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(189, 240, 0, 0.28),
-    0 0 24px rgba(189, 240, 0, 0.18);
+  box-shadow: 0 0 25px rgba(189, 240, 0, 0.25);
 }
 
-.tall-card {
-  min-height: 240px;
+/* Hero Section */
+.hero-section {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
-.card-with-margins {
-  margin-top: 12px;
-  margin-bottom: 12px;
+.hero-content {
+  z-index: 2;
+  position: relative;
 }
 
-/* Buttons */
-.btn-gradient {
-  background: linear-gradient(135deg, #bdf000, #ffffff);
-  color: #09050d;
+.hero-badge {
+  display: inline-block;
+  background: rgba(189, 240, 0, 0.15);
+  color: #bdf000;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-bottom: 24px;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+
+.hero-description {
+  font-size: 1.2rem;
+  color: #cfcfcf;
+  max-width: 90%;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.stat-item {
+  text-align: left;
+}
+
+.stat-value {
+  font-size: 2.5rem;
   font-weight: 700;
-  border: 1px solid rgba(189, 240, 0, 0.5);
+  color: #bdf000;
+  line-height: 1;
 }
 
-.btn-outline-light {
-  border: 1px solid #fff;
-  color: #fff;
+.stat-label {
+  font-size: 0.9rem;
+  color: #cfcfcf;
+  margin-top: 4px;
 }
 
-/* Partners marquee (gapless, masked edges) */
+.hero-visual {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-img {
+  max-width: 90%;
+  height: auto;
+  border-radius: 16px;
+  z-index: 2;
+  position: relative;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(189, 240, 0, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  filter: blur(60px);
+}
+
+/* Section Styles */
+.section-header {
+  margin-bottom: 60px;
+}
+
+.section-subtitle {
+  color: #cfcfcf;
+  font-size: 1.1rem;
+  margin-top: 12px;
+}
+
+/* Advantages Section */
+.advantage-item {
+  margin-bottom: 100px;
+}
+
+.advantage-reverse {
+  flex-direction: row-reverse;
+}
+
+.advantage-card {
+  padding: 30px;
+  height: 100%;
+}
+
+.advantage-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(189, 240, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advantage-description {
+  color: #cfcfcf;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.advantage-stat-label {
+  color: #cfcfcf;
+  font-size: 0.9rem;
+}
+
+.advantage-img {
+  max-width: 85%;
+  height: auto;
+  border-radius: 16px;
+}
+
+/* Services Section */
+.service-card {
+  padding: 30px;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-8px);
+}
+
+.service-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.service-description {
+  color: #cfcfcf;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* How It Works Section */
+.how-card {
+  padding: 30px;
+  height: 100%;
+  position: relative;
+}
+
+.step-number {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: #bdf000;
+  color: #09050d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.how-description {
+  color: #cfcfcf;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Metrics Section */
+.metrics-card {
+  padding: 50px 30px;
+}
+
+.metrics-container {
+  padding: 20px 0;
+}
+
+.metric-item {
+  padding: 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metric-item:last-child {
+  border-right: none;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #bdf000;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.metric-label {
+  color: #cfcfcf;
+  font-size: 0.9rem;
+}
+
+/* Partners Section */
 .partners-marquee {
   position: relative;
   overflow: hidden;
-  background: #000;
-  border: 1px solid rgba(189, 240, 0, 0.25);
-  border-radius: 12px;
-  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 1) 8%, rgba(0, 0, 0, 1) 92%, transparent);
-  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 1) 8%, rgba(0, 0, 0, 1) 92%, transparent);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 30px 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, 1) 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, 1) 90%, transparent);
 }
 
 .track {
   display: flex;
   align-items: center;
-  gap: 48px;
-  padding: 18px 24px;
+  gap: 60px;
   width: max-content;
-  animation: scroll-left 22s linear infinite;
+  animation: scroll-left 30s linear infinite;
 }
 
 .track img {
-  height: 26px;
+  height: 40px;
   width: auto;
-  filter: grayscale(100%);
-  opacity: 0.9;
+  filter: grayscale(100%) brightness(2);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.track img:hover {
+  filter: grayscale(0) brightness(1);
+  opacity: 1;
 }
 
 @keyframes scroll-left {
   0% {
     transform: translateX(0);
   }
-
   100% {
     transform: translateX(-50%);
   }
+}
 
-  /* content duplicated, so -50% loops seamlessly */
+/* CTA Section */
+.cta-card {
+  padding: 40px;
+}
+
+.cta-description {
+  color: #cfcfcf;
+  font-size: 1.1rem;
+  margin-top: 8px;
 }
 
 /* Footer */
 .custom-footer {
-  background: #000;
-  color: #ccc;
+  background: rgba(0, 0, 0, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.custom-footer h5,
-.custom-footer h6 {
+.footer-brand {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.footer-logo {
+  border-radius: 12px;
+}
+
+.footer-description {
+  color: #cfcfcf;
+  line-height: 1.6;
+}
+
+.social-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cfcfcf;
+}
+
+.social-btn:hover {
+  background: rgba(189, 240, 0, 0.2);
   color: #bdf000;
 }
 
-.custom-footer ul {
+.footer-heading {
+  color: #bdf000;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.footer-links {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.custom-footer li {
-  margin: 6px 0;
+.footer-links li {
+  margin-bottom: 12px;
 }
 
-.custom-footer a {
-  color: #ccc;
+.footer-links a {
+  color: #cfcfcf;
   text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.custom-footer a:hover {
+.footer-links a:hover {
   color: #bdf000;
 }
 
-/* Lime + header gradient */
-.text-lime {
-  color: #bdf000;
+.footer-copyright {
+  color: #8f8f8f;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.header-gradient {
-  background: linear-gradient(90deg, #09050d 0%, #121018 60%, #171719 100%);
+/* Animations */
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-3d {
+  animation: float 8s ease-in-out infinite;
+}
+
+.floating-slow {
+  animation: float 10s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 1023px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-stats {
+    gap: 20px;
+  }
+  
+  .stat-value {
+    font-size: 2rem;
+  }
+  
+  .advantage-item, .advantage-reverse {
+    flex-direction: column;
+  }
+  
+  .advantage-content {
+    order: 2;
+    margin-bottom: 40px;
+  }
+  
+  .advantage-visual {
+    order: 1;
+    margin-bottom: 30px;
+  }
+  
+  .metric-item {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+    padding-bottom: 30px;
+  }
+  
+  .metric-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .cta-card .row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .cta-card .text-right {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .hero-stats {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .track img {
+    height: 30px;
+  }
 }
 </style>
