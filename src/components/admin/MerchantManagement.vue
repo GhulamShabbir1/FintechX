@@ -116,90 +116,83 @@
             <q-td :props="props">
               <q-chip
                 :color="getStatusColor(props.value)"
-                text-color="white"
-                :icon="getStatusIcon(props.value)"
+                :label="props.value"
                 size="sm"
-              >
-                {{ props.value }}
-              </q-chip>
+                class="status-chip"
+              />
             </q-td>
           </template>
 
           <!-- Actions Column -->
           <template v-slot:body-cell-actions="props">
             <q-td :props="props">
-              <div class="row q-gutter-xs">
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="visibility"
-                  color="blue"
-                  @click="viewMerchant(props.row)"
-                  size="sm"
-                >
-                  <q-tooltip>View Details</q-tooltip>
-                </q-btn>
-                
-                <q-btn
-                  v-if="props.row.status === 'Pending'"
-                  flat
-                  round
-                  dense
-                  icon="check"
-                  color="green"
-                  @click="approveMerchant(props.row)"
-                  size="sm"
-                >
-                  <q-tooltip>Approve</q-tooltip>
-                </q-btn>
-                
-                <q-btn
-                  v-if="props.row.status === 'Pending'"
-                  flat
-                  round
-                  dense
-                  icon="close"
-                  color="red"
-                  @click="rejectMerchant(props.row)"
-                  size="sm"
-                >
-                  <q-tooltip>Reject</q-tooltip>
-                </q-btn>
-                
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="more_vert"
-                  color="grey"
-                  @click="showMerchantMenu(props.row, $event)"
-                  size="sm"
-                >
-                  <q-tooltip>More Actions</q-tooltip>
-                </q-btn>
-              </div>
-            </q-td>
-          </template>
-
-          <!-- Logo Column -->
-          <template v-slot:body-cell-logo="props">
-            <q-td :props="props">
-              <q-avatar size="32px" square>
-                <img :src="props.value || 'https://placehold.co/32x32/121018/bdf000?text=M'" />
-              </q-avatar>
-            </q-td>
-          </template>
-
-          <!-- Registration Date Column -->
-          <template v-slot:body-cell-created_at="props">
-            <q-td :props="props">
-              {{ formatDate(props.value) }}
+              <q-btn
+                flat
+                round
+                dense
+                icon="more_vert"
+                @click="openMenu($event, props.row)"
+                class="action-btn"
+              />
             </q-td>
           </template>
         </q-table>
       </q-card-section>
     </q-card>
+
+    <!-- Add Merchant Dialog -->
+    <q-dialog v-model="showAddDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <div class="text-h6">Add New Merchant</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit="addMerchant" class="q-gutter-md">
+            <q-input
+              v-model="newMerchant.business_name"
+              label="Business Name"
+              outlined
+              dense
+              :rules="[val => !!val || 'Business name is required']"
+            />
+            <q-input
+              v-model="newMerchant.email"
+              label="Email"
+              type="email"
+              outlined
+              dense
+              :rules="[
+                val => !!val || 'Email is required',
+                val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Invalid email format'
+              ]"
+            />
+            <q-input
+              v-model="newMerchant.phone"
+              label="Phone"
+              outlined
+              dense
+              :rules="[val => !!val || 'Phone is required']"
+            />
+            <q-input
+              v-model="newMerchant.address"
+              label="Address"
+              outlined
+              dense
+              type="textarea"
+              rows="2"
+            />
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn color="lime" label="Add Merchant" @click="addMerchant" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- Merchant Detail Dialog -->
     <q-dialog v-model="showDetailDialog" maximized>
@@ -210,84 +203,65 @@
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
-        <q-card-section v-if="selectedMerchant">
+        <q-card-section class="q-pt-md">
           <div class="row q-col-gutter-lg">
             <!-- Basic Info -->
             <div class="col-12 col-md-6">
-              <q-card class="q-pa-md">
-                <div class="text-subtitle1 q-mb-md">Basic Information</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col-12">
-                    <div class="text-caption">Business Name</div>
-                    <div class="text-body1">{{ selectedMerchant.business_name }}</div>
+              <q-card flat bordered>
+                <q-card-section>
+                  <div class="text-subtitle1 q-mb-md">Basic Information</div>
+                  <div class="row q-col-gutter-sm">
+                    <div class="col-6">
+                      <div class="text-caption text-grey-6">Business Name</div>
+                      <div class="text-body1">{{ selectedMerchant?.business_name }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-6">Email</div>
+                      <div class="text-body1">{{ selectedMerchant?.email }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-6">Phone</div>
+                      <div class="text-body1">{{ selectedMerchant?.phone }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-6">Status</div>
+                      <q-chip
+                        :color="getStatusColor(selectedMerchant?.status)"
+                        :label="selectedMerchant?.status"
+                        size="sm"
+                      />
+                    </div>
                   </div>
-                  <div class="col-12">
-                    <div class="text-caption">Email</div>
-                    <div class="text-body1">{{ selectedMerchant.email }}</div>
-                  </div>
-                  <div class="col-12">
-                    <div class="text-caption">Website</div>
-                    <div class="text-body1">{{ selectedMerchant.website || 'N/A' }}</div>
-                  </div>
-                  <div class="col-12">
-                    <div class="text-caption">Status</div>
-                    <q-chip
-                      :color="getStatusColor(selectedMerchant.status)"
-                      text-color="white"
-                      :icon="getStatusIcon(selectedMerchant.status)"
-                    >
-                      {{ selectedMerchant.status }}
-                    </q-chip>
-                  </div>
-                </div>
-              </q-card>
-            </div>
-
-            <!-- Bank Details -->
-            <div class="col-12 col-md-6">
-              <q-card class="q-pa-md">
-                <div class="text-subtitle1 q-mb-md">Bank Information</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col-12">
-                    <div class="text-caption">Account Number</div>
-                    <div class="text-body1">{{ selectedMerchant.bank_account_number || 'N/A' }}</div>
-                  </div>
-                  <div class="col-12">
-                    <div class="text-caption">IFSC/SWIFT</div>
-                    <div class="text-body1">{{ selectedMerchant.bank_ifsc_swift || 'N/A' }}</div>
-                  </div>
-                  <div class="col-12">
-                    <div class="text-caption">Bank Name</div>
-                    <div class="text-body1">{{ selectedMerchant.bank_name || 'N/A' }}</div>
-                  </div>
-                </div>
+                </q-card-section>
               </q-card>
             </div>
 
             <!-- Documents -->
-            <div class="col-12">
-              <q-card class="q-pa-md">
-                <div class="text-subtitle1 q-mb-md">Documents</div>
-                <div class="row q-col-gutter-md">
-                  <div class="col-12 col-md-4" v-if="selectedMerchant.business_license">
-                    <q-card flat bordered>
-                      <q-card-section class="text-center">
-                        <q-icon name="description" size="48px" color="lime" />
-                        <div class="text-subtitle2 q-mt-sm">Business License</div>
-                        <q-btn flat color="lime" label="View" @click="viewDocument(selectedMerchant.business_license)" />
-                      </q-card-section>
-                    </q-card>
+            <div class="col-12 col-md-6">
+              <q-card flat bordered>
+                <q-card-section>
+                  <div class="text-subtitle1 q-mb-md">Documents</div>
+                  <div class="row q-col-gutter-md">
+                    <div class="col-12 col-md-4" v-if="selectedMerchant?.business_license">
+                      <q-card flat bordered>
+                        <q-card-section class="text-center">
+                          <q-icon name="description" size="48px" color="lime" />
+                          <div class="text-subtitle2 q-mt-sm">Business License</div>
+                          <q-btn flat color="lime" label="View" @click="viewDocument(selectedMerchant.business_license)" />
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                    <div class="col-12 col-md-4" v-if="selectedMerchant?.id_proof">
+                      <q-card flat bordered>
+                        <q-card-section class="text-center">
+                          <q-icon name="badge" size="48px" color="lime" />
+                          <div class="text-subtitle2 q-mt-sm">ID Proof</div>
+                          <q-btn flat color="lime" label="View" @click="viewDocument(selectedMerchant.id_proof)" />
+                        </q-card-section>
+                      </q-card>
+                    </div>
                   </div>
-                  <div class="col-12 col-md-4" v-if="selectedMerchant.id_proof">
-                    <q-card flat bordered>
-                      <q-card-section class="text-center">
-                        <q-icon name="badge" size="48px" color="lime" />
-                        <div class="text-subtitle2 q-mt-sm">ID Proof</div>
-                        <q-btn flat color="lime" label="View" @click="viewDocument(selectedMerchant.id_proof)" />
-                      </q-card-section>
-                    </q-card>
-                  </div>
-                </div>
+                </q-card-section>
               </q-card>
             </div>
           </div>
@@ -296,13 +270,13 @@
         <q-card-actions align="right">
           <q-btn flat label="Close" v-close-popup />
           <q-btn
-            v-if="selectedMerchant.status === 'Pending'"
+            v-if="selectedMerchant?.status === 'Pending'"
             color="green"
             label="Approve"
             @click="approveMerchant(selectedMerchant)"
           />
           <q-btn
-            v-if="selectedMerchant.status === 'Pending'"
+            v-if="selectedMerchant?.status === 'Pending'"
             color="red"
             label="Reject"
             @click="rejectMerchant(selectedMerchant)"
@@ -349,9 +323,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import api from '../../boot/axios'
+
 const $q = useQuasar()
 
 // Reactive data
@@ -361,6 +336,7 @@ const selectedMerchant = ref(null)
 const menuMerchant = ref(null)
 const showDetailDialog = ref(false)
 const showAddDialog = ref(false)
+const merchantMenu = ref(null)
 
 // Filters and pagination
 const filters = ref({
@@ -371,79 +347,87 @@ const filters = ref({
 
 const pagination = ref({
   sortBy: 'created_at',
-  descending: true,
+  descending: false,
   page: 1,
   rowsPerPage: 10,
   rowsNumber: 0
 })
 
-// Stats
-const stats = ref({
-  total: 0,
-  pending: 0,
-  verified: 0,
-  rejected: 0
+// New merchant form
+const newMerchant = ref({
+  business_name: '',
+  email: '',
+  phone: '',
+  address: ''
 })
 
-// Options
+// Computed stats
+const stats = computed(() => {
+  const total = merchants.value.length
+  const pending = merchants.value.filter(m => m.status === 'Pending').length
+  const verified = merchants.value.filter(m => m.status === 'Verified').length
+  const rejected = merchants.value.filter(m => m.status === 'Rejected').length
+  
+  return { total, pending, verified, rejected }
+})
+
+// Options for filters
 const statusOptions = [
   { label: 'All', value: null },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Verified', value: 'verified' },
-  { label: 'Rejected', value: 'rejected' },
-  { label: 'Suspended', value: 'suspended' }
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Verified', value: 'Verified' },
+  { label: 'Rejected', value: 'Rejected' }
 ]
 
 const sortOptions = [
-  { label: 'Registration Date', value: 'created_at' },
+  { label: 'Date Created', value: 'created_at' },
   { label: 'Business Name', value: 'business_name' },
-  { label: 'Status', value: 'status' },
-  { label: 'Email', value: 'email' }
+  { label: 'Status', value: 'status' }
 ]
 
 // Table columns
 const columns = [
   {
-    name: 'logo',
-    label: 'Logo',
-    field: 'logo_url',
-    align: 'center',
-    sortable: false
-  },
-  {
     name: 'business_name',
     label: 'Business Name',
     field: 'business_name',
-    align: 'left',
-    sortable: true
+    sortable: true,
+    align: 'left'
   },
   {
     name: 'email',
     label: 'Email',
     field: 'email',
-    align: 'left',
-    sortable: true
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'phone',
+    label: 'Phone',
+    field: 'phone',
+    sortable: false,
+    align: 'left'
   },
   {
     name: 'status',
     label: 'Status',
     field: 'status',
-    align: 'center',
-    sortable: true
+    sortable: true,
+    align: 'center'
   },
   {
     name: 'created_at',
-    label: 'Registered',
+    label: 'Created',
     field: 'created_at',
-    align: 'center',
-    sortable: true
+    sortable: true,
+    align: 'center'
   },
   {
     name: 'actions',
     label: 'Actions',
     field: 'actions',
-    align: 'center',
-    sortable: false
+    sortable: false,
+    align: 'center'
   }
 ]
 
@@ -451,23 +435,10 @@ const columns = [
 const loadMerchants = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.value.page,
-      limit: pagination.value.rowsPerPage,
-      sortBy: pagination.value.sortBy,
-      descending: pagination.value.descending,
-      search: filters.value.search,
-      status: filters.value.status
-    }
-    
-    const response = await api.get('/admin/merchants', { params })
-    merchants.value = response.data.merchants
-    pagination.value.rowsNumber = response.data.total
-    
-    // Update stats
-    stats.value = response.data.stats
+    const response = await api.get('/api/admin/merchants')
+    merchants.value = response.data.merchants || []
   } catch (error) {
-    console.error('Failed to load merchants:', error)
+    console.error('Error loading merchants:', error)
     $q.notify({
       type: 'negative',
       message: 'Failed to load merchants'
@@ -477,24 +448,29 @@ const loadMerchants = async () => {
   }
 }
 
+const onSearch = () => {
+  // Implement search logic
+  loadMerchants()
+}
+
+const onFilter = () => {
+  // Implement filter logic
+  loadMerchants()
+}
+
+const onSort = () => {
+  // Implement sort logic
+  loadMerchants()
+}
+
 const onRequest = (props) => {
   pagination.value = props.pagination
   loadMerchants()
 }
 
-const onSearch = () => {
-  pagination.value.page = 1
-  loadMerchants()
-}
-
-const onFilter = () => {
-  pagination.value.page = 1
-  loadMerchants()
-}
-
-const onSort = () => {
-  pagination.value.sortBy = filters.value.sortBy
-  loadMerchants()
+const openMenu = (event, merchant) => {
+  menuMerchant.value = merchant
+  merchantMenu.value.show(event)
 }
 
 const viewMerchant = (merchant) => {
@@ -502,91 +478,32 @@ const viewMerchant = (merchant) => {
   showDetailDialog.value = true
 }
 
-const approveMerchant = async (merchant) => {
-  try {
-    await api.post(`/admin/merchants/${merchant.id}/approve`)
-    $q.notify({
-      type: 'positive',
-      message: 'Merchant approved successfully'
-    })
-    loadMerchants()
-    showDetailDialog.value = false
-  } catch (error) {
-    console.error('Failed to approve merchant:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to approve merchant'
-    })
-  }
-}
-
-const rejectMerchant = async (merchant) => {
-  $q.dialog({
-    title: 'Reject Merchant',
-    message: 'Are you sure you want to reject this merchant?',
-    cancel: true,
-    persistent: true
-  }).onOk(async () => {
-    try {
-      await api.post(`/admin/merchants/${merchant.id}/reject`)
-      $q.notify({
-        type: 'positive',
-        message: 'Merchant rejected'
-      })
-      loadMerchants()
-      showDetailDialog.value = false
-    } catch (error) {
-      console.error('Failed to reject merchant:', error)
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to reject merchant'
-      })
-    }
-  })
-}
-
-const showMerchantMenu = (merchant, event) => {
-  menuMerchant.value = merchant
-  ref.merchantMenu.show(event)
-}
-
 const editMerchant = (merchant) => {
+  // Implement edit logic
   console.log('Edit merchant:', merchant)
 }
 
-const suspendMerchant = async (merchant) => {
-  try {
-    await api.post(`/admin/merchants/${merchant.id}/suspend`)
-    $q.notify({
-      type: 'positive',
-      message: 'Merchant suspended'
-    })
-    loadMerchants()
-  } catch (error) {
-    console.error('Failed to suspend merchant:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to suspend merchant'
-    })
-  }
+const suspendMerchant = (merchant) => {
+  // Implement suspend logic
+  console.log('Suspend merchant:', merchant)
 }
 
-const deleteMerchant = async (merchant) => {
+const deleteMerchant = (merchant) => {
   $q.dialog({
-    title: 'Delete Merchant',
-    message: 'Are you sure you want to delete this merchant? This action cannot be undone.',
+    title: 'Confirm Delete',
+    message: `Are you sure you want to delete ${merchant.business_name}?`,
     cancel: true,
     persistent: true
   }).onOk(async () => {
     try {
-      await api.delete(`/admin/merchants/${merchant.id}`)
+      await api.delete(`/api/admin/merchants/${merchant.id}`)
+      await loadMerchants()
       $q.notify({
         type: 'positive',
-        message: 'Merchant deleted'
+        message: 'Merchant deleted successfully'
       })
-      loadMerchants()
     } catch (error) {
-      console.error('Failed to delete merchant:', error)
+      console.error('Error deleting merchant:', error)
       $q.notify({
         type: 'negative',
         message: 'Failed to delete merchant'
@@ -595,36 +512,78 @@ const deleteMerchant = async (merchant) => {
   })
 }
 
-const viewDocument = (url) => {
-  window.open(url, '_blank')
+const approveMerchant = async (merchant) => {
+  try {
+    await api.patch(`/api/admin/merchants/${merchant.id}/approve`)
+    await loadMerchants()
+    showDetailDialog.value = false
+    $q.notify({
+      type: 'positive',
+      message: 'Merchant approved successfully'
+    })
+  } catch (error) {
+    console.error('Error approving merchant:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to approve merchant'
+    })
+  }
+}
+
+const rejectMerchant = async (merchant) => {
+  try {
+    await api.patch(`/api/admin/merchants/${merchant.id}/reject`)
+    await loadMerchants()
+    showDetailDialog.value = false
+    $q.notify({
+      type: 'positive',
+      message: 'Merchant rejected successfully'
+    })
+  } catch (error) {
+    console.error('Error rejecting merchant:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to reject merchant'
+    })
+  }
+}
+
+const addMerchant = async () => {
+  try {
+    await api.post('/api/admin/merchants', newMerchant.value)
+    await loadMerchants()
+    showAddDialog.value = false
+    newMerchant.value = { business_name: '', email: '', phone: '', address: '' }
+    $q.notify({
+      type: 'positive',
+      message: 'Merchant added successfully'
+    })
+  } catch (error) {
+    console.error('Error adding merchant:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to add merchant'
+    })
+  }
+}
+
+const viewDocument = (documentUrl) => {
+  window.open(documentUrl, '_blank')
 }
 
 const getStatusColor = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'verified': return 'green'
-    case 'rejected': return 'red'
-    case 'suspended': return 'orange'
-    case 'pending': return 'orange'
+  switch (status) {
+    case 'Pending': return 'orange'
+    case 'Verified': return 'green'
+    case 'Rejected': return 'red'
     default: return 'grey'
   }
 }
 
-const getStatusIcon = (status) => {
-  switch (status?.toLowerCase()) {
-    case 'verified': return 'check_circle'
-    case 'rejected': return 'cancel'
-    case 'suspended': return 'block'
-    case 'pending': return 'pending'
-    default: return 'help'
-  }
-}
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString()
-}
-
-// Initialize
-loadMerchants()
+// Lifecycle
+onMounted(() => {
+  loadMerchants()
+})
 </script>
 
 <style scoped>
@@ -633,35 +592,61 @@ loadMerchants()
 }
 
 .stat-card {
-  background: #121212;
-  border-radius: 12px;
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(189, 240, 0, 0.2);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(189, 240, 0.15);
 }
 
 .lime-glow {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-              0 0 0 1px rgba(189, 240, 0, 0.2),
-              0 0 20px rgba(189, 240, 0, 15);
+  background: rgba(189, 240, 0, 0.02);
+  border: 1px solid rgba(189, 240, 0.1);
+  box-shadow: 0 2px 10px rgba(189, 240, 0.05);
 }
 
 .merchant-table {
   background: transparent;
 }
 
-.merchant-detail-dialog {
-  background: #0a0a0a;
-  color: #fff;
+.status-chip {
+  font-weight: 500;
 }
 
-.text-lime {
+.action-btn {
+  color: #666;
+}
+
+.action-btn:hover {
   color: #bdf000;
 }
 
-.text-grey-6 {
-  color: #999;
+.merchant-detail-dialog {
+  max-width: 800px;
+}
+
+/* Animation classes */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.slide-up-leave-to {
+  transform: translateY(-20px);
+  opacity: 0;
 }
 </style>

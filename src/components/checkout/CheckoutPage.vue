@@ -172,10 +172,10 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify, Dialog } from 'quasar'
 import api from '../../boot/axios'
-import MerchantBranding from '../components/checkout/MerchantBranding.vue'
-import PaymentMethodSelector from '../components/checkout/PaymentMethodSelector.vue'
-import PaymentMethodCard from '../components/checkout/PaymentMethodCard.vue'
-import PaymentLoader from '../components/payments/PaymentLoader.vue'
+import MerchantBranding from './MerchantBranding.vue'
+import PaymentMethodSelector from './PaymentMethodSelector.vue'
+import PaymentMethodCard from './PaymentMethodCard.vue'
+import PaymentLoader from '../payments/PaymentLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -252,6 +252,8 @@ const selectWallet = (walletId) => {
   selectedWallet.value = walletId
 }
 
+const getMerchantId = () => route.query.merchant || route.params.merchant || route.query.merchantId
+
 const processCardPayment = async (cardData) => {
   await processPayment('card', { cardData })
 }
@@ -309,16 +311,16 @@ const processPayment = async (method, data) => {
         status: 'success',
         amount: paymentDetails.value.amount,
         method: method,
-        merchant: merchantInfo.value?.name || 'Merchant',
+        merchantId: getMerchantId(),
+        merchantName: merchantInfo.value?.name || 'Merchant',
         ...data
       }
     })
-  } catch{
+  } catch {
     Notify.create({
       type: 'negative',
       message: 'Payment failed. Please try again.',
-        actions: [{ label: 'Retry', color: 'white', handler: () => processPayment(method, data) }],
-
+      actions: [{ label: 'Retry', color: 'white', handler: () => processPayment(method, data) }],
     })
   } finally {
     processing.value = false
@@ -352,9 +354,8 @@ const initializeCheckout = async () => {
     
     // Get checkout parameters from route
     const amount = route.query.amount || 99.99
-    const merchantId = route.query.merchant || route.params.merchant
+    const merchantId = getMerchantId()
     const orderId = route.query.orderId
-    
     
     paymentDetails.value.amount = parseFloat(amount)
     paymentDetails.value.description = route.query.description || 'Payment'
@@ -414,6 +415,127 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.checkout-page {
+  background: #0a0a0a;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 20px;
+}
+
+.loading-text {
+  color: #bdf000;
+  font-size: 1.1rem;
+}
+
+.checkout-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.checkout-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  background: rgba(189, 240, 0, 0.1);
+  border: 1px solid rgba(189, 240, 0, 3);
+}
+
+.header-text {
+  flex: 1;
+}
+
+.page-title {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #ccc;
+  opacity: 0.8;
+}
+
+.checkout-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.checkout-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.checkout-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-section {
+  background: #121212;
+  border-radius: 16px;
+  border: 1px solid rgba(189, 240, 0, 0.2);
+}
+
+.wallet-card, .bank-card {
+  background: #121212;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.lime-glow {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(189, 240, 0, 0.2),
+              0 0 20px rgba(189, 240, 0, 15);
+}
+
+.wallet-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wallet-btn {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.wallet-btn:hover {
+  border-color: #bdf000;
+  background: #1f1f1f;
+}
+
+.wallet-selected {
+  border-color: #bdf000;
+  background: rgba(189, 240, 0, 0.1);
+  color: #bdf000;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, #bdf000, #ffffff);
+  color: #09050d;
+  font-weight: 700;
+  border: 1px solid rgba(189, 240, 0, 5);
+}
 .checkout-page {
   background: #0a0a0a;
   min-height: 100vh;
@@ -597,5 +719,48 @@ onBeforeUnmount(() => {
   .wallet-options {
     grid-template-columns: 1fr;
   }
+}
+
+/* Animation classes */
+.back-btn {
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  transform: translateX(-4px);
+  background: rgba(189, 240, 0, 0.2);
+}
+
+.wallet-btn, .bank-card {
+  transition: all 0.3s ease;
+}
+
+.wallet-btn:hover, .bank-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.trust-item {
+  transition: all 0.3s ease;
+}
+
+.trust-item:hover {
+  transform: translateY(-4px);
+  color: #bdf000;
+}
+
+/* Loading animation */
+.loading-container {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

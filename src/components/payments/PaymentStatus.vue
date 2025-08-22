@@ -80,11 +80,10 @@ const paymentStatus = ref(route.query.status || 'unknown')
 const transactionId = ref(route.params.id === 'failed' ? null : route.params.id)
 const amount = ref(parseFloat(route.query.amount) || 0)
 const errorMessage = ref(route.query.error || 'Payment could not be completed.')
-const merchantId = ref(route.query.merchant || null)
-
-const merchantName = ref('Loading...')
+const merchantId = ref(route.query.merchantId || null)
+const merchantName = ref(route.query.merchantName || '')
 const transactionDate = ref(new Date().toLocaleDateString())
-const currency = ref('$') // Default currency, can be dynamic based on merchant/transaction
+const currency = ref('$')
 
 const isSuccess = computed(() => paymentStatus.value === 'success')
 const isFailed = computed(() => paymentStatus.value === 'failed')
@@ -114,11 +113,11 @@ const statusMessage = computed(() => {
 })
 
 const formatAmount = (val) => {
-  return (val / 100).toFixed(2) // Assuming amount is in cents
+  return (val / 100).toFixed(2)
 }
 
 const fetchMerchantName = async () => {
-  if (merchantId.value) {
+  if (merchantId.value && !merchantName.value) {
     try {
       const response = await api.get(`/merchants/${merchantId.value}`)
       merchantName.value = response.data.business_name || 'Unknown Merchant'
@@ -130,14 +129,22 @@ const fetchMerchantName = async () => {
 }
 
 const goToMerchant = () => {
-  // This would typically redirect back to the merchant's site
-  // For now, redirect to home or a generic merchant page
-  router.push('/') 
+  if (route.query.returnUrl) {
+    window.location.href = route.query.returnUrl
+  } else {
+    router.push('/')
+  }
 }
 
 const tryAgain = () => {
-  // Redirect back to the checkout page, potentially with original parameters
-  router.push({ name: 'checkout', query: { merchantId: merchantId.value, amount: amount.value } })
+  router.push({ 
+    name: 'checkout', 
+    query: { 
+      merchantId: merchantId.value, 
+      amount: amount.value,
+      returnUrl: route.query.returnUrl
+    } 
+  })
 }
 
 const goToHome = () => {
@@ -252,6 +259,29 @@ onMounted(() => {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+/* Hover effects */
+.btn-gradient, .btn-outline-light {
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover, .btn-outline-light:hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .payment-status-card {
+    padding: 20px;
+    margin: 16px;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
   }
 }
 </style>
