@@ -11,6 +11,12 @@ import HostedCheckout from '../pages/HostedCheckout.vue'
 import TransactionsPage from '../pages/TransactionsPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
 import AdminDashboardPage from '../pages/AdminDashboardPage.vue'
+import AdminActivityPage from '../pages/AdminActivityPage.vue'
+import AdminAlertsPage from '../pages/AdminAlertsPage.vue'
+import AdminMerchantsPage from '../pages/AdminMerchantsPage.vue'
+import AdminProfilePage from '../pages/AdminProfilePage.vue'
+import AdminSettingsPage from '../pages/AdminSettingsPage.vue'
+import AdminSupportPage from '../pages/AdminSupportPage.vue'
 
 const routes = [
   // Landing and Authentication
@@ -41,20 +47,20 @@ const routes = [
     meta: { title: 'Checkout - FinteckX' }
   },
   { 
-    path: '/checkout/:merchantId', 
+    path: '/checkout/:merchantId', //error in showing data
     name: 'hosted-checkout', 
     component: HostedCheckout,
     meta: { title: 'Secure Checkout - FinteckX' }
   },
   { 
     path: '/payment-status', 
-    name: 'payment-status', 
+    name: 'payment-status',   //payment status unknown
     component: PaymentStatus,
     meta: { title: 'Payment Status - FinteckX' }
   },
   { 
     path: '/payments/status/:id', 
-    name: 'payment-status-detail', 
+    name: 'payment-status-detail', //payment status unknown
     component: PaymentStatus,
     meta: { title: 'Payment Status - FinteckX' }
   },
@@ -71,7 +77,7 @@ const routes = [
     }
   },
   { 
-    path: '/admin-dashboard', 
+    path: '/admin-dashboard', //error in showing data
     name: 'admin-dashboard', 
     component: AdminDashboardPage,
     meta: { 
@@ -92,7 +98,7 @@ const routes = [
     }
   },
   { 
-    path: '/stats', 
+    path: '/stats', //incomplete
     name: 'stats', 
     component: StatsPage,
     meta: { 
@@ -103,7 +109,7 @@ const routes = [
   
   // Additional Checkout Routes
   { 
-    path: '/checkout/embedded/:merchantId', 
+    path: '/checkout/embedded/:merchantId', //error in showing data
     name: 'embedded-checkout', 
     component: HostedCheckout,
     meta: { title: 'Embedded Checkout - FinteckX' }
@@ -111,10 +117,72 @@ const routes = [
   
   // Payment Processing Routes
   { 
-    path: '/payment/process', 
+    path: '/payment/process', // missing required parameters
     name: 'payment-process', 
     component: () => import('../components/checkout/CheckoutRouter.vue'),
     meta: { title: 'Processing Payment - FinteckX' }
+  },
+  
+  // Admin Routes
+  { 
+    path: '/admin/activity',  // this page is under development
+    name: 'admin-activity', 
+    component: AdminActivityPage,
+    meta: { 
+      title: 'Activity Log - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
+  },
+  { 
+    path: '/admin/alerts', //this page is under development
+    name: 'admin-alerts', 
+    component: AdminAlertsPage,
+    meta: { 
+      title: 'Alerts - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
+  },
+  { 
+    path: '/admin/merchants', // not fatch information not show ddata
+    name: 'admin-merchants', 
+    component: AdminMerchantsPage,
+    meta: { 
+      title: 'Merchant Management - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
+  },
+  { 
+    path: '/admin/profile', //show blank page
+    name: 'admin-profile', 
+    component: AdminProfilePage,
+    meta: { 
+      title: 'Admin Profile - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
+  },
+  { 
+    path: '/admin/settings', //this page is under development
+    name: 'admin-settings', 
+    component: AdminSettingsPage,
+    meta: { 
+      title: 'Admin Settings - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
+  },
+  { 
+    path: '/admin/support', // this page is under development
+    name: 'admin-support', 
+    component: AdminSupportPage,
+    meta: { 
+      title: 'Admin Support - FinteckX',
+      requiresAuth: true,
+      role: 'admin'
+    }
   }
 ]
 
