@@ -3,10 +3,10 @@
     <!-- Platform Stats -->
     <div class="row q-col-gutter-lg q-mb-xl">
       <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="stat-card lime-glow">
+        <q-card class="stat-card lime-glow animate-fade-in" style="animation-delay: 0.1s">
           <q-card-section class="text-center">
-            <q-icon name="store" size="48px" color="lime" class="q-mb-md" />
-            <div class="text-h4 text-lime">{{ stats.totalMerchants }}</div>
+            <q-icon name="store" size="48px" color="lime" class="q-mb-md icon-animate" />
+            <div class="text-h4 text-lime count-up-animation">{{ stats.totalMerchants }}</div>
             <div class="text-caption">Total Merchants</div>
             <div class="text-caption text-green q-mt-xs">
               <q-icon name="trending_up" size="16px" />
@@ -17,9 +17,9 @@
       </div>
       
       <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="stat-card lime-glow">
+        <q-card class="stat-card lime-glow animate-fade-in" style="animation-delay: 0.2s">
           <q-card-section class="text-center">
-            <q-icon name="receipt_long" size="48px" color="lime" class="q-mb-md" />
+            <q-icon name="receipt_long" size="48px" color="lime" class="q-mb-md icon-animate" />
             <div class="text-h4 text-lime">{{ formatCurrency(stats.totalRevenue) }}</div>
             <div class="text-caption">Total Revenue</div>
             <div class="text-caption text-green q-mt-xs">
@@ -31,9 +31,9 @@
       </div>
       
       <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="stat-card lime-glow">
+        <q-card class="stat-card lime-glow animate-fade-in" style="animation-delay: 0.3s">
           <q-card-section class="text-center">
-            <q-icon name="payments" size="48px" color="lime" class="q-mb-md" />
+            <q-icon name="payments" size="48px" color="lime" class="q-mb-md icon-animate" />
             <div class="text-h4 text-lime">{{ stats.totalTransactions }}</div>
             <div class="text-caption">Transactions</div>
             <div class="text-caption text-green q-mt-xs">
@@ -45,9 +45,9 @@
       </div>
       
       <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="stat-card lime-glow">
+        <q-card class="stat-card lime-glow animate-fade-in" style="animation-delay: 0.4s">
           <q-card-section class="text-center">
-            <q-icon name="pending_actions" size="48px" color="orange" class="q-mb-md" />
+            <q-icon name="pending_actions" size="48px" color="orange" class="q-mb-md icon-animate" />
             <div class="text-h4 text-orange">{{ stats.pendingApprovals }}</div>
             <div class="text-caption">Pending Approvals</div>
             <div class="text-caption text-grey q-mt-xs">
@@ -62,7 +62,7 @@
     <!-- Quick Actions -->
     <div class="row q-col-gutter-lg q-mb-xl">
       <div class="col-12 col-md-8">
-        <q-card class="lime-glow">
+        <q-card class="lime-glow animate-fade-in" style="animation-delay: 0.5s">
           <q-card-section>
             <div class="text-h6 text-lime q-mb-md">Quick Actions</div>
             <div class="row q-col-gutter-md">
@@ -71,22 +71,22 @@
                   color="lime"
                   icon="store"
                   label="Review Merchants"
-                  class="full-width q-mb-sm"
-                  @click="$router.push('/admin/merchants?status=pending')"
+                  class="full-width q-mb-sm btn-animate"
+                  @click="navigateWithAnimation('/admin/merchants?status=pending')"
                 />
                 <q-btn
                   color="blue"
                   icon="analytics"
                   label="View Analytics"
-                  class="full-width q-mb-sm"
-                  @click="$router.push('/admin/analytics')"
+                  class="full-width q-mb-sm btn-animate"
+                  @click="navigateWithAnimation('/admin/analytics')"
                 />
                 <q-btn
                   color="purple"
                   icon="receipt_long"
                   label="Transaction Report"
-                  class="full-width q-mb-sm"
-                  @click="$router.push('/admin/transactions')"
+                  class="full-width q-mb-sm btn-animate"
+                  @click="navigateWithAnimation('/admin/transactions')"
                 />
               </div>
               <div class="col-12 col-sm-6">
@@ -94,21 +94,21 @@
                   color="orange"
                   icon="support_agent"
                   label="Support Tickets"
-                  class="full-width q-mb-sm"
-                  @click="$router.push('/admin/support')"
+                  class="full-width q-mb-sm btn-animate"
+                  @click="navigateWithAnimation('/admin/support')"
                 />
                 <q-btn
                   color="teal"
                   icon="settings"
                   label="System Settings"
-                  class="full-width q-mb-sm"
-                  @click="$router.push('/admin/settings')"
+                  class="full-width q-mb-sm btn-animate"
+                  @click="navigateWithAnimation('/admin/settings')"
                 />
                 <q-btn
                   color="grey"
                   icon="download"
                   label="Export Data"
-                  class="full-width q-mb-sm"
+                  class="full-width q-mb-sm btn-animate"
                   @click="exportData"
                 />
               </div>
@@ -118,14 +118,19 @@
       </div>
       
       <div class="col-12 col-md-4">
-        <q-card class="lime-glow">
+        <q-card class="lime-glow animate-fade-in" style="animation-delay: 0.6s">
           <q-card-section>
             <div class="text-h6 text-lime q-mb-md">Recent Activity</div>
-            <div class="activity-list">
-              <div v-for="activity in recentActivity" :key="activity.id" class="activity-item q-mb-md">
+            <div class="activity-list smooth-scroll">
+              <div 
+                v-for="(activity, index) in recentActivity" 
+                :key="activity.id" 
+                class="activity-item q-mb-md animate-fade-in" 
+                :style="`animation-delay: ${0.7 + (index * 0.1)}s`"
+              >
                 <div class="row items-center">
                   <div class="col-auto">
-                    <q-avatar size="32px" :color="getActivityColor(activity.type)">
+                    <q-avatar size="32px" :color="getActivityColor(activity.type)" class="avatar-animate">
                       <q-icon :name="getActivityIcon(activity.type)" color="white" />
                     </q-avatar>
                   </div>
@@ -140,8 +145,8 @@
               flat
               color="lime"
               label="View All Activity"
-              class="full-width q-mt-md"
-              @click="$router.push('/admin/activity')"
+              class="full-width q-mt-md btn-animate"
+              @click="navigateWithAnimation('/admin/activity')"
             />
           </q-card-section>
         </q-card>
@@ -151,22 +156,22 @@
     <!-- Charts Row -->
     <div class="row q-col-gutter-lg">
       <div class="col-12 col-md-8">
-        <q-card class="lime-glow">
+        <q-card class="lime-glow animate-fade-in" style="animation-delay: 0.8s">
           <q-card-section>
             <div class="text-h6 text-lime q-mb-md">Revenue Trend</div>
             <div class="chart-container">
-              <canvas ref="revenueChart" height="300"></canvas>
+              <canvas ref="revenueChart" height="300" class="chart-animate"></canvas>
             </div>
           </q-card-section>
         </q-card>
       </div>
       
       <div class="col-12 col-md-4">
-        <q-card class="lime-glow">
+        <q-card class="lime-glow animate-fade-in" style="animation-delay: 0.9s">
           <q-card-section>
             <div class="text-h6 text-lime q-mb-md">Merchant Status</div>
             <div class="chart-container">
-              <canvas ref="merchantChart" height="300"></canvas>
+              <canvas ref="merchantChart" height="300" class="chart-animate"></canvas>
             </div>
           </q-card-section>
         </q-card>
@@ -208,6 +213,15 @@ const loadStats = async () => {
   try {
     const response = await api.get('/admin/stats/overview')
     stats.value = response.data
+    
+    // Animate counting up the stats
+    animateValue('totalMerchants', 0, stats.value.totalMerchants, 1500)
+    animateValue('newMerchantsThisMonth', 0, stats.value.newMerchantsThisMonth, 1500)
+    animateValue('totalRevenue', 0, stats.value.totalRevenue, 1500)
+    animateValue('revenueGrowth', 0, stats.value.revenueGrowth, 1500)
+    animateValue('totalTransactions', 0, stats.value.totalTransactions, 1500)
+    animateValue('successRate', 0, stats.value.successRate, 1500)
+    animateValue('pendingApprovals', 0, stats.value.pendingApprovals, 1500)
   } catch (error) {
     console.error('Failed to load stats:', error)
     stats.value = {
@@ -219,7 +233,31 @@ const loadStats = async () => {
       successRate: 98.7,
       pendingApprovals: 3
     }
+    
+    // Animate fallback values
+    setTimeout(() => {
+      animateValue('totalMerchants', 0, stats.value.totalMerchants, 1500)
+      animateValue('newMerchantsThisMonth', 0, stats.value.newMerchantsThisMonth, 1500)
+      animateValue('totalRevenue', 0, stats.value.totalRevenue, 1500)
+      animateValue('revenueGrowth', 0, stats.value.revenueGrowth, 1500)
+      animateValue('totalTransactions', 0, stats.value.totalTransactions, 1500)
+      animateValue('successRate', 0, stats.value.successRate, 1500)
+      animateValue('pendingApprovals', 0, stats.value.pendingApprovals, 1500)
+    }, 500)
   }
+}
+
+const animateValue = (statKey, start, end, duration) => {
+  if (start === end) return
+  
+  const range = end - start
+  const increment = end > start ? 1 : -1
+  const stepTime = Math.abs(Math.floor(duration / range))
+  const timer = setInterval(() => {
+    start += increment
+    stats.value[statKey] = start
+    if (start === end) clearInterval(timer)
+  }, stepTime)
 }
 
 const loadRecentActivity = async () => {
@@ -276,6 +314,10 @@ const createRevenueChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: 2000,
+        easing: 'easeOutQuart'
+      },
       plugins: {
         legend: {
           display: false
@@ -328,6 +370,10 @@ const createMerchantChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: 2000,
+        easing: 'easeOutQuart'
+      },
       plugins: {
         legend: {
           position: 'bottom',
@@ -373,16 +419,37 @@ const exportData = () => {
       
       $q.notify({
         type: 'positive',
-        message: 'Export completed successfully'
+        message: 'Export completed successfully',
+        position: 'bottom-right'
       })
     } catch (error) {
       console.error('Export failed:', error)
       $q.notify({
         type: 'negative',
-        message: 'Export failed'
+        message: 'Export failed',
+        position: 'bottom-right'
       })
     }
   })
+}
+
+const navigateWithAnimation = (route) => {
+  // Add page transition animation
+  document.querySelector('.admin-overview').style.opacity = 0
+  document.querySelector('.admin-overview').style.transition = 'opacity 0.3s ease'
+  
+  setTimeout(() => {
+    $q.loading.show({
+      message: 'Loading...',
+      boxClass: 'bg-lime text-white',
+      spinnerColor: 'white'
+    })
+    
+    setTimeout(() => {
+      $router.push(route)
+      $q.loading.hide()
+    }, 500)
+  }, 300)
 }
 
 const getActivityColor = (type) => {
@@ -425,12 +492,22 @@ const formatTime = (timestamp) => {
   return time.toLocaleDateString()
 }
 
+// Enable smooth scrolling for the entire page
+const enableSmoothScrolling = () => {
+  document.documentElement.style.scrollBehavior = 'smooth'
+}
+
 // Lifecycle
 onMounted(async () => {
+  enableSmoothScrolling()
   await loadStats()
   await loadRecentActivity()
-  createRevenueChart()
-  createMerchantChart()
+  
+  // Add slight delay for chart animations
+  setTimeout(() => {
+    createRevenueChart()
+    createMerchantChart()
+  }, 500)
 })
 
 onBeforeUnmount(() => {
@@ -440,28 +517,35 @@ onBeforeUnmount(() => {
   if (merchantChartInstance) {
     merchantChartInstance.destroy()
   }
+  
+  // Reset scroll behavior
+  document.documentElement.style.scrollBehavior = 'auto'
 })
 </script>
 
 <style scoped>
 .admin-overview {
   padding: 20px;
+  opacity: 1;
+  transition: opacity 0.5s ease;
 }
 
 .stat-card {
   background: #121212;
   border-radius: 12px;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(189, 240, 0, 0.25) !important;
 }
 
 .lime-glow {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
               0 0 0 1px rgba(189, 240, 0, 0.2),
               0 0 20px rgba(189, 240, 0, 15);
+  transition: box-shadow 0.3s ease;
 }
 
 .chart-container {
@@ -474,9 +558,18 @@ onBeforeUnmount(() => {
   overflow-y: auto;
 }
 
+.activity-list.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
 .activity-item {
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.activity-item:hover {
+  transform: translateX(5px);
 }
 
 .activity-item:last-child {
@@ -493,5 +586,78 @@ onBeforeUnmount(() => {
 
 .text-grey {
   color: #999;
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.icon-animate {
+  transition: transform 0.3s ease;
+}
+
+.icon-animate:hover {
+  transform: scale(1.1);
+}
+
+.btn-animate {
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.btn-animate:hover {
+  transform: translateY(-2px);
+}
+
+.avatar-animate {
+  transition: transform 0.3s ease;
+}
+
+.avatar-animate:hover {
+  transform: scale(1.1);
+}
+
+.chart-animate {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+  animation-delay: 0.5s;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.count-up-animation {
+  transition: all 0.5s ease-out;
+}
+
+/* Custom scrollbar for activity list */
+.activity-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+  background: rgba(189, 240, 0, 0.5);
+  border-radius: 10px;
+}
+
+.activity-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 240, 0, 0.8);
 }
 </style>
