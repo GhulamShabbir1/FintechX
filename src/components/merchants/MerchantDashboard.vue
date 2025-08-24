@@ -1,7 +1,7 @@
 <template>
   <div class="merchant-dashboard">
     <!-- Welcome Section -->
-    <div class="welcome-section q-mb-xl">
+    <div class="welcome-section q-mb-xl animate-fade-in">
       <div class="welcome-content">
         <div class="welcome-text">
           <h1 class="welcome-title">
@@ -16,7 +16,7 @@
             color="lime"
             icon="add"
             label="New Transaction"
-            class="action-btn"
+            class="action-btn btn-primary"
             @click="createTransaction"
           />
           <q-btn
@@ -24,7 +24,7 @@
             color="lime"
             icon="settings"
             label="Settings"
-            class="action-btn"
+            class="action-btn btn-outline"
             @click="openSettings"
           />
         </div>
@@ -32,7 +32,7 @@
     </div>
 
     <!-- KPI Cards -->
-    <TopKpiCards :kpis="kpiData" />
+    <TopKpiCards :kpis="kpiData" class="animate-fade-in" style="animation-delay: 0.1s" />
 
     <!-- Main Content Grid -->
     <div class="dashboard-grid">
@@ -43,18 +43,20 @@
           :status="merchantStatus" 
           :progress="onboardingProgress"
           :show-actions="true"
+          class="animate-fade-in"
+          style="animation-delay: 0.2s"
         />
 
         <!-- Profile Overview -->
-        <div class="profile-card">
+        <div class="profile-card animate-fade-in" style="animation-delay: 0.3s">
           <div class="card-header">
             <h3 class="card-title">Business Profile</h3>
-            <q-btn flat round dense icon="edit" color="lime" @click="editProfile" />
+            <q-btn flat round dense icon="edit" color="lime" @click="editProfile" class="edit-btn" />
           </div>
           
           <div class="profile-content">
             <div class="profile-avatar">
-              <q-avatar size="80px" square>
+              <q-avatar size="80px" square class="avatar-image">
                 <img :src="profile.logo_url || placeholderLogo" alt="Business Logo" />
               </q-avatar>
               <div class="avatar-ring"></div>
@@ -87,11 +89,11 @@
       <!-- Charts Section -->
       <div class="right-column">
         <!-- Revenue Chart -->
-        <div class="chart-card">
+        <div class="chart-card animate-fade-in" style="animation-delay: 0.4s">
           <div class="card-header">
             <h3 class="card-title">Revenue Overview</h3>
             <div class="chart-actions">
-              <q-btn flat round dense icon="refresh" color="lime" @click="refreshChart" />
+              <q-btn flat round dense icon="refresh" color="lime" @click="refreshChart" class="refresh-btn" />
               <q-btn flat round dense icon="more_vert" color="lime" />
             </div>
           </div>
@@ -101,7 +103,7 @@
         </div>
 
         <!-- Recent Activity -->
-        <div class="activity-card">
+        <div class="activity-card animate-fade-in" style="animation-delay: 0.5s">
           <div class="card-header">
             <h3 class="card-title">Recent Activity</h3>
             <q-btn flat round dense icon="more_vert" color="lime" />
@@ -112,6 +114,7 @@
               v-for="activity in recentActivity" 
               :key="activity.id" 
               class="activity-item"
+              :class="`activity-${activity.color}`"
               @click="viewActivity(activity)"
             >
               <div class="activity-icon">
@@ -128,20 +131,21 @@
           </div>
           
           <div class="activity-footer">
-            <q-btn flat color="lime" label="View All Activity" @click="viewAllActivity" />
+            <q-btn flat color="lime" label="View All Activity" @click="viewAllActivity" class="view-all-btn" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="quick-actions q-mt-xl">
+    <div class="quick-actions q-mt-xl animate-fade-in" style="animation-delay: 0.6s">
       <h3 class="section-title">Quick Actions</h3>
       <div class="actions-grid">
         <div 
-          v-for="action in quickActions" 
+          v-for="(action, index) in quickActions" 
           :key="action.id"
           class="action-item"
+          :style="`animation-delay: ${0.7 + index * 0.1}s`"
           @click="executeAction(action)"
         >
           <div class="action-icon">
@@ -398,6 +402,10 @@ const createRevenueChart = () => {
       interaction: {
         intersect: false,
         mode: 'index'
+      },
+      animation: {
+        duration: 2000,
+        easing: 'easeOutQuart'
       }
     }
   })
@@ -409,7 +417,10 @@ onMounted(async () => {
     profile.value = { ...merchant.profile }
   }
   
-  createRevenueChart()
+  // Add slight delay for smooth chart animation
+  setTimeout(() => {
+    createRevenueChart()
+  }, 500)
 })
 
 onBeforeUnmount(() => {
@@ -428,11 +439,13 @@ onBeforeUnmount(() => {
 
 .welcome-section {
   background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 32px;
   border: 1px solid rgba(189, 240, 0, 0.1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .welcome-section::before {
@@ -442,8 +455,8 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 80%, rgba(189, 240, 0, 0.1) 0%, transparent 50%);
-  opacity: 0.5;
+  background: radial-gradient(circle at 20% 80%, rgba(189, 240, 0, 0.15) 0%, transparent 50%);
+  opacity: 0.6;
 }
 
 .welcome-content {
@@ -459,11 +472,15 @@ onBeforeUnmount(() => {
 }
 
 .welcome-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 2.5rem;
+  font-weight: 800;
   color: #ffffff;
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
   line-height: 1.2;
+  background: linear-gradient(135deg, #ffffff 0%, #bdf000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .highlight {
@@ -471,79 +488,145 @@ onBeforeUnmount(() => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 0 30px rgba(189, 240, 0, 0.5);
 }
 
 .welcome-subtitle {
-  font-size: 16px;
-  color: #999;
+  font-size: 1.1rem;
+  color: #ccc;
   margin: 0;
+  opacity: 0.9;
 }
 
 .welcome-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
 }
 
-.action-btn {
-  border-radius: 8px;
+.btn-primary {
+  background: linear-gradient(135deg, #bdf000, #a0d000);
+  color: #09050d;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(189, 240, 0, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(189, 240, 0, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  border: 2px solid rgba(189, 240, 0, 0.3);
+  color: #bdf000;
+  border-radius: 12px;
+  padding: 12px 24px;
   font-weight: 600;
   transition: all 0.3s ease;
+  background: rgba(189, 240, 0, 0.1);
 }
 
-.action-btn:hover {
+.btn-outline:hover {
+  border-color: #bdf000;
+  background: rgba(189, 240, 0, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(189, 240, 0, 0.2);
 }
 
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: 28px;
+  margin-bottom: 32px;
 }
 
 .left-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
 .profile-card,
 .chart-card,
 .activity-card {
-  background: #121212;
-  border-radius: 16px;
-  padding: 24px;
+  background: rgba(18, 18, 18, 0.95);
+  border-radius: 20px;
+  padding: 28px;
   border: 1px solid rgba(189, 240, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
 }
 
 .profile-card:hover,
 .chart-card:hover,
 .activity-card:hover {
-  border-color: rgba(189, 240, 0, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border-color: rgba(189, 240, 0, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(189, 240, 0, 0.2),
+    0 0 30px rgba(189, 240, 0, 0.15);
+}
+
+.profile-card::before,
+.chart-card::before,
+.activity-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(189, 240, 0, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.profile-card:hover::before,
+.chart-card:hover::before,
+.activity-card:hover::before {
+  opacity: 1;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
+}
+
+.edit-btn,
+.refresh-btn {
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover,
+.refresh-btn:hover {
+  transform: rotate(15deg) scale(1.1);
+  background: rgba(189, 240, 0, 0.1);
 }
 
 .chart-actions {
@@ -554,29 +637,43 @@ onBeforeUnmount(() => {
 .profile-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .profile-avatar {
   position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.avatar-image {
+  border: 2px solid rgba(189, 240, 0, 0.3);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.profile-avatar:hover .avatar-image {
+  border-color: rgba(189, 240, 0, 0.6);
+  transform: scale(1.05);
 }
 
 .avatar-ring {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
   border: 2px solid transparent;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #bdf000, #ffffff);
+  border-radius: 20px;
+  background: linear-gradient(45deg, #bdf000, #ffffff, #bdf000);
   opacity: 0;
   transition: opacity 0.3s ease;
+  animation: rotate 3s linear infinite paused;
 }
 
 .profile-avatar:hover .avatar-ring {
-  opacity: 1;
-  animation: rotate 2s linear infinite;
+  opacity: 0.8;
+  animation-play-state: running;
 }
 
 @keyframes rotate {
@@ -593,41 +690,66 @@ onBeforeUnmount(() => {
 }
 
 .business-name {
-  font-size: 20px;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0 0 8px 0;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover .business-name {
+  color: #bdf000;
 }
 
 .business-email,
 .business-website {
-  font-size: 14px;
-  color: #999;
-  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  color: #ccc;
+  margin: 0 0 6px 0;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover .business-email,
+.profile-card:hover .business-website {
+  color: #e0e0e0;
 }
 
 .profile-stats {
   display: flex;
-  gap: 20px;
-  margin-top: 16px;
+  gap: 24px;
+  margin-top: 20px;
 }
 
 .stat-item {
   text-align: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.stat-item:hover {
+  background: rgba(189, 240, 0, 0.1);
+  border-color: rgba(189, 240, 0, 0.3);
+  transform: translateY(-2px);
 }
 
 .stat-value {
   display: block;
-  font-size: 18px;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #bdf000;
+  margin-bottom: 4px;
 }
 
 .stat-label {
   display: block;
-  font-size: 12px;
+  font-size: 0.85rem;
   color: #999;
-  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .chart-container {
@@ -638,15 +760,37 @@ onBeforeUnmount(() => {
 .activity-list {
   max-height: 300px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(189, 240, 0, 0.3) rgba(255, 255, 255, 0.1);
+}
+
+.activity-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+  background: rgba(189, 240, 0, 0.3);
+  border-radius: 3px;
+}
+
+.activity-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 240, 0, 0.5);
 }
 
 .activity-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
+  padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+  border-radius: 12px;
+  margin: 4px 0;
 }
 
 .activity-item:last-child {
@@ -654,21 +798,42 @@ onBeforeUnmount(() => {
 }
 
 .activity-item:hover {
-  background: rgba(189, 240, 0, 0.05);
-  border-radius: 8px;
-  padding: 12px;
-  margin: 0 -12px;
+  background: rgba(189, 240, 0, 0.1);
+  transform: translateX(8px);
+  border-color: transparent;
+}
+
+.activity-green:hover {
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.activity-blue:hover {
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.3);
+}
+
+.activity-orange:hover {
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.3);
+}
+
+.activity-red:hover {
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
 }
 
 .activity-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   background: rgba(189, 240, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
+  margin-right: 16px;
+  transition: all 0.3s ease;
+}
+
+.activity-item:hover .activity-icon {
+  background: rgba(189, 240, 0, 0.2);
+  transform: scale(1.1);
 }
 
 .activity-content {
@@ -676,77 +841,135 @@ onBeforeUnmount(() => {
 }
 
 .activity-title {
-  font-size: 14px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  line-height: 1.4;
 }
 
 .activity-time {
-  font-size: 12px;
+  font-size: 0.85rem;
   color: #999;
 }
 
 .activity-amount {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #bdf000;
+  padding: 6px 12px;
+  background: rgba(189, 240, 0, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(189, 240, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.activity-item:hover .activity-amount {
+  background: rgba(189, 240, 0, 0.2);
+  border-color: rgba(189, 240, 0, 0.3);
+  transform: scale(1.05);
 }
 
 .activity-footer {
-  margin-top: 16px;
+  margin-top: 20px;
   text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.view-all-btn {
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.view-all-btn:hover {
+  transform: translateY(-2px);
 }
 
 .quick-actions {
-  margin-top: 32px;
+  margin-top: 40px;
 }
 
 .section-title {
-  font-size: 20px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 20px 0;
+  margin: 0 0 24px 0;
+  text-align: center;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .action-item {
-  background: #121212;
-  border-radius: 12px;
-  padding: 20px;
+  background: rgba(18, 18, 18, 0.95);
+  border-radius: 16px;
+  padding: 24px;
   border: 1px solid rgba(189, 240, 0, 0.1);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .action-item:hover {
   border-color: rgba(189, 240, 0, 0.3);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-6px);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(189, 240, 0, 0.2),
+    0 0 40px rgba(189, 240, 0, 0.2);
+}
+
+.action-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(189, 240, 0, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-item:hover::before {
+  opacity: 1;
+  animation: gradientFlow 2s ease-in-out infinite;
+}
+
+@keyframes gradientFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .action-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
   background: rgba(189, 240, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .action-item:hover .action-icon {
   background: rgba(189, 240, 0, 0.2);
-  transform: scale(1.1);
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 0 20px rgba(189, 240, 0, 0.3);
 }
 
 .action-content {
@@ -754,33 +977,59 @@ onBeforeUnmount(() => {
 }
 
 .action-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #ffffff;
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
+  transition: all 0.3s ease;
+}
+
+.action-item:hover .action-title {
+  color: #bdf000;
 }
 
 .action-description {
-  font-size: 14px;
-  color: #999;
+  font-size: 0.9rem;
+  color: #ccc;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+}
+
+.action-item:hover .action-description {
+  color: #e0e0e0;
 }
 
 .action-arrow {
   opacity: 0;
+  transform: translateX(-10px);
   transition: all 0.3s ease;
 }
 
 .action-item:hover .action-arrow {
   opacity: 1;
-  transform: translateX(4px);
+  transform: translateX(0);
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.6s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Responsive adjustments */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
   
   .left-column {
@@ -797,14 +1046,19 @@ onBeforeUnmount(() => {
     padding: 16px;
   }
   
+  .welcome-section {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  
   .welcome-content {
     flex-direction: column;
     text-align: center;
-    gap: 20px;
+    gap: 24px;
   }
   
   .welcome-title {
-    font-size: 24px;
+    font-size: 2rem;
   }
   
   .welcome-actions {
@@ -815,34 +1069,119 @@ onBeforeUnmount(() => {
   .profile-content {
     flex-direction: column;
     text-align: center;
+    gap: 20px;
   }
   
   .profile-stats {
     justify-content: center;
+    flex-wrap: wrap;
   }
   
   .actions-grid {
     grid-template-columns: 1fr;
   }
+  
+  .action-item {
+    padding: 20px;
+  }
 }
 
 @media (max-width: 480px) {
-  .welcome-section {
-    padding: 24px;
-  }
-  
   .welcome-title {
-    font-size: 20px;
+    font-size: 1.8rem;
   }
   
   .profile-card,
   .chart-card,
   .activity-card {
     padding: 20px;
+    border-radius: 16px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .chart-actions {
+    align-self: flex-end;
+  }
+  
+  .activity-item {
+    padding: 12px;
   }
   
   .action-item {
-    padding: 16px;
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
   }
+  
+  .action-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .action-item,
+  .activity-item,
+  .profile-card,
+  .chart-card,
+  .activity-card,
+  .btn-primary,
+  .btn-outline,
+  .edit-btn,
+  .refresh-btn,
+  .avatar-ring,
+  .action-icon,
+  .action-arrow {
+    animation: none;
+    transition: none;
+  }
+  
+  .animate-fade-in {
+    opacity: 1;
+    transform: none;
+  }
+  
+  .action-item:hover,
+  .activity-item:hover,
+  .profile-card:hover,
+  .chart-card:hover,
+  .activity-card:hover {
+    transform: none;
+  }
+}
+
+/* Enhanced focus states */
+.action-item:focus-visible,
+.activity-item:focus-visible {
+  outline: 2px solid rgba(189, 240, 0, 0.5);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+}
+
+/* Smooth scrolling */
+.merchant-dashboard {
+  scroll-behavior: smooth;
+}
+
+/* Performance optimizations */
+.action-item,
+.activity-item,
+.profile-card,
+.chart-card,
+.activity-card {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.action-icon,
+.avatar-ring {
+  will-change: transform;
 }
 </style>
