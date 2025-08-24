@@ -182,6 +182,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { Chart, registerables } from 'chart.js'
 import api from '../../boot/axios'
@@ -189,6 +190,7 @@ import api from '../../boot/axios'
 Chart.register(...registerables)
 
 const $q = useQuasar()
+const router = useRouter()
 
 // Reactive data
 const stats = ref({
@@ -446,7 +448,7 @@ const navigateWithAnimation = (route) => {
     })
     
     setTimeout(() => {
-      $router.push(route)
+      router.push(route)
       $q.loading.hide()
     }, 500)
   }, 300)

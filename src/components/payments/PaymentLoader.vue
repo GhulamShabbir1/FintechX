@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-const props = defineProps({ message: { type: String, default: '' } })
+defineProps({ message: { type: String, default: '' } })
 </script>
 
 <style scoped>

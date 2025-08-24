@@ -403,7 +403,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import api from '../../boot/axios'
 
@@ -633,7 +633,7 @@ const viewMerchant = (merchant) => {
   showDetailDialog.value = true
 }
 
-const editMerchant = (merchant) => {
+const editMerchant = () => {
   // Implement edit logic
   $q.notify({
     message: 'Edit functionality coming soon',
