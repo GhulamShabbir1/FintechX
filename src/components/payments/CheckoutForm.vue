@@ -14,7 +14,7 @@
             <div class="text-caption text-grey-5">Secure Payment Portal</div>
           </div>
           <div class="col-auto">
-            <q-chip color="green" text-color="white" icon="security" size="sm">
+            <q-chip color="green" text-color="white" icon="security" size="sm" class="security-chip">
               SSL Secured
             </q-chip>
           </div>
@@ -43,7 +43,7 @@
         <q-separator class="q-my-md" />
 
         <!-- Card Payment Form -->
-        <q-tab-panels v-model="selectedMethod" animated>
+        <q-tab-panels v-model="selectedMethod" animated transition-prev="slide-right" transition-next="slide-left">
           <q-tab-panel name="card" class="q-pa-none">
             <q-form @submit.prevent="processPayment" class="card-form">
               <!-- Card Number -->
@@ -168,9 +168,9 @@
                 dense
                 emit-value
                 map-options
-                class="q-mb-md"
+                class="q-mb-md bank-selector"
               />
-              <q-card class="bg-grey-1 q-pa-md">
+              <q-card class="bg-grey-1 q-pa-md bank-info-card">
                 <div class="text-body2 q-mb-sm">Bank Transfer Details:</div>
                 <div class="text-caption">• You will be redirected to your bank's secure portal</div>
                 <div class="text-caption">• Payment will be processed instantly</div>
@@ -190,10 +190,10 @@
           </div>
           <div class="col-auto">
             <div class="security-badges">
-              <q-chip color="green" text-color="white" size="sm" icon="verified_user">
+              <q-chip color="green" text-color="white" size="sm" icon="verified_user" class="security-badge">
                 PCI DSS
               </q-chip>
-              <q-chip color="blue" text-color="white" size="sm" icon="lock">
+              <q-chip color="blue" text-color="white" size="sm" icon="lock" class="security-badge">
                 256-bit SSL
               </q-chip>
             </div>
@@ -490,6 +490,28 @@ const processPayment = async () => {
 // Lifecycle
 onMounted(() => {
   fetchMerchantInfo()
+  
+  // Add smooth scrolling to the entire page
+  document.documentElement.style.scrollBehavior = 'smooth'
+  
+  // Add animation to form elements when they come into view
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in')
+      }
+    })
+  }, { threshold: 0.1 })
+  
+  // Observe all form elements for animation
+  setTimeout(() => {
+    document.querySelectorAll('.payment-card > *').forEach((el, index) => {
+      el.style.opacity = '0'
+      el.style.transform = 'translateY(20px)'
+      el.style.transition = `all 0.6s ease ${index * 0.1}s`
+      observer.observe(el)
+    })
+  }, 100)
 })
 
 // Watch for input changes to validate in real-time
@@ -513,6 +535,13 @@ watch(() => cardForm.value.cvc, validateCVC)
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+.payment-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
 }
 
 .lime-glow {
@@ -525,15 +554,27 @@ watch(() => cardForm.value.cvc, validateCVC)
 .payment-header {
   background: linear-gradient(90deg, rgba(189, 240, 0, 0.1), transparent);
   border-bottom: 1px solid rgba(189, 240, 0, 0.2);
+  transition: all 0.3s ease;
 }
 
 .merchant-avatar {
   border: 2px solid rgba(189, 240, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.merchant-avatar:hover {
+  border-color: #bdf000;
+  transform: scale(1.1);
+}
+
+.security-chip {
+  animation: subtle-pulse 3s infinite;
 }
 
 .payment-amount {
   text-align: center;
   padding: 30px 20px;
+  transition: all 0.3s ease;
 }
 
 .amount-display {
@@ -541,6 +582,11 @@ watch(() => cardForm.value.cvc, validateCVC)
   font-weight: 700;
   color: #bdf000;
   text-shadow: 0 0 20px rgba(189, 240, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.amount-display:hover {
+  transform: scale(1.05);
 }
 
 .currency {
@@ -562,6 +608,7 @@ watch(() => cardForm.value.cvc, validateCVC)
 .payment-tab.q-tab--active {
   background: linear-gradient(135deg, #bdf000, #a0d000);
   color: #000000;
+  transform: scale(1.05);
 }
 
 .form-group {
@@ -574,6 +621,11 @@ watch(() => cardForm.value.cvc, validateCVC)
   font-weight: 600;
   color: #bdf000;
   margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+.field-label:hover {
+  transform: translateX(5px);
 }
 
 .card-input :deep(.q-field__control) {
@@ -581,15 +633,18 @@ watch(() => cardForm.value.cvc, validateCVC)
   border: 1px solid rgba(189, 240, 0, 0.3);
   border-radius: 12px;
   color: #ffffff;
+  transition: all 0.3s ease;
 }
 
 .card-input :deep(.q-field__control:hover) {
   border-color: rgba(189, 240, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 .card-input :deep(.q-field__control.q-field__control--focused) {
   border-color: #bdf000;
   box-shadow: 0 0 0 2px rgba(189, 240, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .card-input :deep(input) {
@@ -618,11 +673,13 @@ watch(() => cardForm.value.cvc, validateCVC)
 .wallet-btn:hover {
   border-color: rgba(189, 240, 0, 0.5);
   background: rgba(189, 240, 0, 0.1);
+  transform: translateY(-3px);
 }
 
 .wallet-btn.active {
   border-color: #bdf000;
   background: rgba(189, 240, 0, 0.2);
+  transform: scale(1.05);
 }
 
 .wallet-content {
@@ -638,15 +695,35 @@ watch(() => cardForm.value.cvc, validateCVC)
   color: #ffffff;
 }
 
+.bank-selector :deep(.q-field__control) {
+  transition: all 0.3s ease;
+}
+
+.bank-selector :deep(.q-field__control:hover) {
+  transform: translateY(-2px);
+}
+
+.bank-info-card {
+  transition: all 0.3s ease;
+}
+
+.bank-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .payment-summary {
   border-top: 1px solid rgba(189, 240, 0, 0.2);
   background: rgba(189, 240, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
-.security-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.security-badge {
+  transition: all 0.3s ease;
+}
+
+.security-badge:hover {
+  transform: scale(1.1);
 }
 
 .pay-button {
@@ -660,8 +737,8 @@ watch(() => cardForm.value.cvc, validateCVC)
   transition: all 0.3s ease;
 }
 
-.pay-button:hover {
-  transform: translateY(-2px);
+.pay-button:hover:not(:disabled) {
+  transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(189, 240, 0, 0.4);
 }
 
@@ -674,6 +751,11 @@ watch(() => cardForm.value.cvc, validateCVC)
 
 .powered-by {
   width: 100%;
+  transition: all 0.3s ease;
+}
+
+.powered-by:hover {
+  transform: scale(1.05);
 }
 
 .payment-loader {
@@ -697,6 +779,25 @@ watch(() => cardForm.value.cvc, validateCVC)
   }
 }
 
+@keyframes subtle-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(189, 240, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(189, 240, 0, 0);
+  }
+}
+
+.animate-in {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Smooth scrolling for the entire app */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .checkout-container {
@@ -713,6 +814,10 @@ watch(() => cardForm.value.cvc, validateCVC)
   
   .wallet-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .payment-card > * {
+    transition-delay: 0s !important;
   }
 }
 </style>

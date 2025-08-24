@@ -24,20 +24,20 @@
 
       <!-- Quick Actions -->
       <div class="gt-sm q-mr-md">
-        <q-btn flat round dense icon="notifications" class="q-mr-sm">
-          <q-badge color="red" floating>{{ pendingApprovals }}</q-badge>
+        <q-btn flat round dense icon="notifications" class="q-mr-sm" @click="animateNotification">
+          <q-badge color="red" floating :class="{ 'pulse-animation': pendingApprovals > 0 }">{{ pendingApprovals }}</q-badge>
         </q-btn>
         <q-btn flat round dense icon="support_agent" class="q-mr-sm" />
       </div>
 
       <!-- User Menu -->
-      <q-btn flat round dense>
-        <q-avatar size="32px">
+      <q-btn flat round dense class="user-avatar-btn">
+        <q-avatar size="32px" class="avatar-scale">
           <img :src="userAvatar" alt="Admin" />
         </q-avatar>
-        <q-menu>
+        <q-menu transition-show="jump-down" transition-hide="jump-up" class="admin-menu">
           <q-list style="min-width: 200px">
-            <q-item clickable v-close-popup @click="viewProfile">
+            <q-item clickable v-close-popup @click="viewProfile" class="menu-item">
               <q-item-section avatar>
                 <q-avatar size="32px">
                   <img :src="userAvatar" alt="Admin" />
@@ -51,14 +51,14 @@
             
             <q-separator />
             
-            <q-item clickable v-close-popup @click="$router.push('/admin/profile')">
+            <q-item clickable v-close-popup @click="navigateWithSmoothScroll('/admin/profile')" class="menu-item">
               <q-item-section avatar>
                 <q-icon name="person" />
               </q-item-section>
               <q-item-section>Profile Settings</q-item-section>
             </q-item>
             
-            <q-item clickable v-close-popup @click="$router.push('/admin/settings')">
+            <q-item clickable v-close-popup @click="navigateWithSmoothScroll('/admin/settings')" class="menu-item">
               <q-item-section avatar>
                 <q-icon name="settings" />
               </q-item-section>
@@ -67,7 +67,7 @@
             
             <q-separator />
             
-            <q-item clickable v-close-popup @click="logout">
+            <q-item clickable v-close-popup @click="logout" class="menu-item">
               <q-item-section avatar>
                 <q-icon name="logout" />
               </q-item-section>
@@ -79,69 +79,71 @@
     </q-toolbar>
 
     <!-- Mobile Navigation Drawer -->
-    <q-drawer v-model="drawerOpen" side="left" bordered :width="280" class="admin-drawer">
-      <q-list>
-        <q-item-label header>Admin Panel</q-item-label>
-        
-        <q-item clickable v-ripple to="/admin-dashboard" @click="drawerOpen = false">
-          <q-item-section avatar>
-            <q-icon name="dashboard" />
-          </q-item-section>
-          <q-item-section>Dashboard</q-item-section>
-        </q-item>
-        
-        <q-item clickable v-ripple to="/admin/merchants" @click="drawerOpen = false">
-          <q-item-section avatar>
-            <q-icon name="store" />
-          </q-item-section>
-          <q-item-section>Merchants</q-item-section>
-          <q-item-section side>
-            <q-badge color="orange" v-if="pendingApprovals > 0">{{ pendingApprovals }}</q-badge>
-          </q-item-section>
-        </q-item>
-        
-        <q-item clickable v-ripple to="/admin/transactions" @click="drawerOpen = false">
-          <q-item-section avatar>
-            <q-icon name="receipt_long" />
-          </q-item-section>
-          <q-item-section>Transactions</q-item-section>
-        </q-item>
-        
-        <q-item clickable v-ripple to="/admin/analytics" @click="drawerOpen = false">
-          <q-item-section avatar>
-            <q-icon name="analytics" />
-          </q-item-section>
-          <q-item-section>Analytics</q-item-section>
-        </q-item>
-        
-        <q-item clickable v-ripple to="/admin/settings" @click="drawerOpen = false">
-          <q-item-section avatar>
-            <q-icon name="settings" />
-          </q-item-section>
-          <q-item-section>Settings</q-item-section>
-        </q-item>
-        
-        <q-separator />
-        
-        <q-item-label header>Quick Actions</q-item-label>
-        
-        <q-item clickable v-ripple @click="viewPendingApprovals">
-          <q-item-section avatar>
-            <q-icon name="pending_actions" />
-          </q-item-section>
-          <q-item-section>Pending Approvals</q-item-section>
-          <q-item-section side>
-            <q-badge color="orange" v-if="pendingApprovals > 0">{{ pendingApprovals }}</q-badge>
-          </q-item-section>
-        </q-item>
-        
-        <q-item clickable v-ripple @click="viewSupportTickets">
-          <q-item-section avatar>
-            <q-icon name="support_agent" />
-          </q-item-section>
-          <q-item-section>Support Tickets</q-item-section>
-        </q-item>
-      </q-list>
+    <q-drawer v-model="drawerOpen" side="left" bordered :width="280" class="admin-drawer" :breakpoint="700">
+      <q-scroll-area class="fit">
+        <q-list>
+          <q-item-label header class="drawer-header">Admin Panel</q-item-label>
+          
+          <q-item clickable v-ripple @click="navigateWithSmoothScroll('/admin-dashboard')" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="dashboard" />
+            </q-item-section>
+            <q-item-section>Dashboard</q-item-section>
+          </q-item>
+          
+          <q-item clickable v-ripple @click="navigateWithSmoothScroll('/admin/merchants')" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="store" />
+            </q-item-section>
+            <q-item-section>Merchants</q-item-section>
+            <q-item-section side>
+              <q-badge color="orange" v-if="pendingApprovals > 0" class="badge-bounce">{{ pendingApprovals }}</q-badge>
+            </q-item-section>
+          </q-item>
+          
+          <q-item clickable v-ripple @click="navigateWithSmoothScroll('/admin/transactions')" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="receipt_long" />
+            </q-item-section>
+            <q-item-section>Transactions</q-item-section>
+          </q-item>
+          
+          <q-item clickable v-ripple @click="navigateWithSmoothScroll('/admin/analytics')" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="analytics" />
+            </q-item-section>
+            <q-item-section>Analytics</q-item-section>
+          </q-item>
+          
+          <q-item clickable v-ripple @click="navigateWithSmoothScroll('/admin/settings')" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="settings" />
+            </q-item-section>
+            <q-item-section>Settings</q-item-section>
+          </q-item>
+          
+          <q-separator />
+          
+          <q-item-label header class="drawer-header">Quick Actions</q-item-label>
+          
+          <q-item clickable v-ripple @click="viewPendingApprovals" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="pending_actions" />
+            </q-item-section>
+            <q-item-section>Pending Approvals</q-item-section>
+            <q-item-section side>
+              <q-badge color="orange" v-if="pendingApprovals > 0" class="badge-bounce">{{ pendingApprovals }}</q-badge>
+            </q-item-section>
+          </q-item>
+          
+          <q-item clickable v-ripple @click="viewSupportTickets" class="drawer-item">
+            <q-item-section avatar>
+              <q-icon name="support_agent" />
+            </q-item-section>
+            <q-item-section>Support Tickets</q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
     </q-drawer>
   </q-header>
 </template>
@@ -173,7 +175,7 @@ const userAvatar = computed(() => user.value.avatar || 'https://placehold.co/32x
 
 // Methods
 const viewProfile = () => {
-  router.push('/admin/profile')
+  navigateWithSmoothScroll('/admin/profile')
 }
 
 const logout = () => {
@@ -189,19 +191,52 @@ const logout = () => {
 }
 
 const viewPendingApprovals = () => {
-  router.push('/admin/merchants?status=pending')
+  navigateWithSmoothScroll('/admin/merchants?status=pending')
   drawerOpen.value = false
 }
 
 const viewSupportTickets = () => {
-  router.push('/admin/support')
+  navigateWithSmoothScroll('/admin/support')
   drawerOpen.value = false
+}
+
+const navigateWithSmoothScroll = (path) => {
+  // Scroll to top before navigation for a smooth experience
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+  
+  // Small delay to allow scroll to complete before navigation
+  setTimeout(() => {
+    router.push(path)
+  }, 300)
+}
+
+const animateNotification = () => {
+  // Animation is handled through CSS class
 }
 
 // Initialize
 onMounted(async () => {
   try {
     pendingApprovals.value = 3
+    
+    // Add smooth scrolling to all anchor links
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (link && link.getAttribute('href')?.startsWith('#')) {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }
+    });
   } catch (error) {
     console.error('Failed to fetch pending approvals:', error)
   }
@@ -226,11 +261,13 @@ onMounted(async () => {
 .admin-nav .nav-btn:hover {
   color: #bdf000;
   background: rgba(189, 240, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .admin-nav .nav-btn.router-link-active {
   color: #bdf000;
   background: rgba(189, 240, 0, 0.15);
+  animation: pulse 2s infinite;
 }
 
 .admin-drawer {
@@ -240,5 +277,110 @@ onMounted(async () => {
 
 .text-lime {
   color: #bdf000;
+}
+
+/* Animation classes */
+.pulse-animation {
+  animation: pulse 1.5s infinite;
+}
+
+.badge-bounce {
+  animation: bounce 1s infinite;
+}
+
+.avatar-scale {
+  transition: transform 0.3s ease;
+}
+
+.avatar-scale:hover {
+  transform: scale(1.1);
+}
+
+.user-avatar-btn {
+  transition: all 0.3s ease;
+}
+
+.user-avatar-btn:hover {
+  background: rgba(189, 240, 0, 0.1) !important;
+}
+
+.menu-item {
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(189, 240, 0, 0.1);
+  padding-left: 12px;
+}
+
+.drawer-item {
+  transition: all 0.3s ease;
+}
+
+.drawer-item:hover {
+  background-color: rgba(189, 240, 0, 0.1);
+  padding-left: 16px;
+}
+
+.drawer-header {
+  font-weight: 600;
+  color: #bdf000;
+}
+
+.admin-menu {
+  border: 1px solid rgba(189, 240, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Keyframe animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(189, 240, 0, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(189, 240, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(189, 240, 0, 0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Smooth scrolling for the entire app */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for drawer */
+.admin-drawer ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-drawer ::-webkit-scrollbar-track {
+  background: #121018;
+}
+
+.admin-drawer ::-webkit-scrollbar-thumb {
+  background: #bdf000;
+  border-radius: 3px;
+}
+
+.admin-drawer ::-webkit-scrollbar-thumb:hover {
+  background: #a0c900;
 }
 </style>
