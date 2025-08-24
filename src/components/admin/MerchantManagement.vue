@@ -516,7 +516,7 @@ const columns = [
 const loadMerchants = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/admin/merchants')
+    const response = await api.get('/admin/merchants')
     merchants.value = response.data.merchants || []
     
     // Animate counting up the stats
@@ -659,7 +659,7 @@ const deleteMerchant = (merchant) => {
     persistent: true
   }).onOk(async () => {
     try {
-      await api.delete(`/api/admin/merchants/${merchant.id}`)
+      await api.delete(`/admin/merchants/${merchant.id}`)
       await loadMerchants()
       $q.notify({
         type: 'positive',
@@ -679,7 +679,7 @@ const deleteMerchant = (merchant) => {
 
 const approveMerchant = async (merchant) => {
   try {
-    await api.patch(`/api/admin/merchants/${merchant.id}/approve`)
+    await api.patch(`/admin/merchants/${merchant.id}/approve`)
     await loadMerchants()
     showDetailDialog.value = false
     $q.notify({
@@ -699,7 +699,7 @@ const approveMerchant = async (merchant) => {
 
 const rejectMerchant = async (merchant) => {
   try {
-    await api.patch(`/api/admin/merchants/${merchant.id}/reject`)
+    await api.patch(`/admin/merchants/${merchant.id}/reject`)
     await loadMerchants()
     showDetailDialog.value = false
     $q.notify({
@@ -719,7 +719,7 @@ const rejectMerchant = async (merchant) => {
 
 const addMerchant = async () => {
   try {
-    await api.post('/api/admin/merchants', newMerchant.value)
+    await api.post('/admin/merchants', newMerchant.value)
     await loadMerchants()
     showAddDialog.value = false
     newMerchant.value = { business_name: '', email: '', phone: '', address: '' }

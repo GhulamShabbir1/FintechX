@@ -466,7 +466,7 @@ const processPayment = async () => {
       router.push({
         name: 'payment-status',
         params: { id: response.data.payment_id },
-        query: { status: 'success', amount: props.amount, merchant: props.merchantId }
+        query: { status: 'success', amount: props.amount, merchantId: props.merchantId }
       })
     } else {
       throw new Error(response.data.message || 'Payment failed')

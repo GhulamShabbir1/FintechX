@@ -13,7 +13,12 @@
         </q-card-section>
         <q-separator />
         <q-card-section>
-          <CheckoutForm />
+          <CheckoutForm
+            :merchant-id="route.params.merchantId"
+            :amount="Number(route.query.amount || 0)"
+            :currency="(route.query.currency || '$')"
+            :description="(route.query.description || '')"
+          />
         </q-card-section>
       </q-card>
     </div>

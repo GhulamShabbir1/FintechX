@@ -53,14 +53,8 @@ const routes = [
     meta: { title: 'Secure Checkout - FinteckX' }
   },
   { 
-    path: '/payment-status', 
-    name: 'payment-status',   //payment status unknown
-    component: PaymentStatus,
-    meta: { title: 'Payment Status - FinteckX' }
-  },
-  { 
     path: '/payments/status/:id', 
-    name: 'payment-status-detail', //payment status unknown
+    name: 'payment-status',
     component: PaymentStatus,
     meta: { title: 'Payment Status - FinteckX' }
   },
@@ -193,41 +187,25 @@ const router = createRouter({
 
 // Navigation guard for authentication and role-based access
 // COMMENTED OUT FOR DEVELOPMENT - UNCOMMENT WHEN READY FOR PRODUCTION
-/*
 router.beforeEach((to, from, next) => {
-  // Update page title
-  if (to.meta.title) {
-    document.title = to.meta.title
-  }
-  
-  // Check if route requires authentication
+  if (to.meta.title) document.title = to.meta.title
+
   if (to.meta.requiresAuth) {
     const token = localStorage.getItem('auth_token')
-    if (!token) {
-      next({ name: 'login', query: { redirect: to.fullPath } })
-      return
-    }
-    
-    // Check role-based access if specified
+    if (!token) return next({ name: 'login', query: { redirect: to.fullPath } })
+
     if (to.meta.role) {
-      const userRole = localStorage.getItem('user_role')
+      const userRole = (localStorage.getItem('user_role') || '').toLowerCase()
       if (userRole !== to.meta.role) {
-        // Redirect based on user role
-        if (userRole === 'admin') {
-          next({ name: 'admin-dashboard' })
-        } else if (userRole === 'merchant') {
-          next({ name: 'dashboard' })
-        } else {
-          next({ name: 'login' })
-        }
-        return
+        if (userRole === 'admin') return next({ name: 'admin-dashboard' })
+        if (userRole === 'merchant') return next({ name: 'dashboard' })
+        return next({ name: 'login' })
       }
     }
   }
-  
+
   next()
 })
-*/
 
 // Navigation guard for checkout routes
 // COMMENTED OUT FOR DEVELOPMENT - UNCOMMENT WHEN READY FOR PRODUCTION

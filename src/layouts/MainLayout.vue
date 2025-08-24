@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="fintech-layout">
     <!-- Header -->
-    <q-header elevated class="text-white header-glass" reveal>
+    <q-header v-if="!isDashboardRoute" elevated class="text-white header-glass" reveal>
       <q-toolbar class="header-toolbar">
         <q-btn v-if="isAuthed" flat round dense icon="menu" @click="drawerOpen = !drawerOpen" class="q-mr-sm lt-md" />
         <q-toolbar-title class="row items-center no-wrap header-title">
@@ -198,7 +198,7 @@
     </q-page-container>
 
     <!-- Footer -->
-    <footer class="custom-footer q-px-xl q-pt-xl q-pb-lg">
+    <footer v-if="!isDashboardRoute" class="custom-footer q-px-xl q-pt-xl q-pb-lg">
       <div class="row q-col-gutter-xl">
         <div class="col-12 col-md-4">
           <div class="footer-brand">
@@ -235,6 +235,13 @@ const route = useRoute()
 const isAuthed = ref(false)
 const drawerOpen = ref(false)
 const isHome = computed(() => route.path === '/' || route.name === 'home')
+const isDashboardRoute = computed(() =>
+  route.path.startsWith('/dashboard') ||
+  route.path.startsWith('/transactions') ||
+  route.path.startsWith('/stats') ||
+  route.path.startsWith('/business') ||
+  route.path.startsWith('/admin')
+)
 
 // Data for dynamic content
 const services = ref([

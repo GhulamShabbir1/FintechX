@@ -94,6 +94,7 @@ const login = async () => {
             auth.setToken(data.token)
             auth.setUser(data.user || null)
             const role = (data.user?.role || data.role || '').toString().toLowerCase()
+            localStorage.setItem('user_role', role)
             const target = role === 'admin' ? '/admin-dashboard' : '/dashboard'
             Notify.create({ type: 'positive', message: 'Welcome back!' })
             router.push(target)
