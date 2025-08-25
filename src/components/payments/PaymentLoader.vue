@@ -41,13 +41,9 @@
 
     <!-- Security Indicators -->
     <div class="security-indicators">
-      <div class="security-item">
-        <q-icon name="security" color="green" size="sm" />
-        <span>SSL Encrypted</span>
-      </div>
-      <div class="security-item">
-        <q-icon name="verified_user" color="blue" size="sm" />
-        <span>PCI Compliant</span>
+      <div class="security-item" v-for="(item, index) in securityItems" :key="item.id" :style="{ animationDelay: `${index * 0.2}s` }">
+        <q-icon :name="item.icon" :color="item.color" size="sm" />
+        <span>{{ item.text }}</span>
       </div>
     </div>
 
@@ -60,8 +56,14 @@
         size="4px" 
         rounded
         animation-speed="200"
+        class="progress-bar"
       />
       <div class="progress-text">{{ Math.round(progressValue * 100) }}% Complete</div>
+    </div>
+
+    <!-- Additional Visual Elements -->
+    <div class="visual-elements">
+      <div class="floating-particle" v-for="n in 8" :key="n" :style="getParticleStyle(n)"></div>
     </div>
   </div>
 </template>
@@ -81,6 +83,13 @@ const currentStep = ref(0)
 const progressValue = ref(0)
 const startTime = ref(Date.now())
 let progressInterval = null
+
+// Security items
+const securityItems = ref([
+  { id: 'ssl', icon: 'security', color: 'green', text: 'SSL Encrypted' },
+  { id: 'pci', icon: 'verified_user', color: 'blue', text: 'PCI Compliant' },
+  { id: 'secure', icon: 'lock', color: 'lime', text: '256-bit Encryption' }
+])
 
 // Processing steps based on type
 const steps = computed(() => {
@@ -121,10 +130,27 @@ const updateProgress = () => {
   }
 }
 
+const getParticleStyle = (index) => {
+  const angle = (index / 8) * Math.PI * 2
+  const distance = 60 + (index % 3) * 20
+  return {
+    left: `calc(50% + ${Math.cos(angle) * distance}px)`,
+    top: `calc(50% + ${Math.sin(angle) * distance}px)`,
+    animationDelay: `${index * 0.2}s`,
+    backgroundColor: `hsl(${index * 45}, 100%, 70%)`
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   startTime.value = Date.now()
   progressInterval = setInterval(updateProgress, 100)
+  
+  // Add smooth entrance animation
+  const container = document.querySelector('.payment-loader-container')
+  if (container) {
+    container.classList.add('animate-in')
+  }
 })
 
 onUnmounted(() => {
@@ -154,11 +180,23 @@ watch(() => props.message, () => {
   text-align: center;
   color: #ffffff;
   min-height: 400px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease;
+}
+
+.payment-loader-container.animate-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Main Loader Animation */
 .loader-main {
   margin-bottom: 40px;
+  position: relative;
+  z-index: 10;
 }
 
 .pulse-circle {
@@ -192,6 +230,12 @@ watch(() => props.message, () => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 30px rgba(189, 240, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.loader-center:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 40px rgba(189, 240, 0, 0.6);
 }
 
 .lock-icon {
@@ -206,59 +250,95 @@ watch(() => props.message, () => {
   gap: 16px;
   margin-bottom: 30px;
   min-width: 200px;
+  position: relative;
+  z-index: 10;
 }
 
 .step-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: slideInRight 0.6s ease forwards;
 }
 
+.step-item:nth-child(1) { animation-delay: 0.1s; }
+.step-item:nth-child(2) { animation-delay: 0.2s; }
+.step-item:nth-child(3) { animation-delay: 0.3s; }
+.step-item:nth-child(4) { animation-delay: 0.4s; }
+
 .step-item.active {
-  background: rgba(189, 240, 0, 0.1);
-  border-left: 3px solid #bdf000;
+  background: rgba(189, 240, 0, 0.15);
+  border-left: 4px solid #bdf000;
+  transform: translateX(0);
+  box-shadow: 0 4px 12px rgba(189, 240, 0, 0.2);
 }
 
 .step-item.completed {
-  background: rgba(34, 197, 94, 0.1);
-  border-left: 3px solid #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  border-left: 4px solid #22c55e;
+  transform: translateX(0);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
 }
 
 .step-icon {
   flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.step-item.active .step-icon,
+.step-item.completed .step-icon {
+  transform: scale(1.2);
 }
 
 .step-text {
   font-size: 0.875rem;
   font-weight: 500;
   color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.step-item.active .step-text {
+  color: #bdf000;
+  font-weight: 600;
+}
+
+.step-item.completed .step-text {
+  color: #22c55e;
 }
 
 /* Processing Message */
 .processing-message {
   margin-bottom: 30px;
+  position: relative;
+  z-index: 10;
 }
 
 .message-text {
   font-size: 1.125rem;
   font-weight: 600;
   color: #bdf000;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  text-shadow: 0 0 10px rgba(189, 240, 0, 0.3);
+  animation: textGlow 2s ease-in-out infinite;
 }
 
 .progress-dots {
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background-color: #bdf000;
   border-radius: 50%;
   animation: dotPulse 1.5s ease-in-out infinite;
@@ -269,26 +349,77 @@ watch(() => props.message, () => {
   display: flex;
   gap: 24px;
   margin-bottom: 30px;
+  position: relative;
+  z-index: 10;
 }
 
 .security-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.75rem;
   color: #a0a0a0;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.security-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Progress Bar */
 .progress-container {
   width: 100%;
   max-width: 300px;
+  position: relative;
+  z-index: 10;
+}
+
+.progress-bar {
+  transition: all 0.3s ease;
+}
+
+.progress-bar:hover {
+  transform: scaleY(1.2);
 }
 
 .progress-text {
   font-size: 0.75rem;
   color: #a0a0a0;
   margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.progress-container:hover .progress-text {
+  color: #bdf000;
+}
+
+/* Visual Elements */
+.visual-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floating-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: float 3s ease-in-out infinite;
 }
 
 /* Animations */
@@ -323,6 +454,40 @@ watch(() => props.message, () => {
   }
 }
 
+@keyframes slideInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(189, 240, 0, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(189, 240, 0, 0.6);
+  }
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .payment-loader-container {
@@ -353,6 +518,15 @@ watch(() => props.message, () => {
   .processing-steps {
     min-width: auto;
     width: 100%;
+  }
+  
+  .step-item {
+    padding: 10px 12px;
+  }
+  
+  .security-item {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

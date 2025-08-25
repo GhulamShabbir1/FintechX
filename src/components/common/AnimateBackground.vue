@@ -15,7 +15,7 @@ const particleCount = 20
 const mousePosition = ref({ x: 0, y: 0 })
 const isReducedMotion = ref(false)
 
-const particleStyle = (index) => {
+const particleStyle = () => {
   const size = Math.random() * 4 + 1
   const duration = Math.random() * 20 + 10
   const delay = Math.random() * 5

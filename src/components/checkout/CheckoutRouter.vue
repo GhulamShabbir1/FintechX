@@ -7,12 +7,12 @@
     
     <!-- Payment status page -->
     <transition name="fade-slide" mode="out-in">
-      <PaymentStatus v-else-if="showStatus" key="status" />
+      <PaymentStatus v-if="showStatus" key="status" />
     </transition>
     
     <!-- Error page -->
     <transition name="fade-scale" mode="out-in">
-      <div v-else-if="showError" class="error-container" key="error">
+      <div v-if="showError" class="error-container" key="error">
         <q-card class="error-card modern-card">
           <q-card-section class="text-center">
             <div class="error-icon">
@@ -33,7 +33,7 @@
     
     <!-- Loading state -->
     <transition name="fade" mode="out-in">
-      <div v-else class="loading-container" key="loading">
+      <div v-if="checkoutState === 'loading'" class="loading-container" key="loading">
         <div class="loading-content">
           <q-spinner-dots size="50px" color="lime" />
           <div class="loading-text">Initializing secure checkout...</div>

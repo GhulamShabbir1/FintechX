@@ -2,74 +2,87 @@
   <q-page class="q-pa-md flex flex-center payment-status-page">
     <q-card class="payment-status-card lime-glow">
       <q-card-section class="status-icon-section">
-        <q-icon
-          :name="statusIcon"
-          :color="statusColor"
-          size="80px"
-          class="status-icon"
-        />
+        <div class="icon-container">
+          <q-icon
+            :name="statusIcon"
+            :color="statusColor"
+            size="80px"
+            class="status-icon"
+          />
+          <div class="icon-ring" :class="statusColor"></div>
+          <div class="icon-particles" v-if="isSuccess">
+            <div class="particle" v-for="n in 12" :key="n" :style="getParticleStyle(n)"></div>
+          </div>
+        </div>
       </q-card-section>
 
       <q-card-section class="status-message-section">
-        <div class="text-h5 text-center" :class="`text-${statusColor}`">{{ statusTitle }}</div>
-        <div class="text-subtitle1 text-center text-grey-5 q-mt-sm">{{ statusMessage }}</div>
+        <div class="text-h5 text-center status-title" :class="`text-${statusColor}`">{{ statusTitle }}</div>
+        <div class="text-subtitle1 text-center text-grey-5 q-mt-sm status-message">{{ statusMessage }}</div>
       </q-card-section>
 
       <q-card-section v-if="isSuccess" class="payment-details-section">
-        <div class="detail-item">
-          <div class="detail-label">Transaction ID:</div>
-          <div class="detail-value">{{ transactionId || 'N/A' }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Amount Paid:</div>
-          <div class="detail-value text-lime">{{ currency }}{{ formatAmount(amount) }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Merchant:</div>
-          <div class="detail-value">{{ merchantName || 'N/A' }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Date:</div>
-          <div class="detail-value">{{ transactionDate }}</div>
+        <div class="detail-item" v-for="(detail, index) in successDetails" :key="detail.label" :style="{ animationDelay: `${index * 0.1}s` }">
+          <div class="detail-label">
+            <q-icon :name="detail.icon" size="sm" class="q-mr-sm" />
+            {{ detail.label }}:
+          </div>
+          <div class="detail-value" :class="detail.valueClass">{{ detail.value }}</div>
         </div>
       </q-card-section>
 
       <q-card-section v-else-if="isFailed" class="error-details-section">
-        <div class="detail-item">
-          <div class="detail-label">Error:</div>
-          <div class="detail-value text-red">{{ errorMessage || 'Unknown error' }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Please try again or contact support.</div>
+        <div class="detail-item" v-for="(detail, index) in errorDetails" :key="detail.label" :style="{ animationDelay: `${index * 0.1}s` }">
+          <div class="detail-label">
+            <q-icon :name="detail.icon" size="sm" class="q-mr-sm" />
+            {{ detail.label }}:
+          </div>
+          <div class="detail-value" :class="detail.valueClass">{{ detail.value }}</div>
         </div>
       </q-card-section>
 
-      <q-card-actions align="center" class="q-pa-md">
+      <q-card-actions align="center" class="q-pa-md action-buttons">
         <q-btn
           v-if="isSuccess"
           label="Back to Merchant"
           class="btn-gradient"
           @click="goToMerchant"
+          icon="store"
         />
         <q-btn
           v-else
           label="Try Again"
           class="btn-gradient"
           @click="tryAgain"
+          icon="refresh"
         />
         <q-btn
           flat
           label="Go to Home"
           class="q-ml-sm btn-outline-light"
           @click="goToHome"
+          icon="home"
         />
       </q-card-actions>
+
+      <!-- Security Badges -->
+      <q-card-section class="security-badges">
+        <div class="security-item" v-for="(badge, index) in securityBadges" :key="badge.text" :style="{ animationDelay: `${index * 0.2}s` }">
+          <q-icon :name="badge.icon" :color="badge.color" size="sm" />
+          <span>{{ badge.text }}</span>
+        </div>
+      </q-card-section>
     </q-card>
+
+    <!-- Confetti Celebration for Success -->
+    <div v-if="isSuccess" class="confetti-container">
+      <div class="confetti" v-for="n in 50" :key="n" :style="getConfettiStyle(n)"></div>
+    </div>
   </q-page>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../boot/axios'
 
@@ -112,6 +125,24 @@ const statusMessage = computed(() => {
   return 'We could not determine the status of your payment.'
 })
 
+const successDetails = computed(() => [
+  { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
+  { label: 'Amount Paid', value: `${currency.value}${formatAmount(amount.value)}`, icon: 'attach_money', valueClass: 'text-lime' },
+  { label: 'Merchant', value: merchantName.value || 'N/A', icon: 'store', valueClass: '' },
+  { label: 'Date', value: transactionDate.value, icon: 'event', valueClass: '' }
+])
+
+const errorDetails = computed(() => [
+  { label: 'Error', value: errorMessage.value || 'Unknown error', icon: 'error', valueClass: 'text-red' },
+  { label: 'Next Steps', value: 'Please try again or contact support.', icon: 'support_agent', valueClass: 'text-grey-5' }
+])
+
+const securityBadges = computed(() => [
+  { icon: 'security', color: 'green', text: 'SSL Encrypted' },
+  { icon: 'verified_user', color: 'blue', text: 'PCI Compliant' },
+  { icon: 'lock', color: 'lime', text: '256-bit Encryption' }
+])
+
 const formatAmount = (val) => {
   return (val / 100).toFixed(2)
 }
@@ -130,28 +161,80 @@ const fetchMerchantName = async () => {
 
 const goToMerchant = () => {
   if (route.query.returnUrl) {
-    window.location.href = route.query.returnUrl
+    // Smooth scroll to top before redirecting
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTimeout(() => {
+      window.location.href = route.query.returnUrl
+    }, 500)
   } else {
     router.push('/')
   }
 }
 
 const tryAgain = () => {
-  router.push({ 
-    name: 'checkout', 
-    query: { 
-      merchantId: merchantId.value, 
-      amount: amount.value,
-      returnUrl: route.query.returnUrl
-    } 
-  })
+  // Smooth scroll to top before navigating
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  setTimeout(() => {
+    router.push({ 
+      name: 'checkout', 
+      query: { 
+        merchantId: merchantId.value, 
+        amount: amount.value,
+        returnUrl: route.query.returnUrl
+      } 
+    })
+  }, 500)
 }
 
 const goToHome = () => {
-  router.push('/')
+  // Smooth scroll to top before navigating
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  setTimeout(() => {
+    router.push('/')
+  }, 500)
+}
+
+const getParticleStyle = (index) => {
+  const angle = (index / 12) * Math.PI * 2
+  const distance = 60
+  return {
+    transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`,
+    animationDelay: `${index * 0.1}s`
+  }
+}
+
+const getConfettiStyle = (index) => {
+  const colors = ['#bdf000', '#4caf50', '#2196f3', '#ff9800', '#e91e63']
+  const shapes = ['circle', 'rectangle', 'triangle']
+  return {
+    left: `${Math.random() * 100}%`,
+    animationDelay: `${Math.random() * 2}s`,
+    backgroundColor: colors[index % colors.length],
+    width: `${5 + Math.random() * 10}px`,
+    height: `${5 + Math.random() * 10}px`,
+    borderRadius: shapes[index % shapes.length] === 'circle' ? '50%' : '2px'
+  }
 }
 
 onMounted(() => {
+  // Add smooth scrolling to the page
+  document.documentElement.style.scrollBehavior = 'smooth'
+  
+  if (isSuccess.value) {
+    fetchMerchantName()
+  }
+  
+  // Scroll to top on page load
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+// Watch for route changes
+watch(() => route.query, (newQuery) => {
+  paymentStatus.value = newQuery.status || 'unknown'
+  amount.value = parseFloat(newQuery.amount) || 0
+  errorMessage.value = newQuery.error || 'Payment could not be completed.'
+  merchantId.value = newQuery.merchantId || null
+  
   if (isSuccess.value) {
     fetchMerchantName()
   }
@@ -161,6 +244,9 @@ onMounted(() => {
 <style scoped>
 .payment-status-page {
   background: linear-gradient(135deg, #09050d 0%, #121018 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
 .payment-status-card {
@@ -172,6 +258,11 @@ onMounted(() => {
   width: 100%;
   text-align: center;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10;
+  transform: translateY(20px);
+  opacity: 0;
+  animation: slideUpFadeIn 0.8s ease forwards;
 }
 
 .lime-glow {
@@ -185,13 +276,66 @@ onMounted(() => {
   padding-bottom: 0;
 }
 
+.icon-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
 .status-icon {
   animation: bounceIn 0.8s ease-out;
+  position: relative;
+  z-index: 2;
+}
+
+.icon-ring {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border: 2px solid;
+  border-radius: 50%;
+  opacity: 0;
+  animation: pulseRing 2s ease-out infinite;
+}
+
+.icon-ring.green { border-color: #4caf50; }
+.icon-ring.red { border-color: #f44336; }
+.icon-ring.grey { border-color: #9e9e9e; }
+
+.icon-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: #bdf000;
+  border-radius: 50%;
+  animation: particleFloat 1.5s ease-in-out infinite;
 }
 
 .status-message-section {
   padding-top: 10px;
   padding-bottom: 30px;
+}
+
+.status-title {
+  animation: fadeInUp 0.6s ease 0.3s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.status-message {
+  animation: fadeInUp 0.6s ease 0.4s forwards;
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 .payment-details-section, .error-details-section {
@@ -205,8 +349,12 @@ onMounted(() => {
 .detail-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  align-items: center;
+  padding: 12px 0;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: slideInRight 0.5s ease forwards;
 }
 
 .detail-item:last-child {
@@ -216,10 +364,17 @@ onMounted(() => {
 .detail-label {
   font-weight: 500;
   color: #bdf000;
+  display: flex;
+  align-items: center;
 }
 
 .detail-value {
   color: #ffffff;
+  font-weight: 500;
+}
+
+.action-buttons {
+  padding-top: 30px;
 }
 
 .btn-gradient {
@@ -233,7 +388,7 @@ onMounted(() => {
 }
 
 .btn-gradient:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(189, 240, 0, 0.4);
 }
 
@@ -242,9 +397,58 @@ onMounted(() => {
   color: #fff;
   border-radius: 8px;
   padding: 12px 24px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.security-badges {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.security-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #a0a0a0;
+  opacity: 0;
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  animation: confettiFall 5s linear forwards;
 }
 
 /* Animations */
+@keyframes slideUpFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes bounceIn {
   0% {
     transform: scale(0.3);
@@ -262,13 +466,56 @@ onMounted(() => {
   }
 }
 
-/* Hover effects */
-.btn-gradient, .btn-outline-light {
-  transition: all 0.3s ease;
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
-.btn-gradient:hover, .btn-outline-light:hover {
-  transform: translateY(-2px);
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 /* Responsive design */
@@ -280,8 +527,22 @@ onMounted(() => {
   
   .detail-item {
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     text-align: center;
+  }
+  
+  .security-badges {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-outline-light {
+    margin-left: 0 !important;
   }
 }
 </style>
