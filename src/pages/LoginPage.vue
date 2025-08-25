@@ -13,7 +13,7 @@
           <div class="text-h6 text-center text-lime">Merchant Login</div>
           <div class="text-subtitle2 text-center q-mb-md">Welcome back</div>
           <!-- Form -->
-          <q-form @submit.prevent="login" class="q-gutter-md">
+          <q-form @submit.prevent="submit" class="q-gutter-md">
             <q-input v-model="email" type="email" label="Email" filled dense required />
             <q-input v-model="password" type="password" label="Password" filled dense required />
             <q-btn type="submit" label="Login" class="btn-gradient full-width q-mt-sm" :loading="loading" />
@@ -25,48 +25,63 @@
           <div class="q-mt-xs text-center">
             <q-btn flat label="Back to Home" color="secondary" @click="goHome" />
           </div>
+
+          <!-- Error -->
+          <div v-if="error" class="q-mt-md text-negative text-center">
+            {{ error }}
+          </div>
         </div>
       </div>
     </q-card>
   </q-page>
 </template>
+
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Notify } from 'quasar'
-import api from '../boot/axios'
-import { useAuthStore } from '../store/auth'
-import { pinia } from '../store/pinia'
+import api from 'src/boot/axios'
+
 const router = useRouter()
-const auth = useAuthStore(pinia)
+
 const email = ref('')
 const password = ref('')
-const loading = ref(false)
 const illustration = ref('https://source.unsplash.com/800x600/?fintech,3d,payments')
-const onImgError = (e) => { e.target.src = 'https://placehold.co/800x600/121018/bdf000?text=FinteckX' }
-const login = async () => {
+
+const loading = ref(false)
+const error = ref(null)
+
+const onImgError = (e) => {
+  e.target.src = 'https://placehold.co/800x600/121018/bdf000?text=FinteckX'
+}
+
+const submit = async () => {
+  error.value = null
+  loading.value = true
   try {
-    loading.value = true
-    const { data } = await api.post('/merchants/login', { email: email.value, password: password.value })
-    if (!data?.token) {
-      Notify.create({ type: 'negative', message: 'Invalid credentials' })
-      return
-    }
-    auth.setToken(data.token)
-    auth.setUser(data.user || null)
-    const role = (data.user?.role || data.role || '').toString().toLowerCase()
+    const res = await api.post('/api/users/login', {
+      email: email.value,
+      password: password.value
+    })
+
+    const user = res.data?.user || {}
+    const role = (user.role || '').toString().toLowerCase()
     const target = role === 'admin' ? '/admin-dashboard' : '/dashboard'
+
     Notify.create({ type: 'positive', message: 'Welcome back!' })
     router.push(target)
   } catch (e) {
-    console.error('Login error:', e)
-    Notify.create({ type: 'negative', message: 'Login failed. Please try again.' })
+    console.error('Login error:', e.response?.data || e.message)
+    error.value = e.response?.data?.message || 'Login failed. Please try again.'
+    Notify.create({ type: 'negative', message: error.value })
   } finally {
     loading.value = false
   }
 }
+
 const goHome = () => router.push('/')
 </script>
+
 <style scoped>
 .text-lime {
   color: #BDF000;
@@ -110,7 +125,6 @@ const goHome = () => router.push('/')
 .login-illustration {
   border-radius: 12px;
 }
-/* Make inputs readable on dark */
 .form-pane :deep(.q-field__control) {
   background: rgba(255, 255, 255, 0.06);
 }

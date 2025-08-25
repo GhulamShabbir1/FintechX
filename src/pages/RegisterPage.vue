@@ -8,7 +8,8 @@
         <div class="col-12 col-md-7 q-pa-md">
           <div class="text-h6 text-center text-lime">Merchant Onboarding</div>
           <div class="text-subtitle2 text-center q-mb-lg">Create your account and complete verification</div>
-          <OnBoardWizard />
+          <!-- 🔹 This component will call register() -->
+          <OnBoardWizard @register="handleRegister" />
           <div class="q-mt-md text-center">
             <q-btn flat label="Already have an account? Login" @click="$router.push('/login')" />
           </div>
@@ -17,11 +18,29 @@
     </q-card>
   </q-page>
 </template>
+
 <script setup>
+import { Notify } from 'quasar'
+import { useRouter } from 'vue-router'
+import api from 'src/boot/axios'
 import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
+
+const router = useRouter()
 const illustration = 'https://source.unsplash.com/900x700/?fintech,3d,banking'
 const onImgError = (e) => { e.target.src = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
+
+const handleRegister = async (formData) => {
+  try {
+    await api.post('/api/users/register', formData)
+    Notify.create({ type: 'positive', message: 'Registration successful!' })
+    router.push('/login')
+  } catch (e) {
+    console.error('Register error:', e.response?.data || e.message)
+    Notify.create({ type: 'negative', message: e.response?.data?.message || 'Registration failed. Please try again.' })
+  }
+}
 </script>
+
 <style scoped>
 .text-lime {
   color: #BDF000;
