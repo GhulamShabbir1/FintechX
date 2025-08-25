@@ -1,35 +1,49 @@
-# ESLint Error Fixes - COMPLETED ✅
+# Authentication API Integration - Progress Tracking
 
-## Files Successfully Fixed:
+## ✅ Completed Tasks
 
-### 1. AdminOverview.vue
-- ✅ Added missing router import for `$router.push()`
-- ✅ Removed unused `useRouter` import
-- ✅ Fixed `$router` not defined error
+### 1. Login Page Integration
+- [x] Updated LoginPage.vue to use auth store login action
+- [x] Removed direct API calls to `/merchants/login`
+- [x] Added proper error handling using axios interceptor
+- [x] Fixed Notify import and usage
 
-### 2. MerchantManagement.vue
-- ✅ Removed unused `nextTick` import
-- ✅ Fixed unused `merchant` parameter
+### 2. Auth Store Updates
+- [x] Fixed token storage key inconsistency (changed from 'token' to 'auth_token')
+- [x] Corrected API endpoints (removed duplicate '/api' prefix)
+- [x] Ensured consistent token management across the application
 
-### 3. CheckoutRouter.vue
-- ✅ Fixed Vue template directive validation errors
-- ✅ Replaced `v-else-if` and `v-else` with `v-if` directives
+### 3. Registration Integration
+- [x] Updated OnBoardWizard.vue to use auth store register action
+- [x] Removed direct API calls to `/auth/register`
+- [x] Added proper error handling using axios interceptor
+- [x] Maintained merchant registration functionality through merchant store
 
-### 4. AnimateBackground.vue
-- ✅ Removed unused `index` parameter
+## 🔧 Technical Details
 
-### 5. HistogramChart.vue
-- ✅ Removed unused `animation` parameter
+### API Endpoints Now Used:
+- **Login**: `/users/login` (via auth store)
+- **Registration**: `/users/register` (via auth store)
+- **Merchant Registration**: `/merchants/register` (via merchant store)
 
-### 6. HorizontalBarChart.vue
-- ✅ Removed unused `animation` parameter
+### Token Management:
+- All components now use consistent token key: `auth_token`
+- Axios interceptor automatically adds Bearer token to requests
+- Router navigation guard checks for `auth_token`
 
-## Summary:
-All 11 ESLint errors have been successfully resolved. The application now passes ESLint validation without any errors. The changes were minimal and focused on:
+### Error Handling:
+- All API errors are handled by the axios interceptor
+- Consistent error notifications throughout the application
+- Proper error logging for debugging
 
-- Removing unused imports and variables
-- Fixing Vue template directive validation
-- Maintaining all existing functionality
+## 🚀 Next Steps (If Needed)
 
-## Verification:
-ESLint check executed successfully with no errors reported.
+1. **Testing**: Test login and registration flows to ensure they work correctly
+2. **API Compatibility**: Verify that the backend endpoints match the expected structure
+3. **Environment Configuration**: Ensure VITE_API_BASE_URL is properly set for different environments
+
+## 📝 Notes
+
+- The base URL is configured in `src/boot/axios.js` with fallback to ngrok URL
+- All authentication state is managed through Pinia stores
+- Error notifications are handled consistently through the axios interceptor
