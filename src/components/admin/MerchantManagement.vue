@@ -633,7 +633,7 @@ const viewMerchant = (merchant) => {
   showDetailDialog.value = true
 }
 
-const editMerchant = (merchant) => {
+const editMerchant = () => {
   // Implement edit logic
   $q.notify({
     message: 'Edit functionality coming soon',

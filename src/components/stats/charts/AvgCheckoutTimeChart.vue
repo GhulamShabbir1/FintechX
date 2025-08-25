@@ -359,8 +359,8 @@ onBeforeUnmount(() => {
 
 .chart-wrapper {
   position: relative;
-  height: v-bind(typeof props.height === 'number' ? props.height + 'px' : props.height);
-  width: v-bind(typeof props.width === 'number' ? props.width + 'px' : props.width);
+  height: 300px;
+  width: 100%;
   transition: all 0.3s ease;
 }
 

@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
 
 .chart-wrapper {
   position: relative;
-  height: v-bind(typeof props.height === 'number' ? props.height + 'px' : props.height);
+  height: 300px;
   width: 100%;
   margin: 10px 0;
   transition: all 0.3s ease;

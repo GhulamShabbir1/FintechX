@@ -185,6 +185,8 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useQuasar } from 'quasar'
 import { Chart, registerables } from 'chart.js'
 import api from '../../boot/axios'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 Chart.register(...registerables)
 
@@ -446,7 +448,7 @@ const navigateWithAnimation = (route) => {
     })
     
     setTimeout(() => {
-      $router.push(route)
+      router.push(route)
       $q.loading.hide()
     }, 500)
   }, 300)
