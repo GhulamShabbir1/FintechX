@@ -29,7 +29,12 @@ export const useAuthStore = defineStore('auth', {
       if (token) this.token = token
       const userStr = localStorage.getItem('user')
       if (userStr) {
-        try { this.user = JSON.parse(userStr) } catch {}
+        try { this.user = JSON.parse(userStr) }
+        catch {
+          this.user = null
+          localStorage.removeItem('user')
+          localStorage.removeItem('role')
+        }
       }
     },
     async register(payload) {

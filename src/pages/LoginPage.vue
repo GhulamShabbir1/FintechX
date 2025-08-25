@@ -2,62 +2,55 @@
   <q-page class="q-pa-md flex flex-center fintech-bg">
     <q-card class="login-card glass-surface elevate-on-hover">
       <div class="row items-stretch full-height">
-        <!-- Left Pane - Illustration -->
         <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
           <div class="illustration-container">
-            <q-img :src="illustration" alt="Fintech Illustration" fit="contain" ratio="1" 
-                   class="floating hero-illustration" @error="onImgError" />
+            <q-img :src="illustration" alt="Fintech Illustration" fit="contain" ratio="1"
+              class="floating hero-illustration" @error="onImgError" />
             <div class="text-content text-center">
               <div class="text-h4 text-bold text-white">Welcome to FinteckX</div>
               <div class="text-subtitle1 q-mt-md text-soft">The future of financial management starts here</div>
             </div>
           </div>
         </div>
-        
-        <!-- Right Pane - Login Form -->
+
         <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
           <div class="form-container">
             <div class="text-center q-mb-xl">
               <div class="text-h4 text-bold text-lime heading-animate">Welcome Back</div>
               <div class="text-subtitle1 q-mt-sm text-soft">Sign in to continue to your account</div>
             </div>
-            
+
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
-              <q-form @submit.prevent="login" class="q-gutter-md">
-                <q-input v-model="email" type="email" label="Email" filled dense required 
-                         class="custom-input" label-color="grey-4" color="lime-7">
-                  <template v-slot:prepend>
-                    <q-icon name="mail" color="grey-4" />
-                  </template>
+              <q-form @submit.prevent="onSubmit" class="q-gutter-md">
+                <q-input v-model="email" type="email" label="Email" filled dense required class="custom-input"
+                  label-color="grey-4" color="lime-7">
+                  <template v-slot:prepend><q-icon name="mail" color="grey-4" /></template>
                 </q-input>
-                
-                <q-input v-model="password" type="password" label="Password" filled dense required 
-                         class="custom-input" label-color="grey-4" color="lime-7">
-                  <template v-slot:prepend>
-                    <q-icon name="lock" color="grey-4" />
-                  </template>
+
+                <q-input v-model="password" type="password" label="Password" filled dense required class="custom-input"
+                  label-color="grey-4" color="lime-7">
+                  <template v-slot:prepend><q-icon name="lock" color="grey-4" /></template>
                 </q-input>
-                
+
                 <div class="row items-center justify-end q-mb-md">
                   <q-btn flat label="Forgot Password?" class="text-lime text-caption" />
                 </div>
-                
-                <q-btn type="submit" class="btn-lime full-width q-mt-sm" label="Sign In" :loading="loading"
-                       size="lg" no-caps />
+
+                <q-btn type="submit" class="btn-lime full-width q-mt-sm" label="Sign In" :loading="loading" size="lg"
+                  no-caps />
               </q-form>
             </div>
-            
+
             <div class="q-mt-xl text-center">
               <div class="text-caption text-grey-5 q-mb-sm">Don't have an account?</div>
-              <q-btn outline class="btn-lime-outline" label="Create account" 
-                     @click="$router.push('/register')" no-caps />
+              <q-btn outline class="btn-lime-outline" label="Create account" @click="$router.push('/register')"
+                no-caps />
             </div>
           </div>
         </div>
       </div>
     </q-card>
-    
-    <!-- Animated Background Elements -->
+
     <div class="bg-elements">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
@@ -69,14 +62,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
-import api from '../boot/axios'
 import { useAuthStore } from '../store/auth'
 import { pinia } from '../store/pinia'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore(pinia)
 
 const email = ref('')
@@ -86,30 +79,25 @@ const loading = ref(false)
 const illustration = ref('https://source.unsplash.com/900x700/?fintech,3d,payments')
 const onImgError = () => { illustration.value = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
 
-const login = async () => {
-    try {
-        loading.value = true
-        const { data } = await api.post('/merchants/login', { email: email.value, password: password.value })
-        if (data?.token) {
-            auth.setToken(data.token)
-            auth.setUser(data.user || null)
-            const role = (data.user?.role || data.role || '').toString().toLowerCase()
-            const target = role === 'admin' ? '/admin-dashboard' : '/dashboard'
-            Notify.create({ type: 'positive', message: 'Welcome back!' })
-            router.push(target)
-        }
-    } finally {
-        loading.value = false
-    }
+const onSubmit = async () => {
+  try {
+    loading.value = true
+    const { user } = await auth.login({ email: email.value, password: password.value })
+    const role = String(user?.role || '').toLowerCase()
+    const redirect = route.query.redirect
+    const fallback = role === 'admin' ? { name: 'admin-dashboard' } : { name: 'dashboard' }
+    Notify.create({ type: 'positive', message: 'Welcome back!' })
+    router.push(redirect || fallback)
+  } catch (e) {
+    Notify.create({ type: 'negative', message: e?.message || 'Login failed' })
+  } finally {
+    loading.value = false
+  }
 }
-
-// Initialize animations after component mounts
-onMounted(() => {
-  // Any additional animation initialization can go here
-})
 </script>
 
 <style scoped>
+/* keep your existing styles (truncated for brevity) */
 .fintech-bg {
   background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   min-height: 100vh;
@@ -118,24 +106,47 @@ onMounted(() => {
 }
 
 .login-card {
-  width: 980px; 
+  width: 980px;
   max-width: 95%;
   border-radius: 24px;
   background: rgba(10, 10, 10, 0.85);
   border: 1px solid rgba(189, 240, 0, 0.14);
   backdrop-filter: blur(12px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 
-              0 0 0 1px rgba(189, 240, 0, 0.24), 
-              0 0 40px rgba(189, 240, 0, 0.22);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(189, 240, 0, 0.24), 0 0 40px rgba(189, 240, 0, 0.22);
+  transition: all 0.4s ease;
+  overflow: hidden;
+}
+
+.full-height {
+  height: 600px;
+}
+
+.fintech-bg {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card {
+  width: 980px;
+  max-width: 95%;
+  border-radius: 24px;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(189, 240, 0, 0.14);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(189, 240, 0, 0.24),
+    0 0 40px rgba(189, 240, 0, 0.22);
   transition: all 0.4s ease;
   overflow: hidden;
 }
 
 .login-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 
-              0 0 0 1px rgba(189, 240, 0, 0.28), 
-              0 0 48px rgba(189, 240, 0, 0.28);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(189, 240, 0, 0.28),
+    0 0 48px rgba(189, 240, 0, 0.28);
 }
 
 .full-height {
@@ -269,6 +280,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(12px) scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -280,6 +292,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -291,9 +304,12 @@ onMounted(() => {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
+
   50% {
     transform: translateY(-16px) rotate(2deg);
   }
@@ -303,6 +319,7 @@ onMounted(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -324,7 +341,8 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.circle, .square {
+.circle,
+.square {
   position: absolute;
   border: 1px solid rgba(189, 240, 0, 0.1);
   border-radius: 50%;
@@ -383,15 +401,19 @@ onMounted(() => {
   0% {
     transform: translateY(0) rotate(0deg);
   }
+
   25% {
     transform: translateY(-20px) rotate(90deg);
   }
+
   50% {
     transform: translateY(0) rotate(180deg);
   }
+
   75% {
     transform: translateY(20px) rotate(270deg);
   }
+
   100% {
     transform: translateY(0) rotate(360deg);
   }
@@ -402,20 +424,20 @@ onMounted(() => {
   .full-height {
     height: auto;
   }
-  
+
   .left-pane {
     padding: 40px 24px;
     height: 300px;
   }
-  
+
   .right-pane {
     padding: 40px 24px;
   }
-  
+
   .text-content {
     margin-top: 24px;
   }
-  
+
   .text-content .text-h4 {
     font-size: 1.5rem;
   }
