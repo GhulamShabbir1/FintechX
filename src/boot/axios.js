@@ -3,7 +3,7 @@ import axios from 'axios'
 
 // Create axios instance with ONLY the base domain
 const api = axios.create({
-  baseURL: 'https://56d461267821.ngrok-free.app',
+  baseURL: ' http://192.168.12.72:8000/',
   headers: {
     'Content-Type': 'application/json',
   },

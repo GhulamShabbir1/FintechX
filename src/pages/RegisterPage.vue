@@ -5,8 +5,7 @@
         <!-- Left Pane - Illustration -->
         <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
           <div class="illustration-container">
-            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1" 
-                   class="floating hero-illustration" @error="onImgError" />
+            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1" class="floating hero-illustration" @error="onImgError" />
             <div class="text-content text-center">
               <div class="text-h4 text-bold text-white">Join FinteckX</div>
               <div class="text-subtitle1 q-mt-md text-soft">Start your journey to financial innovation</div>
@@ -28,15 +27,6 @@
           </div>
         </div>
 
-        <div class="col-12 col-md-7 q-pa-md">
-          <div class="text-h6 text-center text-lime">Merchant Onboarding</div>
-          <div class="text-subtitle2 text-center q-mb-lg">Create your account and complete verification</div>
-          <!-- 🔹 This component will call register() -->
-          <OnBoardWizard @register="handleRegister" />
-          <div class="q-mt-md text-center">
-            <q-btn flat label="Already have an account? Login" @click="$router.push('/login')" />
-
-        
         <!-- Right Pane - Onboarding Form -->
         <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
           <div class="form-container">
@@ -46,15 +36,13 @@
             </div>
             
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
-              <OnBoardWizard />
+              <OnBoardWizard @register="handleRegister" />
             </div>
             
             <div class="q-mt-xl text-center">
               <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
-              <q-btn outline class="btn-lime-outline" label="Login to your account" 
-                     @click="$router.push('/login')" no-caps />
+              <q-btn outline class="btn-lime-outline" label="Login to your account" @click="$router.push('/login')" no-caps />
             </div>
-
           </div>
         </div>
       </div>
@@ -72,27 +60,13 @@
 </template>
 
 <script setup>
-
+import { ref } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import api from 'src/boot/axios'
 import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
 
 const router = useRouter()
-const illustration = 'https://source.unsplash.com/900x700/?fintech,3d,banking'
-const onImgError = (e) => { e.target.src = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
-
-const handleRegister = async (formData) => {
-  try {
-    await api.post('/api/users/register', formData)
-    Notify.create({ type: 'positive', message: 'Registration successful!' })
-    router.push('/login')
-  } catch (e) {
-    console.error('Register error:', e.response?.data || e.message)
-    Notify.create({ type: 'negative', message: e.response?.data?.message || 'Registration failed. Please try again.' })
-
-import { ref } from 'vue'
-import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
 
 // Using a more reliable image source with fallbacks
 const illustrationSources = [
@@ -108,7 +82,17 @@ const onImgError = () => {
   imgErrorCount++
   if (imgErrorCount < illustrationSources.length) {
     illustration.value = illustrationSources[imgErrorCount]
+  }
+}
 
+const handleRegister = async (formData) => {
+  try {
+    await api.post('/api/users/register', formData)
+    Notify.create({ type: 'positive', message: 'Registration successful!' })
+    router.push('/login')
+  } catch (e) {
+    console.error('Register error:', e.response?.data || e.message)
+    Notify.create({ type: 'negative', message: e.response?.data?.message || 'Registration failed. Please try again.' })
   }
 }
 </script>
