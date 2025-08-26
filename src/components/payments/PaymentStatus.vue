@@ -41,6 +41,14 @@
         </div>
       </q-card-section>
 
+      <q-card-section v-else-if="isPending" class="pending-details-section">
+        <div class="text-center">
+          <q-spinner-dots color="orange" size="40px" class="q-mb-md" />
+          <div class="text-body1">Processing your payment...</div>
+          <div class="text-caption text-grey-5">This may take a few moments</div>
+        </div>
+      </q-card-section>
+
       <q-card-actions align="center" class="q-pa-md action-buttons">
         <q-btn
           v-if="isSuccess"
@@ -50,11 +58,19 @@
           icon="store"
         />
         <q-btn
-          v-else
+          v-else-if="isFailed"
           label="Try Again"
           class="btn-gradient"
           @click="tryAgain"
           icon="refresh"
+        />
+        <q-btn
+          v-else-if="isPending"
+          label="Check Status"
+          class="btn-gradient"
+          @click="checkStatus"
+          icon="refresh"
+          :loading="checking"
         />
         <q-btn
           flat
@@ -82,28 +98,113 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import api from '../../boot/axios'
+
+// Props
+const props = defineProps({
+  paymentId: {
+    type: String,
+    default: null
+  }
+})
 
 const route = useRoute()
 const router = useRouter()
 
-const paymentStatus = ref(route.query.status || 'unknown')
-const transactionId = ref(route.params.id === 'failed' ? null : route.params.id)
-const amount = ref(parseFloat(route.query.amount) || 0)
-const errorMessage = ref(route.query.error || 'Payment could not be completed.')
-const merchantId = ref(route.query.merchantId || null)
-const merchantName = ref(route.query.merchantName || '')
-const transactionDate = ref(new Date().toLocaleDateString())
+// Reactive data
+const checking = ref(false)
+const paymentData = ref(null)
+const loading = ref(false)
+
+// Get payment status from multiple sources
+const paymentStatus = computed(() => {
+  if (paymentData.value?.status) {
+    return paymentData.value.status
+  }
+  return route.query.status || 'pending'
+})
+
+const transactionId = computed(() => {
+  if (paymentData.value?.transaction_id) {
+    return paymentData.value.transaction_id
+  }
+  if (props.paymentId && props.paymentId !== 'failed') {
+    return props.paymentId
+  }
+  return route.query.transaction_id || 'N/A'
+})
+
+const amount = computed(() => {
+  if (paymentData.value?.amount) {
+    return paymentData.value.amount
+  }
+  return parseFloat(route.query.amount) || 0
+})
+
+const errorMessage = computed(() => {
+  if (paymentData.value?.error_message) {
+    return paymentData.value.error_message
+  }
+  return route.query.error || 'Payment could not be completed.'
+})
+
+const merchantId = computed(() => {
+  if (paymentData.value?.merchant_id) {
+    return paymentData.value.merchant_id
+  }
+  return route.query.merchantId || route.query.merchant_id || null
+})
+
+const merchantName = computed(() => {
+  if (paymentData.value?.merchant_name) {
+    return paymentData.value.merchant_name
+  }
+  return route.query.merchantName || route.query.merchant_name || 'Unknown Merchant'
+})
+
+const transactionDate = computed(() => {
+  if (paymentData.value?.created_at) {
+    return new Date(paymentData.value.created_at).toLocaleDateString()
+  }
+  return new Date().toLocaleDateString()
+})
+
 const currency = ref('$')
 
-const isSuccess = computed(() => paymentStatus.value === 'success')
-const isFailed = computed(() => paymentStatus.value === 'failed')
+// Status computed properties
+const isSuccess = computed(() => paymentStatus.value === 'success' || paymentStatus.value === 'completed')
+const isFailed = computed(() => paymentStatus.value === 'failed' || paymentStatus.value === 'error')
+const isPending = computed(() => paymentStatus.value === 'pending' || paymentStatus.value === 'processing')
 
-const statusIcon = computed(() => isSuccess.value ? 'check_circle' : (isFailed.value ? 'cancel' : 'help_outline'))
-const statusColor = computed(() => isSuccess.value ? 'green' : (isFailed.value ? 'red' : 'grey'))
+const statusIcon = computed(() => {
+  if (isSuccess.value) return 'check_circle'
+  if (isFailed.value) return 'cancel'
+  if (isPending.value) return 'schedule'
+  return 'help_outline'
+})
 
-const statusTitle = computed(() => isSuccess.value ? 'Payment Successful!' : (isFailed.value ? 'Payment Failed' : 'Payment Status Unknown'))
-const statusMessage = computed(() => isSuccess.value ? 'Your transaction has been completed.' : (isFailed.value ? 'There was an issue processing your payment.' : 'We could not determine the status of your payment.'))
+const statusColor = computed(() => {
+  if (isSuccess.value) return 'green'
+  if (isFailed.value) return 'red'
+  if (isPending.value) return 'orange'
+  return 'grey'
+})
+
+const statusTitle = computed(() => {
+  if (isSuccess.value) return 'Payment Successful!'
+  if (isFailed.value) return 'Payment Failed'
+  if (isPending.value) return 'Payment Processing'
+  return 'Payment Status Unknown'
+})
+
+const statusMessage = computed(() => {
+  if (isSuccess.value) return 'Your transaction has been completed successfully.'
+  if (isFailed.value) return 'There was an issue processing your payment.'
+  if (isPending.value) return 'Your payment is being processed. Please wait...'
+  return 'We could not determine the status of your payment.'
+})
+
 
 const successDetails = computed(() => [
   { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
@@ -114,7 +215,8 @@ const successDetails = computed(() => [
 
 const errorDetails = computed(() => [
   { label: 'Error', value: errorMessage.value || 'Unknown error', icon: 'error', valueClass: 'text-red' },
-  { label: 'Next Steps', value: 'Please try again or contact support.', icon: 'support_agent', valueClass: 'text-grey-5' }
+  { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
+  { label: 'Next Steps', value: 'Please try again or contact support if the problem persists.', icon: 'support_agent', valueClass: 'text-grey-5' }
 ])
 
 const securityBadges = computed(() => [
@@ -123,23 +225,91 @@ const securityBadges = computed(() => [
   { icon: 'lock', color: 'lime', text: '256-bit Encryption' }
 ])
 
-const formatAmount = (val) => (val / 100).toFixed(2)
 
-const fetchMerchantName = async () => {
-  if (merchantId.value && !merchantName.value) {
-    try {
-      const response = await api.get(`/api/merchants/${merchantId.value}`)
-      merchantName.value = response.data.business_name || 'Unknown Merchant'
-    } catch {
-      merchantName.value = 'Unknown Merchant'
+// Methods
+const formatAmount = (val) => {
+  if (!val) return '0.00'
+  return (val / 100).toFixed(2)
+}
+
+const fetchPaymentDetails = async () => {
+  if (!props.paymentId || props.paymentId === 'failed') {
+    return
+  }
+
+  try {
+    loading.value = true
+    const response = await api.get(`/api/payments/status/${props.paymentId}`)
+    paymentData.value = response.data
+    
+    // Update currency if provided
+    if (response.data.currency) {
+      currency.value = getCurrencySymbol(response.data.currency)
+
     }
+  } catch (error) {
+    console.error('Failed to fetch payment details:', error)
+    // Don't show error notification as we have fallback data from query params
+  } finally {
+    loading.value = false
+  }
+}
+
+const getCurrencySymbol = (currencyCode) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CAD: 'C$',
+    AUD: 'A$'
+  }
+  return symbols[currencyCode] || '$'
+}
+
+const checkStatus = async () => {
+  if (!props.paymentId || props.paymentId === 'failed') {
+    return
+  }
+
+  try {
+    checking.value = true
+    await fetchPaymentDetails()
+    
+    if (paymentData.value?.status === 'completed' || paymentData.value?.status === 'success') {
+      Notify.create({
+        type: 'positive',
+        message: 'Payment completed successfully!',
+        position: 'top'
+      })
+    } else if (paymentData.value?.status === 'failed' || paymentData.value?.status === 'error') {
+      Notify.create({
+        type: 'negative',
+        message: 'Payment failed. Please try again.',
+        position: 'top'
+      })
+    }
+  } catch (error) {
+    console.error('Failed to check payment status:', error)
+    Notify.create({
+      type: 'negative',
+      message: 'Unable to check payment status. Please try again.',
+      position: 'top'
+    })
+  } finally {
+    checking.value = false
   }
 }
 
 const goToMerchant = () => {
-  if (route.query.returnUrl) {
+
+  const returnUrl = route.query.returnUrl || route.query.return_url
+  if (returnUrl) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    setTimeout(() => { window.location.href = route.query.returnUrl }, 500)
+    setTimeout(() => { 
+      window.location.href = returnUrl 
+    }, 500)
+
   } else {
     router.push('/')
   }
@@ -148,19 +318,43 @@ const goToMerchant = () => {
 const tryAgain = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
   setTimeout(() => {
-    router.push({ name: 'checkout', query: { merchantId: merchantId.value, amount: amount.value, returnUrl: route.query.returnUrl } })
+
+    const checkoutParams = {
+      merchantId: merchantId.value,
+      amount: amount.value
+    }
+    
+    const returnUrl = route.query.returnUrl || route.query.return_url
+    if (returnUrl) {
+      checkoutParams.returnUrl = returnUrl
+    }
+    
+    router.push({ 
+      name: 'checkout', 
+      query: checkoutParams
+    })
+
   }, 500)
 }
 
 const goToHome = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
-  setTimeout(() => { router.push('/') }, 500)
+
+  setTimeout(() => { 
+    router.push('/') 
+  }, 500)
+
 }
 
 const getParticleStyle = (index) => {
   const angle = (index / 12) * Math.PI * 2
   const distance = 60
-  return { transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`, animationDelay: `${index * 0.1}s` }
+
+  return { 
+    transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`, 
+    animationDelay: `${index * 0.1}s` 
+  }
+
 }
 const getConfettiStyle = (index) => {
   const colors = ['#bdf000', '#4caf50', '#2196f3', '#ff9800', '#e91e63']
@@ -175,21 +369,39 @@ const getConfettiStyle = (index) => {
   }
 }
 
+// Watchers
+watch(() => props.paymentId, (newId) => {
+  if (newId && newId !== 'failed') {
+    fetchPaymentDetails()
+  }
+}, { immediate: true })
+
+// Lifecycle
 onMounted(() => {
   document.documentElement.style.scrollBehavior = 'smooth'
-  if (isSuccess.value) fetchMerchantName()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-})
 
-watch(() => route.query, (newQuery) => {
-  paymentStatus.value = newQuery.status || 'unknown'
-  amount.value = parseFloat(newQuery.amount) || 0
-  errorMessage.value = newQuery.error || 'Payment could not be completed.'
-  merchantId.value = newQuery.merchantId || null
-  if (isSuccess.value) fetchMerchantName()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  
+  // Auto-refresh for pending payments
+  if (isPending.value && props.paymentId && props.paymentId !== 'failed') {
+    const interval = setInterval(() => {
+      if (!isPending.value) {
+        clearInterval(interval)
+        return
+      }
+      fetchPaymentDetails()
+    }, 5000) // Check every 5 seconds
+    
+    // Clear interval after 5 minutes
+    setTimeout(() => {
+      clearInterval(interval)
+    }, 300000)
+  }
+
 })
 </script>
 
+// ... existing styles remain the same ...
 <style scoped>
 .payment-status-page {
   background: linear-gradient(135deg, #09050d 0%, #121018 100%);
@@ -251,6 +463,7 @@ watch(() => route.query, (newQuery) => {
 
 .icon-ring.green { border-color: #4caf50; }
 .icon-ring.red { border-color: #f44336; }
+.icon-ring.orange { border-color: #ff9800; }
 .icon-ring.grey { border-color: #9e9e9e; }
 
 .icon-particles {
@@ -287,7 +500,9 @@ watch(() => route.query, (newQuery) => {
   transform: translateY(20px);
 }
 
-.payment-details-section, .error-details-section {
+.payment-details-section, 
+.error-details-section,
+.pending-details-section {
   background: rgba(189, 240, 0, 0.05);
   border-radius: 12px;
   padding: 20px;
@@ -466,6 +681,13 @@ watch(() => route.query, (newQuery) => {
     opacity: 0;
   }
 }
+
+/* Color classes */
+.text-lime { color: #bdf000; }
+.text-red { color: #f44336; }
+.text-green { color: #4caf50; }
+.text-orange { color: #ff9800; }
+.text-grey-5 { color: #aaa; }
 
 /* Responsive design */
 @media (max-width: 768px) {
