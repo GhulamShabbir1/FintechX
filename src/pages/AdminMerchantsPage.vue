@@ -1,29 +1,34 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <!-- Merchant Header -->
-    <MerchantHeader />
+
+   
+=======
+    <!-- Admin Header -->
+    <AdminHeader />
     
     <!-- Page Content -->
+
     <q-page-container>
       <q-page class="merchant-dashboard-page">
-        <!-- Breadcrumb -->
         <div class="breadcrumb-section q-pa-md">
           <q-breadcrumbs class="text-grey-6">
-            <q-breadcrumbs-el icon="dashboard" label="Dashboard" />
-            <q-breadcrumbs-el icon="home" label="Overview" />
+            <q-breadcrumbs-el icon="admin_panel_settings" label="Admin" />
+            <q-breadcrumbs-el icon="store" label="Merchants" />
           </q-breadcrumbs>
         </div>
 
-        <!-- Main Dashboard Content -->
-        <MerchantDashboard />
+
+        <!-- Main Merchant Management Content -->
+
+        <MerchantManagement />
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup>
-import MerchantHeader from '../components/navigation/MerchantHeader.vue'
-import MerchantDashboard from '../components/merchants/MerchantDashboard.vue'
+import AdminHeader from '../components/navigation/AdminHeader.vue'
+import MerchantManagement from '../components/admin/MerchantManagement.vue'
 </script>
 
 <style scoped>

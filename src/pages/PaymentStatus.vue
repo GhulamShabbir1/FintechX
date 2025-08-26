@@ -1,7 +1,9 @@
 <template>
+
   <q-page class="q-pa-md flex flex-center payment-status-page">
     <PaymentStatusComponent :payment-id="paymentId" />
   </q-page>
+
 </template>
 
 <script setup>
@@ -34,8 +36,10 @@ const paymentId = computed(() => {
 </script>
 
 <style scoped>
+
 .payment-status-page {
   background: linear-gradient(135deg, #09050d 0%, #121018 100%);
   min-height: 100vh;
 }
+
 </style>

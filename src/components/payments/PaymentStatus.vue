@@ -205,6 +205,7 @@ const statusMessage = computed(() => {
   return 'We could not determine the status of your payment.'
 })
 
+
 const successDetails = computed(() => [
   { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
   { label: 'Amount Paid', value: `${currency.value}${formatAmount(amount.value)}`, icon: 'attach_money', valueClass: 'text-lime' },
@@ -223,6 +224,7 @@ const securityBadges = computed(() => [
   { icon: 'verified_user', color: 'blue', text: 'PCI Compliant' },
   { icon: 'lock', color: 'lime', text: '256-bit Encryption' }
 ])
+
 
 // Methods
 const formatAmount = (val) => {
@@ -243,6 +245,7 @@ const fetchPaymentDetails = async () => {
     // Update currency if provided
     if (response.data.currency) {
       currency.value = getCurrencySymbol(response.data.currency)
+
     }
   } catch (error) {
     console.error('Failed to fetch payment details:', error)
@@ -299,12 +302,14 @@ const checkStatus = async () => {
 }
 
 const goToMerchant = () => {
+
   const returnUrl = route.query.returnUrl || route.query.return_url
   if (returnUrl) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setTimeout(() => { 
       window.location.href = returnUrl 
     }, 500)
+
   } else {
     router.push('/')
   }
@@ -313,6 +318,7 @@ const goToMerchant = () => {
 const tryAgain = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
   setTimeout(() => {
+
     const checkoutParams = {
       merchantId: merchantId.value,
       amount: amount.value
@@ -327,25 +333,29 @@ const tryAgain = () => {
       name: 'checkout', 
       query: checkoutParams
     })
+
   }, 500)
 }
 
 const goToHome = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
+
   setTimeout(() => { 
     router.push('/') 
   }, 500)
+
 }
 
 const getParticleStyle = (index) => {
   const angle = (index / 12) * Math.PI * 2
   const distance = 60
+
   return { 
     transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`, 
     animationDelay: `${index * 0.1}s` 
   }
-}
 
+}
 const getConfettiStyle = (index) => {
   const colors = ['#bdf000', '#4caf50', '#2196f3', '#ff9800', '#e91e63']
   const shapes = ['circle', 'rectangle', 'triangle']
@@ -369,6 +379,7 @@ watch(() => props.paymentId, (newId) => {
 // Lifecycle
 onMounted(() => {
   document.documentElement.style.scrollBehavior = 'smooth'
+
   window.scrollTo({ top: 0, behavior: 'smooth' })
   
   // Auto-refresh for pending payments
@@ -386,6 +397,7 @@ onMounted(() => {
       clearInterval(interval)
     }, 300000)
   }
+
 })
 </script>
 
