@@ -65,7 +65,6 @@
         />
       </q-card-actions>
 
-      <!-- Security Badges -->
       <q-card-section class="security-badges">
         <div class="security-item" v-for="(badge, index) in securityBadges" :key="badge.text" :style="{ animationDelay: `${index * 0.2}s` }">
           <q-icon :name="badge.icon" :color="badge.color" size="sm" />
@@ -74,7 +73,6 @@
       </q-card-section>
     </q-card>
 
-    <!-- Confetti Celebration for Success -->
     <div v-if="isSuccess" class="confetti-container">
       <div class="confetti" v-for="n in 50" :key="n" :style="getConfettiStyle(n)"></div>
     </div>
@@ -101,29 +99,11 @@ const currency = ref('$')
 const isSuccess = computed(() => paymentStatus.value === 'success')
 const isFailed = computed(() => paymentStatus.value === 'failed')
 
-const statusIcon = computed(() => {
-  if (isSuccess.value) return 'check_circle'
-  if (isFailed.value) return 'cancel'
-  return 'help_outline'
-})
+const statusIcon = computed(() => isSuccess.value ? 'check_circle' : (isFailed.value ? 'cancel' : 'help_outline'))
+const statusColor = computed(() => isSuccess.value ? 'green' : (isFailed.value ? 'red' : 'grey'))
 
-const statusColor = computed(() => {
-  if (isSuccess.value) return 'green'
-  if (isFailed.value) return 'red'
-  return 'grey'
-})
-
-const statusTitle = computed(() => {
-  if (isSuccess.value) return 'Payment Successful!'
-  if (isFailed.value) return 'Payment Failed'
-  return 'Payment Status Unknown'
-})
-
-const statusMessage = computed(() => {
-  if (isSuccess.value) return 'Your transaction has been completed.'
-  if (isFailed.value) return 'There was an issue processing your payment.'
-  return 'We could not determine the status of your payment.'
-})
+const statusTitle = computed(() => isSuccess.value ? 'Payment Successful!' : (isFailed.value ? 'Payment Failed' : 'Payment Status Unknown'))
+const statusMessage = computed(() => isSuccess.value ? 'Your transaction has been completed.' : (isFailed.value ? 'There was an issue processing your payment.' : 'We could not determine the status of your payment.'))
 
 const successDetails = computed(() => [
   { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
@@ -143,17 +123,14 @@ const securityBadges = computed(() => [
   { icon: 'lock', color: 'lime', text: '256-bit Encryption' }
 ])
 
-const formatAmount = (val) => {
-  return (val / 100).toFixed(2)
-}
+const formatAmount = (val) => (val / 100).toFixed(2)
 
 const fetchMerchantName = async () => {
   if (merchantId.value && !merchantName.value) {
     try {
-      const response = await api.get(`/merchants/${merchantId.value}`)
+      const response = await api.get(`/api/merchants/${merchantId.value}`)
       merchantName.value = response.data.business_name || 'Unknown Merchant'
-    } catch (error) {
-      console.error('Failed to fetch merchant name:', error)
+    } catch {
       merchantName.value = 'Unknown Merchant'
     }
   }
@@ -161,48 +138,30 @@ const fetchMerchantName = async () => {
 
 const goToMerchant = () => {
   if (route.query.returnUrl) {
-    // Smooth scroll to top before redirecting
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    setTimeout(() => {
-      window.location.href = route.query.returnUrl
-    }, 500)
+    setTimeout(() => { window.location.href = route.query.returnUrl }, 500)
   } else {
     router.push('/')
   }
 }
 
 const tryAgain = () => {
-  // Smooth scroll to top before navigating
   window.scrollTo({ top: 0, behavior: 'smooth' })
   setTimeout(() => {
-    router.push({ 
-      name: 'checkout', 
-      query: { 
-        merchantId: merchantId.value, 
-        amount: amount.value,
-        returnUrl: route.query.returnUrl
-      } 
-    })
+    router.push({ name: 'checkout', query: { merchantId: merchantId.value, amount: amount.value, returnUrl: route.query.returnUrl } })
   }, 500)
 }
 
 const goToHome = () => {
-  // Smooth scroll to top before navigating
   window.scrollTo({ top: 0, behavior: 'smooth' })
-  setTimeout(() => {
-    router.push('/')
-  }, 500)
+  setTimeout(() => { router.push('/') }, 500)
 }
 
 const getParticleStyle = (index) => {
   const angle = (index / 12) * Math.PI * 2
   const distance = 60
-  return {
-    transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`,
-    animationDelay: `${index * 0.1}s`
-  }
+  return { transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`, animationDelay: `${index * 0.1}s` }
 }
-
 const getConfettiStyle = (index) => {
   const colors = ['#bdf000', '#4caf50', '#2196f3', '#ff9800', '#e91e63']
   const shapes = ['circle', 'rectangle', 'triangle']
@@ -217,27 +176,17 @@ const getConfettiStyle = (index) => {
 }
 
 onMounted(() => {
-  // Add smooth scrolling to the page
   document.documentElement.style.scrollBehavior = 'smooth'
-  
-  if (isSuccess.value) {
-    fetchMerchantName()
-  }
-  
-  // Scroll to top on page load
+  if (isSuccess.value) fetchMerchantName()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
 
-// Watch for route changes
 watch(() => route.query, (newQuery) => {
   paymentStatus.value = newQuery.status || 'unknown'
   amount.value = parseFloat(newQuery.amount) || 0
   errorMessage.value = newQuery.error || 'Payment could not be completed.'
   merchantId.value = newQuery.merchantId || null
-  
-  if (isSuccess.value) {
-    fetchMerchantName()
-  }
+  if (isSuccess.value) fetchMerchantName()
 })
 </script>
 

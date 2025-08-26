@@ -5,32 +5,24 @@
       <q-step :name="1" title="Account" icon="person" :done="step > 1">
         <div class="row q-col-gutter-md">
           <div class="col-12 col-md-6">
-            <q-input v-model="account.name" label="Full Name" outlined dense required 
+            <q-input v-model="account.name" label="Full Name" outlined dense required
               :rules="[val => !!val || 'Name is required']" />
           </div>
           <div class="col-12 col-md-6">
-            <q-input v-model="account.email" type="email" label="Email" outlined dense required 
+            <q-input v-model="account.email" type="email" label="Email" outlined dense required
               :rules="[val => !!val || 'Email is required', val => /.+@.+\..+/.test(val) || 'Enter a valid email']" />
           </div>
           <div class="col-12 col-md-6">
-            <q-input v-model="account.password" type="password" label="Password" outlined dense required 
+            <q-input v-model="account.password" type="password" label="Password" outlined dense required
               :rules="[val => !!val || 'Password is required', val => val.length >= 6 || 'Password must be at least 6 characters']" />
           </div>
           <div class="col-12 col-md-6">
-            <q-input v-model="account.confirmPassword" type="password" label="Confirm Password" outlined dense required 
+            <q-input v-model="account.confirmPassword" type="password" label="Confirm Password" outlined dense required
               :rules="[val => !!val || 'Please confirm password', val => val === account.password || 'Passwords do not match']" />
           </div>
           <div class="col-12 col-md-6">
-            <q-select
-              v-model="account.role"
-              :options="roleOptions"
-              label="Select Role"
-              outlined
-              dense
-              emit-value
-              map-options
-              required
-            />
+            <q-select v-model="account.role" :options="roleOptions" label="Select Role" outlined dense emit-value
+              map-options required />
           </div>
         </div>
       </q-step>
@@ -41,11 +33,11 @@
         <div class="text-subtitle2 q-mb-sm">Business</div>
         <div class="row q-col-gutter-md">
           <div class="col-12 col-md-6">
-            <q-input v-model="merchant.business_name" label="Business Name" outlined dense required 
+            <q-input v-model="merchant.business_name" label="Business Name" outlined dense required
               :rules="[val => !!val || 'Business name is required']" />
           </div>
           <div class="col-12 col-md-6">
-            <q-input v-model="merchant.website" label="Website" outlined dense 
+            <q-input v-model="merchant.website" label="Website" outlined dense
               :rules="[val => !val || /^https?:\/\/.+\..+/.test(val) || 'Enter a valid website URL']" />
           </div>
         </div>
@@ -68,16 +60,8 @@
                 <q-icon name="attach_file" />
               </template>
             </q-file>
-            <q-linear-progress
-              v-if="uploadProgress > 0"
-              class="q-mt-md progress-bar"
-              stripe
-              rounded
-              size="10px"
-              :value="uploadProgress / 100"
-              color="green"
-              animation="glow"
-            />
+            <q-linear-progress v-if="uploadProgress > 0" class="q-mt-md progress-bar" stripe rounded size="10px"
+              :value="uploadProgress / 100" color="green" animation="glow" />
           </div>
         </div>
 
@@ -94,15 +78,8 @@
             <q-input v-model="merchant.bank_ifsc_swift" label="IFSC / SWIFT" outlined dense />
           </div>
           <div class="col-12 col-md-6">
-            <q-select
-              v-model="merchant.payout_preferences"
-              :options="payoutOptions"
-              label="Payout Preferences"
-              multiple
-              outlined
-              dense
-              class="payout-selector"
-            />
+            <q-select v-model="merchant.payout_preferences" :options="payoutOptions" label="Payout Preferences" multiple
+              outlined dense class="payout-selector" />
           </div>
         </div>
       </q-step>
@@ -117,7 +94,8 @@
           <q-separator class="q-my-md" />
           <div class="text-caption summary-item">Business: {{ merchant.business_name || '—' }}</div>
           <div class="text-caption summary-item">Website: {{ merchant.website || '—' }}</div>
-          <div class="text-caption summary-item">Payouts: {{ (merchant.payout_preferences || []).join(', ') || '—' }}</div>
+          <div class="text-caption summary-item">Payouts: {{ (merchant.payout_preferences || []).join(', ') || '—' }}
+          </div>
         </q-card>
         <div class="row items-center q-col-gutter-md q-mt-md">
           <div class="col-auto">
@@ -126,7 +104,8 @@
             </q-avatar>
           </div>
           <div class="col">
-            <q-chip color="orange" text-color="white" icon="hourglass_empty" square class="status-chip">Pending verification</q-chip>
+            <q-chip color="orange" text-color="white" icon="hourglass_empty" square class="status-chip">Pending
+              verification</q-chip>
             <div class="text-caption status-text">After submission your account goes for verification.</div>
           </div>
         </div>
@@ -134,19 +113,8 @@
 
       <template #navigation>
         <q-stepper-navigation class="stepper-navigation">
-          <q-btn
-            :label="primaryCta"
-            class="btn-gradient"
-            :loading="submitting"
-            @click="handleSubmit"
-          />
-          <q-btn
-            v-if="step > 1"
-            flat
-            class="q-ml-sm btn-outline-light"
-            label="Back"
-            @click="prev"
-          />
+          <q-btn :label="primaryCta" class="btn-gradient" :loading="submitting" @click="handleSubmit" />
+          <q-btn v-if="step > 1" flat class="q-ml-sm btn-outline-light" label="Back" @click="prev" />
         </q-stepper-navigation>
       </template>
     </q-stepper>
@@ -208,8 +176,8 @@ const primaryCta = computed(() => {
 })
 
 const onReject = () => {
-  Notify.create({ 
-    type: 'warning', 
+  Notify.create({
+    type: 'warning',
     message: 'Only image files allowed',
     position: 'top',
     timeout: 2000,
@@ -217,10 +185,9 @@ const onReject = () => {
   })
 }
 
-const prev = () => { 
+const prev = () => {
   if (step.value > 1) {
     step.value -= 1
-    // Smooth scroll to top when going back
     scrollToTop()
   }
 }
@@ -233,19 +200,18 @@ const scrollToTop = () => {
 }
 
 const handleSubmit = async () => {
-  // Validate step transitions
   if (step.value === 1) {
     if (!account.value.name || !account.value.email || !account.value.password || !account.value.confirmPassword) {
-      return Notify.create({ 
-        type: 'warning', 
+      return Notify.create({
+        type: 'warning',
         message: 'Please fill in all fields',
         position: 'top',
         timeout: 2000
       })
     }
     if (account.value.password !== account.value.confirmPassword) {
-      return Notify.create({ 
-        type: 'negative', 
+      return Notify.create({
+        type: 'negative',
         message: 'Passwords do not match',
         position: 'top',
         timeout: 2000
@@ -253,7 +219,6 @@ const handleSubmit = async () => {
     }
     if (isMerchant.value) {
       step.value = 2
-      // Smooth scroll to top when moving to next step
       setTimeout(() => {
         scrollToTop()
       }, 300)
@@ -261,17 +226,15 @@ const handleSubmit = async () => {
     }
   }
   if (step.value === 2 && isMerchant.value) {
-    // quick check before review
     if (!merchant.value.business_name) {
-      return Notify.create({ 
-        type: 'warning', 
+      return Notify.create({
+        type: 'warning',
         message: 'Please provide business name',
         position: 'top',
         timeout: 2000
       })
     }
     step.value = 3
-    // Smooth scroll to top when moving to next step
     setTimeout(() => {
       scrollToTop()
     }, 300)
@@ -283,8 +246,7 @@ const handleSubmit = async () => {
     submitting.value = true
 
     // 1) Create user account
-    // Adjust endpoint as per your backend
-    await api.post('/auth/register', {
+    await api.post('/api/auth/register', {
       name: account.value.name,
       email: account.value.email,
       password: account.value.password,
@@ -300,7 +262,7 @@ const handleSubmit = async () => {
       fd.append('bank_account_name', merchant.value.bank_account_name || '')
       fd.append('bank_account_number', merchant.value.bank_account_number || '')
       fd.append('bank_ifsc_swift', merchant.value.bank_ifsc_swift || '')
-      ;(merchant.value.payout_preferences || []).forEach((v) => fd.append('payout_preferences[]', v))
+        ; (merchant.value.payout_preferences || []).forEach((v) => fd.append('payout_preferences[]', v))
       if (logoFile.value) fd.append('logo', logoFile.value)
 
       await store.register(fd, (e) => {
@@ -309,22 +271,21 @@ const handleSubmit = async () => {
       })
     }
 
-    Notify.create({ 
-      type: 'positive', 
+    Notify.create({
+      type: 'positive',
       message: 'Account created. Please log in.',
       position: 'top',
       timeout: 3000,
       icon: 'check_circle'
     })
-    
-    // Add a small delay before redirecting to show the success message
+
     setTimeout(() => {
       window.location.href = '/login'
     }, 1500)
   } catch (e) {
     console.error(e)
-    Notify.create({ 
-      type: 'negative', 
+    Notify.create({
+      type: 'negative',
       message: 'Registration failed. Please try again.',
       position: 'top',
       timeout: 3000,
@@ -335,15 +296,12 @@ const handleSubmit = async () => {
   }
 }
 
-// Initialize smooth scrolling behavior
 onMounted(() => {
-  // Add smooth scrolling to the entire form
   const formElement = document.querySelector('.q-form')
   if (formElement) {
     formElement.style.scrollBehavior = 'smooth'
   }
-  
-  // Add animation to form elements when they come into view
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -351,8 +309,7 @@ onMounted(() => {
       }
     })
   }, { threshold: 0.1 })
-  
-  // Observe all form inputs for animation
+
   setTimeout(() => {
     document.querySelectorAll('.q-input, .q-select, .q-file').forEach(el => {
       observer.observe(el)
@@ -362,8 +319,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.btn-outline-light { 
-  border: 1px solid #fff; 
+.btn-outline-light {
+  border: 1px solid #fff;
   color: #fff;
   transition: all 0.3s ease;
 }
@@ -487,25 +444,31 @@ onMounted(() => {
 }
 
 /* Animation for form elements */
-.q-input, .q-select, .q-file {
+.q-input,
+.q-select,
+.q-file {
   transition: all 0.5s ease;
   opacity: 0;
   transform: translateY(20px);
 }
 
-.q-input.animate-in, .q-select.animate-in, .q-file.animate-in {
+.q-input.animate-in,
+.q-select.animate-in,
+.q-file.animate-in {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Keyframe animations */
+/* Keyframes */
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(189, 240, 0, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(189, 240, 0, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(189, 240, 0, 0);
   }
@@ -515,25 +478,28 @@ onMounted(() => {
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
+
   100% {
     opacity: 0.6;
   }
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 768px) {
   .custom-stepper {
     border-radius: 8px;
   }
-  
-  .btn-gradient, .btn-outline-light {
+
+  .btn-gradient,
+  .btn-outline-light {
     width: 100%;
     margin-bottom: 8px;
   }
-  
+
   .stepper-navigation {
     flex-direction: column;
   }
