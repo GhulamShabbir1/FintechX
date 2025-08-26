@@ -6,7 +6,7 @@
         <div class="row items-center q-col-gutter-md">
           <div class="col-auto">
             <q-avatar size="48px" class="merchant-avatar">
-              <img :src="merchantInfo.logo || placeholderLogo" />
+              <img :src="merchantInfo.logo || placeholderLogo" @error="handleImageError" />
             </q-avatar>
           </div>
           <div class="col">
@@ -29,15 +29,55 @@
             <span class="amount">{{ formatAmount(amount) }}</span>
           </div>
           <div class="text-caption text-grey-6" v-if="description">{{ description }}</div>
+          <div v-if="processingFee > 0" class="processing-fee text-caption text-grey-6">
+            Processing fee: {{ currency }}{{ processingFee }}
+          </div>
+        </div>
+      </q-card-section>
+
+      <!-- Customer Information -->
+      <q-card-section class="customer-info" v-if="showCustomerInfo">
+        <div class="section-title">Customer Information</div>
+        <div class="row q-col-gutter-md">
+          <div class="col-12 col-md-6">
+            <q-input
+              v-model="customerForm.email"
+              label="Email Address"
+              type="email"
+              outlined
+              dense
+              :error="!!errors.email"
+              :error-message="errors.email"
+              @blur="validateEmail"
+            />
+          </div>
+          <div class="col-12 col-md-6">
+            <q-input
+              v-model="customerForm.name"
+              label="Full Name"
+              outlined
+              dense
+              :error="!!errors.name"
+              :error-message="errors.name"
+              @blur="validateName"
+            />
+          </div>
         </div>
       </q-card-section>
 
       <!-- Payment Methods Tabs -->
       <q-card-section class="payment-methods">
+        <div class="section-title">Payment Method</div>
         <q-tabs v-model="selectedMethod" class="payment-tabs" indicator-color="lime" align="justify">
-          <q-tab name="card" icon="credit_card" label="Card" class="payment-tab" />
-          <q-tab name="wallet" icon="account_balance_wallet" label="Wallet" class="payment-tab" />
-          <q-tab name="bank" icon="account_balance" label="Bank" class="payment-tab" />
+          <q-tab 
+            v-for="method in availablePaymentMethods" 
+            :key="method.id"
+            :name="method.id" 
+            :icon="method.icon" 
+            :label="method.label" 
+            class="payment-tab"
+            :disabled="!method.enabled"
+          />
         </q-tabs>
 
         <q-separator class="q-my-md" />
@@ -60,6 +100,7 @@
                     :error="!!errors.number"
                     :error-message="errors.number"
                     @input="validateCardNumber"
+                    @blur="validateCardNumber"
                   >
                     <template v-slot:append>
                       <q-icon :name="cardBrandIcon" :color="cardBrandColor" size="sm" />
@@ -80,6 +121,7 @@
                   :error="!!errors.name"
                   :error-message="errors.name"
                   @input="validateCardName"
+                  @blur="validateCardName"
                 />
               </div>
 
@@ -98,216 +140,333 @@
                       :error="!!errors.expiry"
                       :error-message="errors.expiry"
                       @input="validateExpiry"
+                      @blur="validateExpiry"
                     />
                   </div>
                 </div>
                 <div class="col-6">
                   <div class="form-group">
-                    <label class="field-label">CVC</label>
+                    <label class="field-label">CVC/CVV</label>
                     <q-input
                       v-model="cardForm.cvc"
-                      mask="####"
+                      mask="###"
                       placeholder="123"
                       outlined
                       dense
                       class="card-input"
                       :error="!!errors.cvc"
                       :error-message="errors.cvc"
-                      @input="validateCVC"
-                    >
-                      <template v-slot:append>
-                        <q-icon name="help_outline" color="grey-6" size="xs">
-                          <q-tooltip>3-4 digit security code on back of card</q-tooltip>
-                        </q-icon>
-                      </template>
-                    </q-input>
+                      @input="validateCvc"
+                      @blur="validateCvc"
+                    />
                   </div>
                 </div>
               </div>
 
+              <!-- Billing Address -->
+              <div class="form-group" v-if="showBillingAddress">
+                <label class="field-label">Billing Address</label>
+                <q-input
+                  v-model="cardForm.billingAddress"
+                  placeholder="123 Main St, City, State, ZIP"
+                  outlined
+                  dense
+                  class="card-input"
+                  :error="!!errors.billingAddress"
+                  :error-message="errors.billingAddress"
+                />
+              </div>
+
               <!-- Save Card Option -->
-              <div class="form-group">
-                <q-checkbox v-model="saveCard" label="Save card for future payments" color="lime" />
+              <div class="form-group" v-if="showSaveCard">
+                <q-checkbox
+                  v-model="cardForm.saveCard"
+                  label="Save this card for future payments"
+                  color="lime"
+                />
               </div>
             </q-form>
           </q-tab-panel>
 
-          <!-- Digital Wallet Panel -->
+          <!-- Digital Wallet Payment -->
           <q-tab-panel name="wallet" class="q-pa-none">
             <div class="wallet-options">
-              <div class="wallet-grid">
-                <q-btn
-                  v-for="wallet in walletMethods"
-                  :key="wallet.id"
-                  :class="['wallet-btn', { active: selectedWallet === wallet.id }]"
-                  @click="selectWallet(wallet.id)"
-                  flat
-                >
-                  <div class="wallet-content">
-                    <q-icon :name="wallet.icon" size="md" :color="wallet.color" />
-                    <div class="wallet-name">{{ wallet.name }}</div>
-                  </div>
-                </q-btn>
+              <div class="wallet-option" @click="selectWallet('paypal')">
+                <q-icon name="paypal" size="32px" color="blue" />
+                <span>PayPal</span>
               </div>
-              <div v-if="selectedWallet" class="wallet-info q-mt-md">
-                <q-card class="bg-grey-1 q-pa-md">
-                  <div class="text-body2">You will be redirected to {{ getWalletName(selectedWallet) }} to complete your payment.</div>
-                </q-card>
+              <div class="wallet-option" @click="selectWallet('apple')">
+                <q-icon name="apple" size="32px" color="black" />
+                <span>Apple Pay</span>
+              </div>
+              <div class="wallet-option" @click="selectWallet('google')">
+                <q-icon name="g_mobiledata" size="32px" color="green" />
+                <span>Google Pay</span>
               </div>
             </div>
           </q-tab-panel>
 
-          <!-- Bank Transfer Panel -->
+          <!-- Bank Transfer -->
           <q-tab-panel name="bank" class="q-pa-none">
-            <div class="bank-transfer-form">
-              <q-select
-                v-model="selectedBank"
-                :options="bankOptions"
-                label="Select Your Bank"
-                outlined
-                dense
-                emit-value
-                map-options
-                class="q-mb-md bank-selector"
+            <div class="bank-transfer-info">
+              <div class="info-item">
+                <q-icon name="info" color="lime" size="20px" />
+                <span>Bank transfers may take 1-3 business days to process</span>
+              </div>
+              <q-btn
+                label="Continue with Bank Transfer"
+                color="lime"
+                class="full-width q-mt-md"
+                @click="initiateBankTransfer"
               />
-              <q-card class="bg-grey-1 q-pa-md bank-info-card">
-                <div class="text-body2 q-mb-sm">Bank Transfer Details:</div>
-                <div class="text-caption">• You will be redirected to your bank's secure portal</div>
-                <div class="text-caption">• Payment will be processed instantly</div>
-                <div class="text-caption">• No additional fees apply</div>
-              </q-card>
             </div>
           </q-tab-panel>
         </q-tab-panels>
       </q-card-section>
 
-      <!-- Payment Summary -->
-      <q-card-section class="payment-summary bg-grey-1">
-        <div class="row items-center justify-between">
-          <div class="col">
-            <div class="text-body2">Total Amount</div>
-            <div class="text-h6 text-lime">{{ currency }}{{ formatAmount(amount) }}</div>
-          </div>
-          <div class="col-auto">
-            <div class="security-badges">
-              <q-chip color="green" text-color="white" size="sm" icon="verified_user" class="security-badge">
-                PCI DSS
-              </q-chip>
-              <q-chip color="blue" text-color="white" size="sm" icon="lock" class="security-badge">
-                256-bit SSL
-              </q-chip>
-            </div>
-          </div>
+      <!-- Terms and Conditions -->
+      <q-card-section class="terms-section">
+        <q-checkbox
+          v-model="termsAccepted"
+          label="I agree to the terms and conditions"
+          color="lime"
+          :error="!!errors.terms"
+          :error-message="errors.terms"
+        />
+        <div class="terms-links">
+          <a href="#" @click.prevent="showTerms">Terms of Service</a>
+          <span class="separator">|</span>
+          <a href="#" @click.prevent="showPrivacy">Privacy Policy</a>
         </div>
       </q-card-section>
 
-      <!-- Action Buttons -->
-      <q-card-actions class="payment-actions q-pa-md">
+      <!-- Payment Button -->
+      <q-card-section class="payment-action">
         <q-btn
-          @click="processPayment"
+          :label="paymentButtonLabel"
+          :color="paymentButtonColor"
           :loading="processing"
-          :disable="!isFormValid"
-          class="pay-button full-width"
+          :disabled="!canProcessPayment"
+          class="payment-button full-width"
           size="lg"
-          no-caps
-        >
-          <q-icon name="lock" class="q-mr-sm" />
-          Pay {{ currency }}{{ formatAmount(amount) }}
-        </q-btn>
+          @click="processPayment"
+        />
         
-        <div class="powered-by q-mt-sm text-center">
-          <div class="text-caption text-grey-6">
-            Powered by <span class="text-lime text-weight-bold">FinteckX</span>
-          </div>
+        <div v-if="processing" class="processing-info q-mt-sm">
+          <q-spinner-dots size="16px" color="lime" />
+          <span class="q-ml-sm">Processing your payment...</span>
         </div>
-      </q-card-actions>
+      </q-card-section>
+
+      <!-- Error Display -->
+      <q-card-section v-if="hasErrors" class="error-section">
+        <q-banner class="error-banner" color="negative">
+          <template v-slot:avatar>
+            <q-icon name="error" color="white" />
+          </template>
+          <div class="error-messages">
+            <div v-for="(error, field) in errors" :key="field" class="error-message">
+              {{ error }}
+            </div>
+          </div>
+        </q-banner>
+      </q-card-section>
     </q-card>
 
-    <!-- Loading Overlay -->
-    <q-inner-loading :showing="processing" class="payment-loader">
-      <PaymentLoader :message="processingMessage" />
-    </q-inner-loading>
+    <!-- Terms Modal -->
+    <q-dialog v-model="showTermsModal">
+      <q-card class="terms-modal">
+        <q-card-section>
+          <div class="text-h6">Terms of Service</div>
+        </q-card-section>
+        <q-card-section>
+          <div class="terms-content">
+            <!-- Terms content here -->
+            <p>By using this payment service, you agree to our terms of service...</p>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="grey" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Privacy Modal -->
+    <q-dialog v-model="showPrivacyModal">
+      <q-card class="privacy-modal">
+        <q-card-section>
+          <div class="text-h6">Privacy Policy</div>
+        </q-card-section>
+        <q-card-section>
+          <div class="privacy-content">
+            <!-- Privacy content here -->
+            <p>We are committed to protecting your privacy...</p>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Close" color="grey" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+import { useQuasar } from 'quasar'
 import api from '../../boot/axios'
-import PaymentLoader from './PaymentLoader.vue'
-
-const router = useRouter()
 
 // Props
 const props = defineProps({
-  merchantId: { type: String, required: true },
-  amount: { type: Number, required: true },
-  currency: { type: String, default: '$' },
-  description: { type: String, default: '' }
+  merchantId: {
+    type: String,
+    required: true
+  },
+  amount: {
+    type: [Number, String],
+    required: true
+  },
+  currency: {
+    type: String,
+    default: 'USD'
+  },
+  description: {
+    type: String,
+    default: ''
+  },
+  merchantName: {
+    type: String,
+    default: ''
+  },
+  merchantLogo: {
+    type: String,
+    default: ''
+  },
+  paymentMethods: {
+    type: Array,
+    default: () => []
+  },
+  customerInfo: {
+    type: Object,
+    default: () => ({})
+  }
 })
+
+// Emits
+const emit = defineEmits([
+  'payment-success',
+  'payment-failed',
+  'payment-processing',
+  'validation-error'
+])
+
+// Quasar
+const $q = useQuasar()
 
 // Reactive data
 const processing = ref(false)
-const processingMessage = ref('Processing your payment...')
 const selectedMethod = ref('card')
-const selectedWallet = ref(null)
-const selectedBank = ref(null)
-const saveCard = ref(false)
+const termsAccepted = ref(false)
+const showTermsModal = ref(false)
+const showPrivacyModal = ref(false)
 
-const merchantInfo = ref({
-  business_name: '',
-  logo: '',
-  website: ''
-})
-
+// Form data
 const cardForm = ref({
   number: '',
   name: '',
   expiry: '',
-  cvc: ''
+  cvc: '',
+  billingAddress: '',
+  saveCard: false
 })
 
-const errors = ref({
-  number: '',
-  name: '',
-  expiry: '',
-  cvc: ''
+const customerForm = ref({
+  email: props.customerInfo.email || '',
+  name: props.customerInfo.name || ''
 })
 
-// Constants
-const placeholderLogo = 'https://placehold.co/48x48/121018/bdf000?text=FX'
+// Validation errors
+const errors = ref({})
 
-const walletMethods = [
-  { id: 'apple_pay', name: 'Apple Pay', icon: 'phone_iphone', color: 'black' },
-  { id: 'google_pay', name: 'Google Pay', icon: 'android', color: 'green' },
-  { id: 'paypal', name: 'PayPal', icon: 'payment', color: 'blue' },
-  { id: 'samsung_pay', name: 'Samsung Pay', icon: 'smartphone', color: 'blue-grey' }
-]
+// Configuration
+const showCustomerInfo = ref(true)
+const showBillingAddress = ref(true)
+const showSaveCard = ref(true)
 
-const bankOptions = [
-  { label: 'Chase Bank', value: 'chase' },
-  { label: 'Bank of America', value: 'bofa' },
-  { label: 'Wells Fargo', value: 'wells_fargo' },
-  { label: 'Citibank', value: 'citi' },
-  { label: 'Other', value: 'other' }
-]
+// Computed
+const merchantInfo = computed(() => ({
+  business_name: props.merchantName,
+  logo: props.merchantLogo
+}))
 
-// Computed properties
+const availablePaymentMethods = computed(() => {
+  if (props.paymentMethods.length > 0) {
+    return props.paymentMethods
+  }
+  
+  // Default payment methods
+  return [
+    { id: 'card', label: 'Card', icon: 'credit_card', enabled: true },
+    { id: 'wallet', label: 'Wallet', icon: 'account_balance_wallet', enabled: true },
+    { id: 'bank', label: 'Bank', icon: 'account_balance', enabled: true }
+  ]
+})
+
+const placeholderLogo = computed(() => {
+  return 'https://placehold.co/80x80/121018/bdf000?text=M'
+})
+
+const processingFee = computed(() => {
+  // Calculate processing fee based on amount and payment method
+  const amount = Number(props.amount)
+  if (amount <= 0) return 0
+  
+  if (selectedMethod.value === 'card') {
+    return Math.max(0.30, amount * 0.029) // 2.9% + $0.30
+  } else if (selectedMethod.value === 'wallet') {
+    return amount * 0.025 // 2.5%
+  } else {
+    return amount * 0.01 // 1%
+  }
+})
+
 const cardBrandIcon = computed(() => {
   const number = cardForm.value.number.replace(/\s/g, '')
-  if (number.startsWith('4')) return 'credit_card' // Visa
-  if (number.startsWith('5') || number.startsWith('2')) return 'credit_card' // Mastercard
-  if (number.startsWith('3')) return 'credit_card' // Amex
+  if (number.startsWith('4')) return 'credit_card'
+  if (number.startsWith('5')) return 'credit_card'
+  if (number.startsWith('34') || number.startsWith('37')) return 'credit_card'
+  if (number.startsWith('6')) return 'credit_card'
   return 'credit_card'
 })
 
 const cardBrandColor = computed(() => {
   const number = cardForm.value.number.replace(/\s/g, '')
-  if (number.startsWith('4')) return 'blue' // Visa
-  if (number.startsWith('5') || number.startsWith('2')) return 'red' // Mastercard
-  if (number.startsWith('3')) return 'green' // Amex
+  if (number.startsWith('4')) return 'blue'
+  if (number.startsWith('5')) return 'green'
+  if (number.startsWith('34') || number.startsWith('37')) return 'red'
+  if (number.startsWith('6')) return 'orange'
   return 'grey'
+})
+
+const paymentButtonLabel = computed(() => {
+  if (processing.value) return 'Processing...'
+  return `Pay ${props.currency}${formatAmount(Number(props.amount) + processingFee.value)}`
+})
+
+const paymentButtonColor = computed(() => {
+  if (processing.value) return 'grey'
+  return canProcessPayment.value ? 'lime' : 'grey'
+})
+
+const canProcessPayment = computed(() => {
+  return termsAccepted.value && 
+         !hasErrors.value && 
+         isFormValid.value &&
+         !processing.value
+})
+
+const hasErrors = computed(() => {
+  return Object.keys(errors.value).length > 0
 })
 
 const isFormValid = computed(() => {
@@ -315,371 +474,370 @@ const isFormValid = computed(() => {
     return cardForm.value.number && 
            cardForm.value.name && 
            cardForm.value.expiry && 
-           cardForm.value.cvc &&
-           !Object.values(errors.value).some(error => error)
-  } else if (selectedMethod.value === 'wallet') {
-    return selectedWallet.value
-  } else if (selectedMethod.value === 'bank') {
-    return selectedBank.value
+           cardForm.value.cvc
   }
-  return false
+  return true
 })
 
 // Methods
 const formatAmount = (amount) => {
-  return (amount / 100).toFixed(2)
+  if (!amount && amount !== 0) return '0.00'
+  return Number(amount).toFixed(2)
+}
+
+const handleImageError = (event) => {
+  event.target.src = placeholderLogo.value
 }
 
 const validateCardNumber = () => {
   const number = cardForm.value.number.replace(/\s/g, '')
+  
   if (!number) {
     errors.value.number = 'Card number is required'
-  } else if (number.length < 15) {
-    errors.value.number = 'Invalid card number'
-  } else if (!luhnCheck(number)) {
-    errors.value.number = 'Invalid card number'
-  } else {
-    errors.value.number = ''
+    return false
   }
+  
+  if (number.length < 13 || number.length > 19) {
+    errors.value.number = 'Card number must be 13-19 digits'
+    return false
+  }
+  
+  // Luhn algorithm validation
+  if (!isValidLuhn(number)) {
+    errors.value.number = 'Invalid card number'
+    return false
+  }
+  
+  delete errors.value.number
+  return true
 }
 
 const validateCardName = () => {
-  if (!cardForm.value.name.trim()) {
+  const name = cardForm.value.name.trim()
+  
+  if (!name) {
     errors.value.name = 'Cardholder name is required'
-  } else if (cardForm.value.name.trim().length < 2) {
-    errors.value.name = 'Name must be at least 2 characters'
-  } else {
-    errors.value.name = ''
+    return false
   }
+  
+  if (name.length < 2) {
+    errors.value.name = 'Name must be at least 2 characters'
+    return false
+  }
+  
+  delete errors.value.name
+  return true
 }
 
 const validateExpiry = () => {
   const expiry = cardForm.value.expiry
+  
   if (!expiry) {
     errors.value.expiry = 'Expiry date is required'
-  } else if (expiry.length !== 5) {
-    errors.value.expiry = 'Invalid expiry date'
-  } else {
-    const [month, year] = expiry.split('/')
-    const currentYear = new Date().getFullYear() % 100
-    const currentMonth = new Date().getMonth() + 1
-    
-    if (parseInt(month) < 1 || parseInt(month) > 12) {
-      errors.value.expiry = 'Invalid month'
-    } else if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
-      errors.value.expiry = 'Card has expired'
-    } else {
-      errors.value.expiry = ''
-    }
+    return false
   }
+  
+  const [month, year] = expiry.split('/')
+  const currentDate = new Date()
+  const currentYear = currentDate.getFullYear() % 100
+  const currentMonth = currentDate.getMonth() + 1
+  
+  if (month < 1 || month > 12) {
+    errors.value.expiry = 'Invalid month'
+    return false
+  }
+  
+  if (year < currentYear || (year === currentYear && month < currentMonth)) {
+    errors.value.expiry = 'Card has expired'
+    return false
+  }
+  
+  delete errors.value.expiry
+  return true
 }
 
-const validateCVC = () => {
+const validateCvc = () => {
   const cvc = cardForm.value.cvc
+  
   if (!cvc) {
     errors.value.cvc = 'CVC is required'
-  } else if (cvc.length < 3) {
-    errors.value.cvc = 'Invalid CVC'
-  } else {
-    errors.value.cvc = ''
+    return false
   }
+  
+  if (cvc.length < 3 || cvc.length > 4) {
+    errors.value.cvc = 'CVC must be 3-4 digits'
+    return false
+  }
+  
+  delete errors.value.cvc
+  return true
 }
 
-// Luhn algorithm for card validation
-const luhnCheck = (cardNumber) => {
-  let sum = 0
-  let alternate = false
+const validateEmail = () => {
+  const email = customerForm.value.email.trim()
   
-  for (let i = cardNumber.length - 1; i >= 0; i--) {
-    let n = parseInt(cardNumber.charAt(i), 10)
+  if (!email) {
+    errors.value.email = 'Email is required'
+    return false
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    errors.value.email = 'Invalid email format'
+    return false
+  }
+  
+  delete errors.value.email
+  return true
+}
+
+const validateName = () => {
+  const name = customerForm.value.name.trim()
+  
+  if (!name) {
+    errors.value.name = 'Name is required'
+    return false
+  }
+  
+  if (name.length < 2) {
+    errors.value.name = 'Name must be at least 2 characters'
+    return false
+  }
+  
+  delete errors.value.name
+  return false
+}
+
+const isValidLuhn = (number) => {
+  let sum = 0
+  let isEven = false
+  
+  for (let i = number.length - 1; i >= 0; i--) {
+    let digit = parseInt(number[i])
     
-    if (alternate) {
-      n *= 2
-      if (n > 9) {
-        n = (n % 10) + 1
+    if (isEven) {
+      digit *= 2
+      if (digit > 9) {
+        digit -= 9
       }
     }
     
-    sum += n
-    alternate = !alternate
+    sum += digit
+    isEven = !isEven
   }
   
-  return (sum % 10) === 0
+  return sum % 10 === 0
 }
 
-const selectWallet = (walletId) => {
-  selectedWallet.value = walletId
-}
-
-const getWalletName = (walletId) => {
-  return walletMethods.find(w => w.id === walletId)?.name || ''
-}
-
-const fetchMerchantInfo = async () => {
-  if (!props.merchantId) {
-    console.warn('No merchant ID provided')
-    return
+const validateForm = () => {
+  const validations = []
+  
+  if (selectedMethod.value === 'card') {
+    validations.push(
+      validateCardNumber(),
+      validateCardName(),
+      validateExpiry(),
+      validateCvc()
+    )
   }
-
-  try {
-    const response = await api.get(`/api/merchants/${props.merchantId}`)
-    merchantInfo.value = response.data
-  } catch (error) {
-    console.error('Failed to fetch merchant info:', error)
-    // Use fallback merchant info
-    merchantInfo.value = {
-      business_name: 'FinteckX Store',
-      logo: placeholderLogo,
-      website: 'https://finteckx.com'
-    }
+  
+  if (showCustomerInfo.value) {
+    validations.push(
+      validateEmail(),
+      validateName()
+    )
   }
+  
+  return validations.every(Boolean)
 }
 
 const processPayment = async () => {
-  if (!isFormValid.value) {
-    Notify.create({
-      type: 'negative',
-      message: 'Please fill in all required fields',
-      position: 'top'
-    })
+  if (!validateForm()) {
+    emit('validation-error', errors.value)
     return
   }
-
+  
+  if (!termsAccepted.value) {
+    errors.value.terms = 'You must accept the terms and conditions'
+    emit('validation-error', errors.value)
+    return
+  }
+  
+  processing.value = true
+  emit('payment-processing')
+  
   try {
-    processing.value = true
-    processingMessage.value = 'Validating payment details...'
-    
-    // Simulate validation delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
     const paymentData = {
-      merchant_id: props.merchantId,
-      amount: props.amount,
-      currency: getCurrencyCode(props.currency),
-      method: selectedMethod.value,
-      description: props.description || 'Payment via FinteckX'
+      merchantId: props.merchantId,
+      amount: Number(props.amount),
+      currency: props.currency,
+      description: props.description,
+      paymentMethod: selectedMethod.value,
+      customer: customerForm.value,
+      metadata: {
+        source: 'hosted_checkout',
+        timestamp: new Date().toISOString()
+      }
     }
-
+    
     if (selectedMethod.value === 'card') {
       paymentData.card = {
         number: cardForm.value.number.replace(/\s/g, ''),
         name: cardForm.value.name,
-        expiry_month: cardForm.value.expiry.split('/')[0],
-        expiry_year: '20' + cardForm.value.expiry.split('/')[1], // Convert YY to YYYY
+        expiry: cardForm.value.expiry,
         cvc: cardForm.value.cvc,
-        save_card: saveCard.value
+        billingAddress: cardForm.value.billingAddress,
+        saveCard: cardForm.value.saveCard
       }
-      processingMessage.value = 'Processing card payment...'
-    } else if (selectedMethod.value === 'wallet') {
-      paymentData.wallet = { provider: selectedWallet.value }
-      processingMessage.value = `Redirecting to ${getWalletName(selectedWallet.value)}...`
-    } else if (selectedMethod.value === 'bank') {
-      paymentData.bank = { provider: selectedBank.value }
-      processingMessage.value = 'Preparing bank transfer...'
     }
-
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
     
-    const response = await api.post('/api/payments/process', paymentData)
+    const response = await api.post('/api/payments/checkout', paymentData)
     
-    if (response.data.status === 'success' || response.data.status === 'completed') {
-      processingMessage.value = 'Payment successful! Redirecting...'
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Redirect to success page
-      router.push({
-        name: 'payment-status',
-        params: { id: response.data.payment_id || response.data.transaction_id },
-        query: { 
-          status: 'success', 
-          amount: props.amount, 
-          merchantId: props.merchantId,
-          merchantName: merchantInfo.value.business_name
-        }
-      })
-    } else if (response.data.status === 'pending') {
-      processingMessage.value = 'Payment is being processed...'
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Redirect to pending status page
-      router.push({
-        name: 'payment-status',
-        params: { id: response.data.payment_id || response.data.transaction_id },
-        query: { 
-          status: 'pending', 
-          amount: props.amount, 
-          merchantId: props.merchantId,
-          merchantName: merchantInfo.value.business_name
-        }
-      })
+    if (response.data.status === 'success') {
+      emit('payment-success', response.data.transaction)
     } else {
-      throw new Error(response.data.message || 'Payment failed')
+      emit('payment-failed', {
+        message: response.data.message || 'Payment failed',
+        code: response.data.code
+      })
     }
+    
   } catch (error) {
-    console.error('Payment error:', error)
-    processingMessage.value = 'Payment failed. Redirecting...'
+    console.error('Payment processing error:', error)
     
-    let errorMessage = 'Payment processing failed'
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message
-    } else if (error.message) {
-      errorMessage = error.message
-    }
-    
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Redirect to failure page
-    router.push({
-      name: 'payment-status',
-      params: { id: 'failed' },
-      query: { 
-        status: 'failed', 
-        error: errorMessage, 
-        amount: props.amount,
-        merchantId: props.merchantId,
-        merchantName: merchantInfo.value.business_name
-      }
+    const errorMessage = error.response?.data?.message || 'Payment processing failed'
+    emit('payment-failed', {
+      message: errorMessage,
+      code: error.response?.data?.code || 'PROCESSING_ERROR'
     })
   } finally {
     processing.value = false
   }
 }
 
-const getCurrencyCode = (symbol) => {
-  const currencyMap = {
-    '$': 'USD',
-    '€': 'EUR',
-    '£': 'GBP',
-    '¥': 'JPY',
-    'C$': 'CAD',
-    'A$': 'AUD'
-  }
-  return currencyMap[symbol] || 'USD'
+const selectWallet = (walletType) => {
+  // Handle wallet selection
+  $q.notify({
+    type: 'info',
+    message: `${walletType} integration coming soon`,
+    position: 'top'
+  })
 }
+
+const initiateBankTransfer = () => {
+  // Handle bank transfer initiation
+  $q.notify({
+    type: 'info',
+    message: 'Bank transfer feature coming soon',
+    position: 'top'
+  })
+}
+
+const showTerms = () => {
+  showTermsModal.value = true
+}
+
+const showPrivacy = () => {
+  showPrivacyModal.value = true
+}
+
+// Watchers
+watch(() => props.customerInfo, (newInfo) => {
+  if (newInfo.email) customerForm.value.email = newInfo.email
+  if (newInfo.name) customerForm.value.name = newInfo.name
+}, { deep: true })
 
 // Lifecycle
 onMounted(() => {
-  fetchMerchantInfo()
-  
-  // Add smooth scrolling to the entire page
-  document.documentElement.style.scrollBehavior = 'smooth'
-  
-  // Add animation to form elements when they come into view
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('animate-in')
-      }
-    })
-  }, { threshold: 0.1 })
-  
-  // Observe all form elements for animation
-  setTimeout(() => {
-    document.querySelectorAll('.payment-card > *').forEach((el, index) => {
-      el.style.opacity = '0'
-      el.style.transform = 'translateY(20px)'
-      el.style.transition = `all 0.6s ease ${index * 0.1}s`
-      observer.observe(el)
-    })
-  }, 100)
+  // Initialize with customer info if provided
+  if (props.customerInfo.email) {
+    customerForm.value.email = props.customerInfo.email
+  }
+  if (props.customerInfo.name) {
+    customerForm.value.name = props.customerInfo.name
+  }
 })
-
-// Watch for input changes to validate in real-time
-watch(() => cardForm.value.number, validateCardNumber)
-watch(() => cardForm.value.name, validateCardName)
-watch(() => cardForm.value.expiry, validateExpiry)
-watch(() => cardForm.value.cvc, validateCVC)
 </script>
 
 <style scoped>
 .checkout-container {
-  position: relative;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 20px;
 }
 
 .payment-card {
-  background: linear-gradient(135deg, #000000 0%, #121018 100%);
-  color: #ffffff;
+  background: rgba(18, 18, 18, 0.9);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(189, 240, 0.2);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  transform: translateY(0);
-  transition: all 0.3s ease;
-}
-
-.payment-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
 }
 
 .lime-glow {
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(189, 240, 0, 0.2),
-    0 0 30px rgba(189, 240, 0, 0.1);
+  box-shadow: 0 0 30px rgba(189, 240, 0.1);
 }
 
 .payment-header {
-  background: linear-gradient(90deg, rgba(189, 240, 0, 0.1), transparent);
-  border-bottom: 1px solid rgba(189, 240, 0, 0.2);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(189, 240, 0.1), rgba(189, 240, 0.05));
+  border-bottom: 1px solid rgba(189, 240, 0.1);
 }
 
 .merchant-avatar {
-  border: 2px solid rgba(189, 240, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.merchant-avatar:hover {
-  border-color: #bdf000;
-  transform: scale(1.1);
+  border: 2px solid rgba(189, 240, 0.3);
 }
 
 .security-chip {
-  animation: subtle-pulse 3s infinite;
+  font-size: 12px;
 }
 
 .payment-amount {
-  text-align: center;
-  padding: 30px 20px;
-  transition: all 0.3s ease;
+  background: rgba(189, 240, 0.05);
+  border-bottom: 1px solid rgba(189, 240, 0.1);
 }
 
 .amount-display {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #bdf000;
-  text-shadow: 0 0 20px rgba(189, 240, 0, 0.3);
-  transition: all 0.3s ease;
-}
-
-.amount-display:hover {
-  transform: scale(1.05);
+  margin-bottom: 8px;
 }
 
 .currency {
-  font-size: 1.8rem;
-  margin-right: 4px;
+  font-size: 24px;
+  color: #bdf000;
+  font-weight: 600;
+}
+
+.amount {
+  font-size: 48px;
+  color: #ffffff;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.processing-fee {
+  margin-top: 8px;
+  color: #9e9e9e;
+}
+
+.customer-info {
+  border-bottom: 1px solid rgba(189, 240, 0.1);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.payment-methods {
+  border-bottom: 1px solid rgba(189, 240, 0.1);
 }
 
 .payment-tabs {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  overflow: hidden;
+  color: #9e9e9e;
 }
 
 .payment-tab {
-  color: #ffffff;
-  transition: all 0.3s ease;
-}
-
-.payment-tab.q-tab--active {
-  background: linear-gradient(135deg, #bdf000, #a0d000);
-  color: #000000;
-  transform: scale(1.05);
+  font-weight: 500;
 }
 
 .form-group {
@@ -688,207 +846,175 @@ watch(() => cardForm.value.cvc, validateCVC)
 
 .field-label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #bdf000;
+  color: #ffffff;
+  font-weight: 500;
   margin-bottom: 8px;
-  transition: all 0.3s ease;
+  font-size: 14px;
 }
 
-.field-label:hover {
-  transform: translateX(5px);
-}
-
-.card-input :deep(.q-field__control) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(189, 240, 0, 0.3);
-  border-radius: 12px;
-  color: #ffffff;
-  transition: all 0.3s ease;
-}
-
-.card-input :deep(.q-field__control:hover) {
-  border-color: rgba(189, 240, 0, 0.5);
-  transform: translateY(-2px);
-}
-
-.card-input :deep(.q-field__control.q-field__control--focused) {
-  border-color: #bdf000;
-  box-shadow: 0 0 0 2px rgba(189, 240, 0, 0.2);
-  transform: translateY(-2px);
-}
-
-.card-input :deep(input) {
-  color: #ffffff;
-}
-
-.card-input :deep(.q-field__label) {
-  color: #bdf000;
-}
-
-.wallet-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.wallet-btn {
-  padding: 20px 12px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+.card-input {
   background: rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
 }
 
-.wallet-btn:hover {
-  border-color: rgba(189, 240, 0, 0.5);
-  background: rgba(189, 240, 0, 0.1);
-  transform: translateY(-3px);
+.card-input-container {
+  position: relative;
 }
 
-.wallet-btn.active {
-  border-color: #bdf000;
-  background: rgba(189, 240, 0, 0.2);
-  transform: scale(1.05);
+.wallet-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  padding: 20px 0;
 }
 
-.wallet-content {
+.wallet-option {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-}
-
-.wallet-name {
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: 20px;
+  border: 1px solid rgba(189, 240, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
   color: #ffffff;
 }
 
-.bank-selector :deep(.q-field__control) {
-  transition: all 0.3s ease;
-}
-
-.bank-selector :deep(.q-field__control:hover) {
+.wallet-option:hover {
+  border-color: rgba(189, 240, 0.4);
+  background: rgba(189, 240, 0.05);
   transform: translateY(-2px);
 }
 
-.bank-info-card {
-  transition: all 0.3s ease;
+.bank-transfer-info {
+  padding: 20px 0;
 }
 
-.bank-info-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9e9e9e;
+  margin-bottom: 16px;
 }
 
-.payment-summary {
-  border-top: 1px solid rgba(189, 240, 0, 0.2);
-  background: rgba(189, 240, 0, 0.05);
-  transition: all 0.3s ease;
+.terms-section {
+  border-bottom: 1px solid rgba(189, 240, 0.1);
 }
 
-.security-badge {
-  transition: all 0.3s ease;
+.terms-links {
+  margin-top: 12px;
+  text-align: center;
 }
 
-.security-badge:hover {
-  transform: scale(1.1);
+.terms-links a {
+  color: #bdf000;
+  text-decoration: none;
+  font-size: 12px;
 }
 
-.pay-button {
-  background: linear-gradient(135deg, #bdf000, #a0d000);
-  color: #000000;
-  font-weight: 700;
-  font-size: 1.1rem;
-  border-radius: 12px;
+.terms-links a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: #9e9e9e;
+  margin: 0 8px;
+}
+
+.payment-action {
+  background: rgba(189, 240, 0.05);
+}
+
+.payment-button {
   height: 56px;
-  box-shadow: 0 8px 24px rgba(189, 240, 0, 0.3);
-  transition: all 0.3s ease;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 12px;
 }
 
-.pay-button:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(189, 240, 0, 0.4);
+.processing-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9e9e9e;
+  font-size: 14px;
 }
 
-.pay-button:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
-  transform: none;
-  box-shadow: none;
+.error-section {
+  border-top: 1px solid rgba(244, 67, 54, 0.2);
 }
 
-.powered-by {
-  width: 100%;
-  transition: all 0.3s ease;
+.error-banner {
+  border-radius: 8px;
 }
 
-.powered-by:hover {
-  transform: scale(1.05);
+.error-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.payment-loader {
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+.error-message {
+  font-size: 14px;
 }
 
-/* Animations */
-.checkout-container {
-  animation: slideUp 0.6s ease-out;
+.terms-modal,
+.privacy-modal {
+  background: rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(20px);
+  min-width: 500px;
+  max-width: 600px;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.terms-content,
+.privacy-content {
+  max-height: 400px;
+  overflow-y: auto;
+  color: #ffffff;
+  line-height: 1.6;
 }
 
-@keyframes subtle-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(189, 240, 0, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(189, 240, 0, 0);
-  }
-}
-
-.animate-in {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-}
-
-/* Smooth scrolling for the entire app */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
+/* Responsive adjustments */
+@media (max-width: 768px) {
   .checkout-container {
-    padding: 10px;
+    max-width: 100%;
+    padding: 0 16px;
   }
   
   .payment-card {
     border-radius: 16px;
   }
   
-  .amount-display {
-    font-size: 2rem;
+  .amount {
+    font-size: 36px;
   }
   
-  .wallet-grid {
+  .wallet-options {
     grid-template-columns: 1fr;
   }
   
-  .payment-card > * {
-    transition-delay: 0s !important;
+  .terms-modal,
+  .privacy-modal {
+    min-width: 90vw;
+    margin: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .amount {
+    font-size: 32px;
+  }
+  
+  .payment-button {
+    height: 48px;
+    font-size: 16px;
   }
 }
 </style>
