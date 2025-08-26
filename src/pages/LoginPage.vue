@@ -1,4 +1,28 @@
 <template>
+
+  <q-page class="q-pa-md flex flex-center">
+    <q-card class="shadow-2 lime-glow rounded-borders" style="width: 900px; max-width: 95%;">
+      <div class="row items-stretch">
+        <!-- Left: Illustration -->
+        <div class="col-12 col-md-6 q-pa-md bg-dark pane-left">
+          <q-img :src="illustration" ratio="4/3" fit="contain" class="floating login-illustration"
+            @error="onImgError" />
+        </div>
+        <!-- Right: Form -->
+        <div class="col-12 col-md-6 q-pa-lg form-pane">
+          <!-- Title -->
+          <div class="text-h6 text-center text-lime">Merchant Login</div>
+          <div class="text-subtitle2 text-center q-mb-md">Welcome back</div>
+          <!-- Form -->
+          <q-form @submit.prevent="submit" class="q-gutter-md">
+            <q-input v-model="email" type="email" label="Email" filled dense required />
+            <q-input v-model="password" type="password" label="Password" filled dense required />
+            <q-btn type="submit" label="Login" class="btn-gradient full-width q-mt-sm" :loading="loading" />
+          </q-form>
+          <!-- Links -->
+          <div class="q-mt-md text-center">
+            <q-btn flat label="Create account" color="secondary" @click="$router.push('/register')" />
+
   <q-page class="q-pa-md flex flex-center fintech-bg">
     <q-card class="login-card glass-surface elevate-on-hover">
       <div class="row items-stretch full-height">
@@ -10,6 +34,7 @@
               <div class="text-h4 text-bold text-white">Welcome to FinteckX</div>
               <div class="text-subtitle1 q-mt-md text-soft">The future of financial management starts here</div>
             </div>
+
           </div>
         </div>
 
@@ -47,6 +72,11 @@
                 no-caps />
             </div>
           </div>
+
+          <!-- Error -->
+          <div v-if="error" class="q-mt-md text-negative text-center">
+            {{ error }}
+          </div>
         </div>
       </div>
     </q-card>
@@ -65,6 +95,36 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
+
+import api from 'src/boot/axios'
+
+const router = useRouter()
+
+const email = ref('')
+const password = ref('')
+const illustration = ref('https://source.unsplash.com/800x600/?fintech,3d,payments')
+
+const loading = ref(false)
+const error = ref(null)
+
+const onImgError = (e) => {
+  e.target.src = 'https://placehold.co/800x600/121018/bdf000?text=FinteckX'
+}
+
+const submit = async () => {
+  error.value = null
+  loading.value = true
+  try {
+    const res = await api.post('/api/users/login', {
+      email: email.value,
+      password: password.value
+    })
+
+    const user = res.data?.user || {}
+    const role = (user.role || '').toString().toLowerCase()
+    const target = role === 'admin' ? '/admin-dashboard' : '/dashboard'
+
+
 import { useAuthStore } from '../store/auth'
 import { pinia } from '../store/pinia'
 
@@ -86,14 +146,25 @@ const onSubmit = async () => {
     const role = String(user?.role || '').toLowerCase()
     const redirect = route.query.redirect
     const fallback = role === 'admin' ? { name: 'admin-dashboard' } : { name: 'dashboard' }
+
     Notify.create({ type: 'positive', message: 'Welcome back!' })
     router.push(redirect || fallback)
   } catch (e) {
+
+    console.error('Login error:', e.response?.data || e.message)
+    error.value = e.response?.data?.message || 'Login failed. Please try again.'
+    Notify.create({ type: 'negative', message: error.value })
+=======
     Notify.create({ type: 'negative', message: e?.message || 'Login failed' })
+
   } finally {
     loading.value = false
   }
 }
+
+
+const goHome = () => router.push('/')
+
 </script>
 
 <style scoped>
@@ -370,6 +441,10 @@ const onSubmit = async () => {
   animation-delay: -10s;
 }
 
+.form-pane :deep(.q-field__control) {
+  background: rgba(255, 255, 255, 0.06);
+
+
 .circle-3 {
   width: 60px;
   height: 60px;
@@ -441,5 +516,6 @@ const onSubmit = async () => {
   .text-content .text-h4 {
     font-size: 1.5rem;
   }
+
 }
 </style>

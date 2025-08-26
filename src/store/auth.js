@@ -1,12 +1,54 @@
+// src/store/auth.js
 import { defineStore } from 'pinia'
+
+import api from 'src/boot/axios'
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null,
+
 import api from '../boot/axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: JSON.parse(localStorage.getItem('user') || 'null'),
+
     token: localStorage.getItem('token') || null,
   }),
+
   actions: {
+
+    async register(payload) {
+      try {
+        // POST /api/users/register
+        const { data } = await api.post('/api/users/register', payload)
+
+        this.user = data.user
+        this.token = data.token
+        localStorage.setItem('token', data.token)
+
+        return data
+      } catch (error) {
+        console.error('Register error:', error)
+        throw error.response?.data || { message: 'Register failed' }
+      }
+    },
+
+    async login(payload) {
+      try {
+        // POST /api/users/login
+        const { data } = await api.post('/api/users/login', payload)
+
+        this.user = data.user
+        this.token = data.token
+        localStorage.setItem('token', data.token)
+
+        return data
+      } catch (error) {
+        console.error('Login error:', error)
+        throw error.response?.data || { message: 'Login failed' }
+      }
+
     setToken(token) {
       this.token = token
       if (token) localStorage.setItem('token', token)
@@ -46,10 +88,20 @@ export const useAuthStore = defineStore('auth', {
       this.setUser(data.user || null)
       this.setToken(data.token || null)
       return data
+
     },
+
     logout() {
+      this.user = null
+      this.token = null
+      localStorage.removeItem('token')
+    }
+  }
+})
+
       this.setUser(null)
       this.setToken(null)
     }
   }
 })
+
