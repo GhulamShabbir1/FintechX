@@ -1,6 +1,13 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+
+   
+=======
+    <!-- Admin Header -->
     <AdminHeader />
+    
+    <!-- Page Content -->
+
     <q-page-container>
       <q-page class="merchant-dashboard-page">
         <div class="breadcrumb-section q-pa-md">
@@ -9,6 +16,10 @@
             <q-breadcrumbs-el icon="store" label="Merchants" />
           </q-breadcrumbs>
         </div>
+
+
+        <!-- Main Merchant Management Content -->
+
         <MerchantManagement />
       </q-page>
     </q-page-container>
