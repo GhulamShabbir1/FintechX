@@ -15,27 +15,25 @@ export const useMerchantStore = defineStore('merchant', {
   },
   actions: {
     async register(formData, onUploadProgress) {
-      const response = await api.post('/merchants/register', formData, { onUploadProgress })
-      this.profile = response.data
-      this.status = response.data?.status || 'Pending'
-      return response.data
+      const { data } = await api.post('/api/merchants/register', formData, { onUploadProgress })
+      this.profile = data
+      this.status = data?.status || 'Pending'
+      return data
     },
     async fetchById(id) {
-      const response = await api.get(`/merchants/${id}`)
-      this.profile = response.data
-      this.status = response.data?.status || this.status
-      return response.data
+      const { data } = await api.get(`/api/merchants/${id}`)
+      this.profile = data
+      this.status = data?.status || this.status
+      return data
     },
     async update(id, payload) {
-      const response = await api.patch(`/merchants/${id}` , payload)
-      this.profile = response.data
-      this.status = response.data?.status || this.status
-      return response.data
+      const { data } = await api.patch(`/api/merchants/${id}`, payload)
+      this.profile = data
+      this.status = data?.status || this.status
+      return data
     },
-
-    // Multi-business
     async fetchBusinesses(merchantId) {
-      const { data } = await api.get(`/merchants/${merchantId}/businesses`)
+      const { data } = await api.get(`/api/merchants/${merchantId}/businesses`)
       this.businesses = Array.isArray(data) ? data : []
       if (!this.currentBusinessId && this.businesses.length) {
         this.currentBusinessId = this.businesses[0].id
@@ -43,15 +41,14 @@ export const useMerchantStore = defineStore('merchant', {
       return this.businesses
     },
     async addBusiness(merchantId, payload, onUploadProgress) {
-      // payload can be plain object or FormData
       const form = payload instanceof FormData ? payload : new FormData()
       if (!(payload instanceof FormData)) {
-        Object.entries(payload || {}).forEach(([k,v]) => {
+        Object.entries(payload || {}).forEach(([k, v]) => {
           if (Array.isArray(v)) v.forEach(val => form.append(`${k}[]`, val))
           else if (v !== undefined && v !== null) form.append(k, v)
         })
       }
-      const { data } = await api.post(`/merchants/${merchantId}/businesses`, form, { onUploadProgress })
+      const { data } = await api.post(`/api/merchants/${merchantId}/businesses`, form, { onUploadProgress })
       if (data) {
         this.businesses.unshift(data)
         this.currentBusinessId = data.id

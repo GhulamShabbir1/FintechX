@@ -19,7 +19,7 @@ const confirmRefund = () => {
   }).onOk(async () => {
     try {
       loading.value = true
-      await api.post(`/transactions/${props.transaction.id}/refund`)
+      await api.post(`/api/transactions/${props.transaction.id}/refund`)
       Notify.create({ type: 'positive', message: 'Refund initiated' })
     } finally {
       loading.value = false

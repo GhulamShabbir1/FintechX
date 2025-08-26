@@ -1,7 +1,5 @@
 <template>
-  <q-page class="q-pa-xl flex flex-center">
-    <PaymentStatus />
-  </q-page>
+  <PaymentStatus />
 </template>
 
 <script setup>
