@@ -5,8 +5,8 @@
         <!-- Left Pane - Illustration -->
         <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
           <div class="illustration-container">
-            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1" 
-                   class="floating hero-illustration" @error="onImgError" />
+            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1"
+              class="floating hero-illustration" @error="onImgError" />
             <div class="text-content text-center">
               <div class="text-h4 text-bold text-white">Join FinteckX</div>
               <div class="text-subtitle1 q-mt-md text-soft">Start your journey to financial innovation</div>
@@ -28,15 +28,6 @@
           </div>
         </div>
 
-        <div class="col-12 col-md-7 q-pa-md">
-          <div class="text-h6 text-center text-lime">Merchant Onboarding</div>
-          <div class="text-subtitle2 text-center q-mb-lg">Create your account and complete verification</div>
-          <!-- 🔹 This component will call register() -->
-          <OnBoardWizard @register="handleRegister" />
-          <div class="q-mt-md text-center">
-            <q-btn flat label="Already have an account? Login" @click="$router.push('/login')" />
-
-        
         <!-- Right Pane - Onboarding Form -->
         <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
           <div class="form-container">
@@ -44,22 +35,21 @@
               <div class="text-h4 text-bold text-lime heading-animate">Get Started</div>
               <div class="text-subtitle1 q-mt-sm text-soft">Complete your merchant account setup</div>
             </div>
-            
+
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
-              <OnBoardWizard />
-            </div>
-            
-            <div class="q-mt-xl text-center">
-              <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
-              <q-btn outline class="btn-lime-outline" label="Login to your account" 
-                     @click="$router.push('/login')" no-caps />
+              <OnBoardWizard @register="handleRegister" />
             </div>
 
+            <div class="q-mt-xl text-center">
+              <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
+              <q-btn outline class="btn-lime-outline" label="Login to your account" @click="$router.push('/login')"
+                no-caps />
+            </div>
           </div>
         </div>
       </div>
     </q-card>
-    
+
     <!-- Animated Background Elements -->
     <div class="bg-elements">
       <div class="circle circle-1"></div>
@@ -72,15 +62,27 @@
 </template>
 
 <script setup>
-
+import { ref } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import api from 'src/boot/axios'
 import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
 
 const router = useRouter()
-const illustration = 'https://source.unsplash.com/900x700/?fintech,3d,banking'
-const onImgError = (e) => { e.target.src = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
+
+const illustrationSources = [
+  'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
+  'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
+  'https://placehold.co/900x700/121018/bdf000?text=FinteckX+Onboarding',
+]
+const illustration = ref(illustrationSources[0])
+let imgErrorCount = 0
+const onImgError = () => {
+  imgErrorCount++
+  if (imgErrorCount < illustrationSources.length) {
+    illustration.value = illustrationSources[imgErrorCount]
+  }
+}
 
 const handleRegister = async (formData) => {
   try {
@@ -90,25 +92,6 @@ const handleRegister = async (formData) => {
   } catch (e) {
     console.error('Register error:', e.response?.data || e.message)
     Notify.create({ type: 'negative', message: e.response?.data?.message || 'Registration failed. Please try again.' })
-
-import { ref } from 'vue'
-import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
-
-// Using a more reliable image source with fallbacks
-const illustrationSources = [
-  'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://placehold.co/900x700/121018/bdf000?text=FinteckX+Onboarding'
-]
-
-const illustration = ref(illustrationSources[0])
-let imgErrorCount = 0
-
-const onImgError = () => { 
-  imgErrorCount++
-  if (imgErrorCount < illustrationSources.length) {
-    illustration.value = illustrationSources[imgErrorCount]
-
   }
 }
 </script>
@@ -122,24 +105,20 @@ const onImgError = () => {
 }
 
 .onboarding-card {
-  width: 980px; 
+  width: 980px;
   max-width: 95%;
   border-radius: 24px;
   background: rgba(10, 10, 10, 0.85);
   border: 1px solid rgba(189, 240, 0, 0.14);
   backdrop-filter: blur(12px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 
-              0 0 0 1px rgba(189, 240, 0, 0.24), 
-              0 0 40px rgba(189, 240, 0, 0.22);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(189, 240, 0, 0.24), 0 0 40px rgba(189, 240, 0, 0.22);
   transition: all 0.4s ease;
   overflow: hidden;
 }
 
 .onboarding-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 
-              0 0 0 1px rgba(189, 240, 0, 0.28), 
-              0 0 48px rgba(189, 240, 0, 0.28);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(189, 240, 0, 0.28), 0 0 48px rgba(189, 240, 0, 0.28);
 }
 
 .full-height {
@@ -246,6 +225,7 @@ const onImgError = () => {
     opacity: 0;
     transform: translateY(12px) scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -257,6 +237,7 @@ const onImgError = () => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -268,9 +249,12 @@ const onImgError = () => {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
+
   50% {
     transform: translateY(-16px) rotate(2deg);
   }
@@ -280,6 +264,7 @@ const onImgError = () => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -303,7 +288,8 @@ const onImgError = () => {
   overflow: hidden;
 }
 
-.circle, .square {
+.circle,
+.square {
   position: absolute;
   border: 1px solid rgba(189, 240, 0, 0.1);
   border-radius: 50%;
@@ -363,15 +349,19 @@ const onImgError = () => {
   0% {
     transform: translateY(0) rotate(0deg);
   }
+
   25% {
     transform: translateY(-20px) rotate(90deg);
   }
+
   50% {
     transform: translateY(0) rotate(180deg);
   }
+
   75% {
     transform: translateY(20px) rotate(270deg);
   }
+
   100% {
     transform: translateY(0) rotate(360deg);
   }
@@ -382,45 +372,47 @@ const onImgError = () => {
   .full-height {
     height: auto;
   }
-  
+
   .left-pane {
     padding: 40px 24px;
     min-height: 300px;
     height: auto;
   }
-  
+
   .right-pane {
     padding: 40px 24px;
     border-left: none;
     border-top: 1px solid rgba(189, 240, 0, 0.1);
   }
-  
+
   .text-content {
     margin-top: 24px;
   }
-  
+
   .text-content .text-h4 {
     font-size: 1.5rem;
   }
-  
+
   .features-list {
     display: none;
   }
-  
+
   .onboarding-card {
     margin: 20px 0;
   }
 }
 
 @media (max-width: 600px) {
-  .left-pane, .right-pane {
+
+  .left-pane,
+  .right-pane {
     padding: 24px 16px;
   }
-  
+
   .text-content .text-h4 {
     font-size: 1.3rem;
   }
-  
+
   .glass-panel {
     padding: 16px;
   }
