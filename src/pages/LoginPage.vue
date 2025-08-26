@@ -1,3 +1,4 @@
+<!-- /workspace/src/pages/LoginPage.vue -->
 <template>
   <q-page class="q-pa-md flex flex-center fintech-bg">
     <q-card class="login-card glass-surface elevate-on-hover">
