@@ -13,7 +13,12 @@
         </q-card-section>
         <q-separator />
         <q-card-section>
-          <CheckoutForm />
+          <CheckoutForm
+            :merchant-id="merchantId"
+            :amount="amount"
+            :currency="currency"
+            :description="description"
+          />
         </q-card-section>
       </q-card>
     </div>
@@ -28,13 +33,28 @@ import CheckoutForm from '../components/payments/CheckoutForm.vue'
 
 const route = useRoute()
 const branding = ref({})
+const merchantId = ref('')
+const amount = ref(0)
+const currency = ref('$')
+const description = ref('')
 
 onMounted(async () => {
-  const id = route.params.merchantId
-  const { data } = await api.get(`/checkout/${id}`)
-  branding.value = data
+  merchantId.value = String(route.params.merchantId || '')
+  amount.value = parseInt(route.query.amount) || 10000
+  currency.value = route.query.currency || '$'
+  description.value = route.query.description || 'Secure purchase'
+
+  if (merchantId.value) {
+    try {
+      const { data } = await api.get(`/api/checkout/${merchantId.value}`)
+      branding.value = data || {}
+    } catch {
+      branding.value = {}
+    }
+  }
 })
 </script>
+
 
 <style scoped>
 </style>
