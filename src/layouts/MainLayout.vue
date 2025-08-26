@@ -374,11 +374,13 @@ const onImgError = (key) => {
 
 const onHowImgError = (index) => {
   const list = howSources[index] || []
-  const map = { 1: howItWorks.value[0], 2: howItWorks.value[1], 3: howItWorks.value[2] }
-  const currentRef = map[index]
-  if (!currentRef) return
+  if (!howItWorks.value || !howItWorks.value[index - 1]) return
+  
+  const currentRef = howItWorks.value[index - 1]
+  if (!currentRef || !currentRef.image) return
+  
   const currentIdx = list.indexOf(currentRef.image)
-  const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
+  const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 0
   if (nextIdx < list.length) {
     currentRef.image = list[nextIdx]
   }
