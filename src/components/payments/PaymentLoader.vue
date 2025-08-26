@@ -11,12 +11,12 @@
           </div>
         </div>
       </div>
-      
+
       <div class="loader-message">
         <div class="text-h6 text-lime q-mb-sm">{{ message }}</div>
         <div class="text-caption text-grey-5">Please do not refresh or close this page</div>
       </div>
-      
+
       <div class="security-indicators">
         <div class="security-item">
           <q-icon name="security" color="green" size="sm" />
@@ -120,9 +120,12 @@ defineProps({
 
 /* Animations */
 @keyframes cardPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -133,6 +136,7 @@ defineProps({
     transform: scale(0.5);
     opacity: 1;
   }
+
   100% {
     transform: scale(1.2);
     opacity: 0;

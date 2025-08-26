@@ -1,420 +1,458 @@
 <template>
-  <q-page class="q-pa-md flex flex-center fintech-bg">
-    <q-card class="onboarding-card glass-surface elevate-on-hover">
-      <div class="row items-stretch full-height">
-        <!-- Left Pane - Illustration -->
-        <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
-          <div class="illustration-container">
-            <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1"
-              class="floating hero-illustration" @error="onImgError" />
-            <div class="text-content text-center">
-              <div class="text-h4 text-bold text-white">Join FinteckX</div>
-              <div class="text-subtitle1 q-mt-md text-soft">Start your journey to financial innovation</div>
-              <div class="q-mt-lg features-list">
-                <div class="feature-item">
-                  <q-icon name="check_circle" color="lime-7" size="sm" />
-                  <span class="q-ml-sm">Fast verification process</span>
-                </div>
-                <div class="feature-item">
-                  <q-icon name="check_circle" color="lime-7" size="sm" />
-                  <span class="q-ml-sm">Secure transactions</span>
-                </div>
-                <div class="feature-item">
-                  <q-icon name="check_circle" color="lime-7" size="sm" />
-                  <span class="q-ml-sm">24/7 customer support</span>
-                </div>
+  <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
+    <q-stepper v-model="step" header-nav color="primary" animated flat class="custom-stepper dark-surface">
+      <!-- Step 1: Account Setup -->
+      <q-step :name="1" title="Account" icon="person" :done="step > 1" class="dark-panel">
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <q-input v-model="account.name" label="Full Name" outlined dense required
+              :rules="[val => !!val || 'Name is required']" />
+          </div>
+          <div class="col-12">
+            <q-input v-model="account.email" type="email" label="Email" outlined dense required
+              :rules="[val => !!val || 'Email is required', val => /.+@.+\..+/.test(val) || 'Enter a valid email']" />
+          </div>
+          <div class="col-12">
+            <q-input v-model="account.password" type="password" label="Password" outlined dense required
+              :rules="[val => !!val || 'Password is required', val => val.length >= 6 || 'Password must be at least 6 characters']" />
+          </div>
+          <div class="col-12">
+            <q-input v-model="account.confirmPassword" type="password" label="Confirm Password" outlined dense required
+              :rules="[val => !!val || 'Please confirm password', val => val === account.password || 'Passwords do not match']" />
+          </div>
+          <div class="col-12">
+            <q-select v-model="account.role" :options="roleOptions" label="Select Role" outlined dense emit-value
+              map-options required />
+          </div>
+        </div>
+      </q-step>
+
+      <!-- Step 2: Merchant Details (only if merchant) -->
+      <q-step v-if="isMerchant" :name="2" title="Merchant Details" icon="store" :done="step > 2" class="dark-panel">
+        <!-- Business -->
+        <div class="text-subtitle2 q-mb-sm text-soft">Business</div>
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <q-input v-model="merchant.business_name" label="Business Name" outlined dense required
+              :rules="[val => !!val || 'Business name is required']" />
+          </div>
+          <div class="col-12">
+            <q-input v-model="merchant.website" label="Website" outlined dense
+              :rules="[val => !val || /^https?:\/\/.+\..+/.test(val) || 'Enter a valid website URL']" />
+          </div>
+        </div>
+
+        <!-- Branding -->
+        <div class="text-subtitle2 q-mt-md q-mb-sm text-soft">Branding</div>
+        <div class="row items-center q-col-gutter-md">
+          <div class="col-auto">
+            <q-avatar size="72px" square class="logo-preview dark-tile">
+              <img :src="logoPreview || placeholderLogo" />
+              <div class="logo-overlay" v-if="!logoPreview">
+                <q-icon name="add_a_photo" size="24px" />
               </div>
-            </div>
+            </q-avatar>
+          </div>
+          <div class="col-12">
+            <q-file v-model="logoFile" label="Upload Logo" outlined dense accept="image/*" @rejected="onReject"
+              class="file-uploader dark-field">
+              <template v-slot:prepend>
+                <q-icon name="attach_file" />
+              </template>
+            </q-file>
+            <q-linear-progress v-if="uploadProgress > 0" class="q-mt-md progress-bar" stripe rounded size="10px"
+              :value="uploadProgress / 100" color="green" animation="glow" />
           </div>
         </div>
 
-        <!-- Right Pane - Onboarding Form -->
-        <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
-          <div class="form-container">
-            <div class="text-center q-mb-lg">
-              <div class="text-h4 text-bold text-lime heading-animate">Get Started</div>
-              <div class="text-subtitle1 q-mt-sm text-soft">Complete your merchant account setup</div>
-            </div>
-
-            <div class="glass-panel q-pa-lg rounded-borders form-inner">
-              <OnBoardWizard @register="handleRegister" />
-            </div>
-
-            <div class="q-mt-xl text-center">
-              <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
-              <q-btn outline class="btn-lime-outline" label="Login to your account" @click="$router.push('/login')"
-                no-caps />
-            </div>
+        <!-- Bank -->
+        <div class="text-subtitle2 q-mt-md q-mb-sm text-soft">Bank</div>
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <q-input v-model="merchant.bank_account_name" label="Account Holder Name" outlined dense />
+          </div>
+          <div class="col-12">
+            <q-input v-model="merchant.bank_account_number" label="Account Number" outlined dense />
+          </div>
+          <div class="col-12">
+            <q-input v-model="merchant.bank_ifsc_swift" label="IFSC / SWIFT" outlined dense />
+          </div>
+          <div class="col-12">
+            <q-select v-model="merchant.payout_preferences" :options="payoutOptions" label="Payout Preferences" multiple
+              outlined dense class="payout-selector dark-field" />
           </div>
         </div>
-      </div>
-    </q-card>
+      </q-step>
 
-    <!-- Animated Background Elements -->
-    <div class="bg-elements">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
-      <div class="square square-1"></div>
-      <div class="square square-2"></div>
-    </div>
-  </q-page>
+      <!-- Step 3: Review (only if merchant) -->
+      <q-step v-if="isMerchant" :name="3" title="Review" icon="check_circle" class="dark-panel">
+        <q-card flat bordered class="q-pa-md summary-card dark-card">
+          <div class="text-subtitle1 q-mb-sm text-lime">Summary</div>
+          <div class="text-caption summary-item text-soft">Name: {{ account.name }}</div>
+          <div class="text-caption summary-item text-soft">Email: {{ account.email }}</div>
+          <div class="text-caption summary-item text-soft">Role: {{ account.role }}</div>
+          <q-separator class="q-my-md" />
+          <div class="text-caption summary-item text-soft">Business: {{ merchant.business_name || '—' }}</div>
+          <div class="text-caption summary-item text-soft">Website: {{ merchant.website || '—' }}</div>
+          <div class="text-caption summary-item text-soft">Payouts: {{ (merchant.payout_preferences || []).join(', ') || '—' }}</div>
+        </q-card>
+        <div class="row items-center q-col-gutter-md q-mt-md">
+          <div class="col-auto">
+            <q-avatar size="64px" square class="logo-review dark-tile">
+              <img :src="logoPreview || placeholderLogo" />
+            </q-avatar>
+          </div>
+          <div class="col">
+            <q-chip color="orange" text-color="white" icon="hourglass_empty" square class="status-chip">Pending verification</q-chip>
+            <div class="text-caption status-text text-soft">After submission your account goes for verification.</div>
+          </div>
+        </div>
+      </q-step>
+
+      <template #navigation>
+        <q-stepper-navigation class="stepper-navigation">
+          <q-btn :label="primaryCta" class="btn-gradient" :loading="submitting" @click="handleSubmit" />
+          <q-btn v-if="step > 1" flat class="q-ml-sm btn-outline-light" label="Back" @click="prev" />
+        </q-stepper-navigation>
+      </template>
+    </q-stepper>
+  </q-form>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Notify } from 'quasar'
-import { useRouter } from 'vue-router'
-import api from 'src/boot/axios'
-import OnBoardWizard from '../components/onboarding/OnBoardWizard.vue'
+import api from '../../boot/axios'
+import { useMerchantStore } from '../../store/merchant'
+import { pinia } from '../../store/pinia'
 
-const router = useRouter()
+const store = useMerchantStore(pinia)
 
-const illustrationSources = [
-  'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://placehold.co/900x700/121018/bdf000?text=FinteckX+Onboarding',
+const step = ref(1)
+const submitting = ref(false)
+const uploadProgress = ref(0)
+
+const roleOptions = [
+  { label: 'Admin', value: 'admin' },
+  { label: 'Merchant', value: 'merchant' }
 ]
-const illustration = ref(illustrationSources[0])
-let imgErrorCount = 0
-const onImgError = () => {
-  imgErrorCount++
-  if (imgErrorCount < illustrationSources.length) {
-    illustration.value = illustrationSources[imgErrorCount]
+const payoutOptions = ['daily', 'weekly', 'monthly']
+
+const account = ref({
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  role: 'merchant'
+})
+
+const merchant = ref({
+  business_name: '',
+  website: '',
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_ifsc_swift: '',
+  payout_preferences: []
+})
+
+const logoFile = ref(null)
+const logoPreview = ref('')
+const placeholderLogo = 'https://placehold.co/120x120/121018/bdf000?text=LOGO'
+
+watch(logoFile, (file) => {
+  if (!file) { logoPreview.value = ''; return }
+  const reader = new FileReader()
+  reader.onload = (e) => { logoPreview.value = e.target?.result || '' }
+  reader.readAsDataURL(file)
+})
+
+const isMerchant = computed(() => (account.value.role || '').toLowerCase() === 'merchant')
+const primaryCta = computed(() => {
+  if (step.value === 1 && !isMerchant.value) return 'Create Admin Account'
+  if (step.value < (isMerchant.value ? 3 : 1)) return 'Next'
+  return 'Submit'
+})
+
+const onReject = () => {
+  Notify.create({
+    type: 'warning',
+    message: 'Only image files allowed',
+    position: 'top',
+    timeout: 2000,
+    actions: [{ icon: 'close', color: 'white' }]
+  })
+}
+
+const prev = () => {
+  if (step.value > 1) {
+    step.value -= 1
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 
-const handleRegister = async (formData) => {
+const handleSubmit = async () => {
+  if (step.value === 1) {
+    if (!account.value.name || !account.value.email || !account.value.password || !account.value.confirmPassword) {
+      return Notify.create({ type: 'warning', message: 'Please fill in all fields', position: 'top', timeout: 2000 })
+    }
+    if (account.value.password !== account.value.confirmPassword) {
+      return Notify.create({ type: 'negative', message: 'Passwords do not match', position: 'top', timeout: 2000 })
+    }
+    if (isMerchant.value) {
+      step.value = 2
+      setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, 300)
+      return
+    }
+  }
+
+  if (step.value === 2 && isMerchant.value) {
+    if (!merchant.value.business_name) {
+      return Notify.create({ type: 'warning', message: 'Please provide business name', position: 'top', timeout: 2000 })
+    }
+    step.value = 3
+    setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, 300)
+    return
+  }
+
   try {
-    await api.post('/api/users/register', formData)
-    Notify.create({ type: 'positive', message: 'Registration successful!' })
-    router.push('/login')
+    submitting.value = true
+
+    await api.post('/api/auth/register', {
+      name: account.value.name,
+      email: account.value.email,
+      password: account.value.password,
+      role: account.value.role
+    })
+
+    if (isMerchant.value) {
+      const fd = new FormData()
+      fd.append('business_name', merchant.value.business_name || '')
+      fd.append('email', account.value.email || '')
+      fd.append('website', merchant.value.website || '')
+      fd.append('bank_account_name', merchant.value.bank_account_name || '')
+      fd.append('bank_account_number', merchant.value.bank_account_number || '')
+      fd.append('bank_ifsc_swift', merchant.value.bank_ifsc_swift || '')
+      ;(merchant.value.payout_preferences || []).forEach((v) => fd.append('payout_preferences[]', v))
+      if (logoFile.value) fd.append('logo', logoFile.value)
+
+      await store.register(fd, (e) => {
+        if (!e?.total) return
+        uploadProgress.value = Math.round((e.loaded * 100) / e.total)
+      })
+    }
+
+    Notify.create({ type: 'positive', message: 'Account created. Please log in.', position: 'top', timeout: 3000, icon: 'check_circle' })
+    setTimeout(() => { window.location.href = '/login' }, 1500)
   } catch (e) {
-    console.error('Register error:', e.response?.data || e.message)
-    Notify.create({ type: 'negative', message: e.response?.data?.message || 'Registration failed. Please try again.' })
+    console.error(e)
+    Notify.create({ type: 'negative', message: 'Registration failed. Please try again.', position: 'top', timeout: 3000, icon: 'error' })
+  } finally {
+    submitting.value = false
   }
 }
 </script>
 
 <style scoped>
-.fintech-bg {
-  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-.onboarding-card {
-  width: 980px;
-  max-width: 95%;
-  border-radius: 24px;
-  background: rgba(10, 10, 10, 0.85);
-  border: 1px solid rgba(189, 240, 0, 0.14);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(189, 240, 0, 0.24), 0 0 40px rgba(189, 240, 0, 0.22);
-  transition: all 0.4s ease;
-  overflow: hidden;
-}
-
-.onboarding-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(189, 240, 0, 0.28), 0 0 48px rgba(189, 240, 0, 0.28);
-}
-
-.full-height {
-  min-height: 600px;
-  height: auto;
-}
-
-.left-pane {
-  background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(15, 14, 18, 0.95) 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.left-pane::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(189, 240, 0, 0.08) 0%, transparent 70%);
-  animation: rotate 30s linear infinite;
-}
-
-.illustration-container {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-}
-
-.text-content {
-  margin-top: 32px;
-}
-
-.features-list {
-  text-align: left;
-  display: inline-block;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  margin: 12px 0;
-  color: #cfcfcf;
-  font-size: 0.9rem;
-}
-
-/* FIXED: Right pane now has proper dark background */
-.right-pane {
-  background: rgba(8, 8, 8, 0.95) !important;
-  border-left: 1px solid rgba(189, 240, 0, 0.1);
-}
-
-.form-container {
-  width: 100%;
-  max-width: 360px;
-  background: transparent;
-}
-
-.glass-panel {
-  background: rgba(18, 18, 18, 0.7);
-  border: 1px solid rgba(189, 240, 0, 0.14);
-  backdrop-filter: blur(8px);
+/* Dark surfaces */
+.dark-surface {
+  background: #0e0f13 !important;
+  border: 1px solid rgba(189, 240, 0, 0.12);
   border-radius: 16px;
-  transition: all 0.3s ease;
 }
 
-.glass-panel:hover {
-  border-color: rgba(189, 240, 0, 0.3);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.dark-panel {
+  background: transparent;
+  color: #e9e9ea;
 }
 
-.form-inner {
-  animation: fadeInUp 0.8s ease;
+.dark-card {
+  background: rgba(12, 12, 14, 0.85);
+  border: 1px solid rgba(189, 240, 0, 0.12);
+  color: #e9e9ea;
 }
 
-.text-lime {
-  color: #BDF000;
+.dark-tile {
+  background: rgba(20, 22, 26, 0.8);
+  border: 1px solid rgba(189, 240, 0, 0.14);
 }
 
-.text-soft {
-  color: #cfcfcf;
+/* Quasar Stepper theming */
+:deep(.q-stepper__header) {
+  background: #0f1116;
+  border-bottom: 1px solid rgba(189, 240, 0, 0.12);
 }
 
-.btn-lime-outline {
-  color: #BDF000;
-  border: 1px solid rgba(189, 240, 0, 0.6);
-  border-radius: 12px;
-  transition: all 0.3s ease;
+:deep(.q-stepper__tab) {
+  background: transparent;
+  color: #cfd2d6;
 }
 
-.btn-lime-outline:hover {
+:deep(.q-stepper__tab--active) {
   background: rgba(189, 240, 0, 0.08);
+  color: #bdf000;
+  border-radius: 10px;
+}
+
+:deep(.q-stepper__dot) {
+  background: rgba(189, 240, 0, 0.18);
+}
+
+:deep(.q-stepper__dot .q-icon) {
+  color: #0b0c10;
+}
+
+:deep(.q-stepper__content) {
+  background: rgba(10, 11, 14, 0.9);
+}
+
+/* Inputs and selects - dark */
+.dark-field,
+:deep(.q-field--outlined .q-field__control) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(189, 240, 0, 0.14) !important;
+  border-radius: 12px !important;
+}
+
+:deep(.q-field--outlined .q-field__control:hover) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(189, 240, 0, 0.22) !important;
+}
+
+:deep(.q-field__native),
+:deep(.q-field__label),
+:deep(.q-file__label) {
+  color: #e2e5e9 !important;
+}
+
+:deep(.q-field__bottom) {
+  color: #e07a7a !important;
+}
+
+/* Buttons */
+.btn-outline-light {
+  border: 1px solid rgba(189, 240, 0, 0.24);
+  color: #e9e9ea;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background-color: rgba(189, 240, 0, 0.08);
   transform: translateY(-2px);
 }
 
-.heading-animate {
-  animation: pop-in 0.8s cubic-bezier(.2, .8, .2, 1) both;
-  transform-origin: center;
+.btn-gradient {
+  background: linear-gradient(135deg, #bdf000, #ffffff);
+  color: #09050d;
+  font-weight: 700;
+  border: 1px solid rgba(189, 240, 0, 0.5);
+  transition: all 0.3s ease;
 }
 
-@keyframes pop-in {
-  0% {
-    opacity: 0;
-    transform: translateY(12px) scale(0.95);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(189, 240, 0, 0.3);
 }
 
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.floating {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-16px) rotate(2deg);
-  }
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.hero-illustration {
+/* Stepper container */
+.custom-stepper {
   border-radius: 16px;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
-  max-width: 100%;
-  height: auto;
-}
-
-/* Background elements animation */
-.bg-elements {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
   overflow: hidden;
 }
 
-.circle,
-.square {
+/* Logo/file blocks */
+.logo-preview {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 2px dashed rgba(189, 240, 0, 0.3);
+}
+
+.logo-preview:hover {
+  border-color: #bdf000;
+  transform: scale(1.05);
+}
+
+.logo-overlay {
   position: absolute;
-  border: 1px solid rgba(189, 240, 0, 0.1);
-  border-radius: 50%;
-  animation: floatElement 20s infinite linear;
-  will-change: transform;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 9, 11, 0.55);
+  color: #bdf000;
 }
 
-.square {
-  border-radius: 8px;
+.file-uploader {
+  transition: all 0.3s ease;
 }
 
-.circle-1 {
-  width: 80px;
-  height: 80px;
-  top: 15%;
-  left: 15%;
-  animation-duration: 25s;
+.file-uploader:hover {
+  transform: translateY(-2px);
 }
 
-.circle-2 {
-  width: 120px;
-  height: 120px;
-  top: 65%;
-  left: 80%;
-  animation-duration: 30s;
-  animation-delay: -10s;
+.progress-bar {
+  transition: width 0.3s ease;
 }
 
-.circle-3 {
-  width: 60px;
-  height: 60px;
-  top: 75%;
-  left: 10%;
-  animation-duration: 20s;
-  animation-delay: -5s;
+/* Payout selector */
+.payout-selector {
+  transition: all 0.3s ease;
 }
 
-.square-1 {
-  width: 70px;
-  height: 70px;
-  top: 20%;
-  left: 80%;
-  animation-duration: 35s;
-  animation-delay: -15s;
+.payout-selector:hover {
+  transform: translateY(-2px);
 }
 
-.square-2 {
-  width: 100px;
-  height: 100px;
-  top: 60%;
-  left: 20%;
-  animation-duration: 28s;
-  animation-delay: -7s;
+/* Summary */
+.summary-card {
+  transition: all 0.3s ease;
 }
 
-@keyframes floatElement {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  25% {
-    transform: translateY(-20px) rotate(90deg);
-  }
-
-  50% {
-    transform: translateY(0) rotate(180deg);
-  }
-
-  75% {
-    transform: translateY(20px) rotate(270deg);
-  }
-
-  100% {
-    transform: translateY(0) rotate(360deg);
-  }
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(189, 240, 0, 0.12);
 }
 
-/* Responsive adjustments */
-@media (max-width: 1023px) {
-  .full-height {
-    height: auto;
-  }
-
-  .left-pane {
-    padding: 40px 24px;
-    min-height: 300px;
-    height: auto;
-  }
-
-  .right-pane {
-    padding: 40px 24px;
-    border-left: none;
-    border-top: 1px solid rgba(189, 240, 0, 0.1);
-  }
-
-  .text-content {
-    margin-top: 24px;
-  }
-
-  .text-content .text-h4 {
-    font-size: 1.5rem;
-  }
-
-  .features-list {
-    display: none;
-  }
-
-  .onboarding-card {
-    margin: 20px 0;
-  }
+.summary-item {
+  padding: 4px 0;
+  transition: all 0.3s ease;
 }
 
-@media (max-width: 600px) {
+.summary-item:hover {
+  padding-left: 8px;
+  color: #bdf000;
+}
 
-  .left-pane,
-  .right-pane {
-    padding: 24px 16px;
-  }
+/* Logo review */
+.logo-review {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
 
-  .text-content .text-h4 {
-    font-size: 1.3rem;
-  }
+.logo-review:hover {
+  border-color: #bdf000;
+  transform: scale(1.1);
+}
 
-  .glass-panel {
-    padding: 16px;
-  }
+/* Status */
+.status-chip {
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  opacity: 0.85;
+  transition: all 0.3s ease;
+}
+
+.status-text:hover {
+  opacity: 1;
+  color: #bdf000;
+}
+
+/* Navigation */
+.stepper-navigation {
+  padding: 16px 0;
+  border-top: 1px solid rgba(189, 240, 0, 0.12);
+  margin-top: 24px;
 }
 </style>
