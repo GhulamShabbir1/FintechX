@@ -122,11 +122,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { Notify } from 'quasar'
-import api from '../../boot/axios'
-import { useMerchantStore } from '../../store/merchant'
-import { pinia } from '../../store/pinia'
+import { useAuthStore } from '../store/auth'
+import { useMerchantStore } from '../store/merchant'
+import { pinia } from '../store/pinia'
 
-const store = useMerchantStore(pinia)
+const auth = useAuthStore(pinia)
+const merchantStore = useMerchantStore(pinia)
 
 const step = ref(1)
 const submitting = ref(false)
@@ -217,7 +218,8 @@ const handleSubmit = async () => {
   try {
     submitting.value = true
 
-    await api.post('/api/auth/register', {
+    // Use auth store for registration
+    await auth.register({
       name: account.value.name,
       email: account.value.email,
       password: account.value.password,
@@ -235,17 +237,17 @@ const handleSubmit = async () => {
       ;(merchant.value.payout_preferences || []).forEach((v) => fd.append('payout_preferences[]', v))
       if (logoFile.value) fd.append('logo', logoFile.value)
 
-      await store.register(fd, (e) => {
+      await merchantStore.register(fd, (e) => {
         if (!e?.total) return
         uploadProgress.value = Math.round((e.loaded * 100) / e.total)
       })
     }
 
-    Notify.create({ type: 'positive', message: 'Account created. Please log in.', position: 'top', timeout: 3000, icon: 'check_circle' })
+    Notify.create({ type: 'positive', message: 'Account created successfully!', position: 'top', timeout: 3000, icon: 'check_circle' })
     setTimeout(() => { window.location.href = '/login' }, 1500)
   } catch (e) {
-    console.error(e)
-    Notify.create({ type: 'negative', message: 'Registration failed. Please try again.', position: 'top', timeout: 3000, icon: 'error' })
+    console.error('Registration error:', e)
+    // Error notification is handled by the axios interceptor
   } finally {
     submitting.value = false
   }
