@@ -233,8 +233,10 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 import api from '../../boot/axios'
 import PaymentLoader from './PaymentLoader.vue'
+
 const router = useRouter()
 
 // Props
@@ -414,27 +416,48 @@ const getWalletName = (walletId) => {
 }
 
 const fetchMerchantInfo = async () => {
+  if (!props.merchantId) {
+    console.warn('No merchant ID provided')
+    return
+  }
+
   try {
-    const response = await api.get(`/merchants/${props.merchantId}`)
+    const response = await api.get(`/api/merchants/${props.merchantId}`)
     merchantInfo.value = response.data
   } catch (error) {
     console.error('Failed to fetch merchant info:', error)
+    // Use fallback merchant info
+    merchantInfo.value = {
+      business_name: 'FinteckX Store',
+      logo: placeholderLogo,
+      website: 'https://finteckx.com'
+    }
   }
 }
 
 const processPayment = async () => {
+  if (!isFormValid.value) {
+    Notify.create({
+      type: 'negative',
+      message: 'Please fill in all required fields',
+      position: 'top'
+    })
+    return
+  }
+
   try {
     processing.value = true
     processingMessage.value = 'Validating payment details...'
     
+    // Simulate validation delay
     await new Promise(resolve => setTimeout(resolve, 1500))
     
     const paymentData = {
       merchant_id: props.merchantId,
       amount: props.amount,
-      currency: props.currency.replace('$', 'USD'), // Assuming currency is passed as '$' and API expects 'USD'
+      currency: getCurrencyCode(props.currency),
       method: selectedMethod.value,
-      description: props.description
+      description: props.description || 'Payment via FinteckX'
     }
 
     if (selectedMethod.value === 'card') {
@@ -442,7 +465,7 @@ const processPayment = async () => {
         number: cardForm.value.number.replace(/\s/g, ''),
         name: cardForm.value.name,
         expiry_month: cardForm.value.expiry.split('/')[0],
-        expiry_year: cardForm.value.expiry.split('/')[1],
+        expiry_year: '20' + cardForm.value.expiry.split('/')[1], // Convert YY to YYYY
         cvc: cardForm.value.cvc,
         save_card: saveCard.value
       }
@@ -455,18 +478,40 @@ const processPayment = async () => {
       processingMessage.value = 'Preparing bank transfer...'
     }
 
+    // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    const response = await api.post('/payments/process', paymentData)
+    const response = await api.post('/api/payments/process', paymentData)
     
-    if (response.data.status === 'success') {
+    if (response.data.status === 'success' || response.data.status === 'completed') {
       processingMessage.value = 'Payment successful! Redirecting...'
       await new Promise(resolve => setTimeout(resolve, 1500))
       
+      // Redirect to success page
       router.push({
         name: 'payment-status',
-        params: { id: response.data.payment_id },
-        query: { status: 'success', amount: props.amount, merchant: props.merchantId }
+        params: { id: response.data.payment_id || response.data.transaction_id },
+        query: { 
+          status: 'success', 
+          amount: props.amount, 
+          merchantId: props.merchantId,
+          merchantName: merchantInfo.value.business_name
+        }
+      })
+    } else if (response.data.status === 'pending') {
+      processingMessage.value = 'Payment is being processed...'
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Redirect to pending status page
+      router.push({
+        name: 'payment-status',
+        params: { id: response.data.payment_id || response.data.transaction_id },
+        query: { 
+          status: 'pending', 
+          amount: props.amount, 
+          merchantId: props.merchantId,
+          merchantName: merchantInfo.value.business_name
+        }
       })
     } else {
       throw new Error(response.data.message || 'Payment failed')
@@ -475,16 +520,42 @@ const processPayment = async () => {
     console.error('Payment error:', error)
     processingMessage.value = 'Payment failed. Redirecting...'
     
+    let errorMessage = 'Payment processing failed'
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
     await new Promise(resolve => setTimeout(resolve, 1500))
     
+    // Redirect to failure page
     router.push({
       name: 'payment-status',
       params: { id: 'failed' },
-      query: { status: 'failed', error: error.message, amount: props.amount }
+      query: { 
+        status: 'failed', 
+        error: errorMessage, 
+        amount: props.amount,
+        merchantId: props.merchantId,
+        merchantName: merchantInfo.value.business_name
+      }
     })
   } finally {
     processing.value = false
   }
+}
+
+const getCurrencyCode = (symbol) => {
+  const currencyMap = {
+    '$': 'USD',
+    '€': 'EUR',
+    '£': 'GBP',
+    '¥': 'JPY',
+    'C$': 'CAD',
+    'A$': 'AUD'
+  }
+  return currencyMap[symbol] || 'USD'
 }
 
 // Lifecycle
