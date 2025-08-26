@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
 
     async register(payload) {
       // Depending on backend, adjust endpoint if needed
-      const { data } = await api.post('/api/users/register', payload)
+      const { data } = await api.post('/api/merchants/register', payload)
       // Optionally auto-login after register
       if (data?.token) this.setToken(data.token)
       if (data?.user) this.setUser(data.user)
@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(payload) {
-      const { data } = await api.post('/api/users/login', payload)
+      const { data } = await api.post('/api/auth/login', payload)
       this.setUser(data.user || null)
       this.setToken(data.token || null)
       return data

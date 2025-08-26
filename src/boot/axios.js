@@ -3,7 +3,7 @@ import axios from 'axios'
 
 // Create axios instance with ONLY the base domain
 const api = axios.create({
-  baseURL: ' http://192.168.12.72:8000/',
+  baseURL: ' http://192.168.12.72:8000',
   headers: {
     'Content-Type': 'application/json',
   },
