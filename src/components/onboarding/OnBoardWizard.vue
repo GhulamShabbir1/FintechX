@@ -1,143 +1,615 @@
 <template>
-  <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
-    <q-stepper v-model="step" header-nav color="primary" animated flat class="custom-stepper dark-surface">
+  <div class="onboarding-wizard">
+    <q-stepper 
+      v-model="currentStep" 
+      header-nav 
+      color="lime" 
+      animated 
+      flat 
+      class="custom-stepper"
+    >
       <!-- Step 1: Account Setup -->
-      <q-step :name="1" title="Account" icon="person" :done="step > 1" class="dark-panel">
-        <div class="row q-col-gutter-md">
-          <div class="col-12">
-            <q-input v-model="account.name" label="Full Name" outlined dense required
-              :rules="[val => !!val || 'Name is required']" />
+      <q-step :name="1" title="Account" icon="person" :done="currentStep > 1">
+        <div class="step-content">
+          <div class="step-header">
+            <h3 class="step-title">Create Your Account</h3>
+            <p class="step-description">Let's start with your basic information</p>
           </div>
-          <div class="col-12">
-            <q-input v-model="account.email" type="email" label="Email" outlined dense required
-              :rules="[val => !!val || 'Email is required', val => /.+@.+\..+/.test(val) || 'Enter a valid email']" />
-          </div>
-          <div class="col-12">
-            <q-input v-model="account.password" type="password" label="Password" outlined dense required
-              :rules="[val => !!val || 'Password is required', val => val.length >= 6 || 'Password must be at least 6 characters']" />
-          </div>
-          <div class="col-12">
-            <q-input v-model="account.confirmPassword" type="password" label="Confirm Password" outlined dense required
-              :rules="[val => !!val || 'Please confirm password', val => val === account.password || 'Passwords do not match']" />
-          </div>
-          <div class="col-12">
-            <q-select v-model="account.role" :options="roleOptions" label="Select Role" outlined dense emit-value
-              map-options required />
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="field-label">Full Name *</label>
+              <q-input 
+                v-model="account.name" 
+                placeholder="Enter your full name"
+                outlined 
+                dense 
+                :error="!!errors.name"
+                :error-message="errors.name"
+                @blur="validateField('name', account.name)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Email Address *</label>
+              <q-input 
+                v-model="account.email" 
+                type="email"
+                placeholder="Enter your email address"
+                outlined 
+                dense 
+                :error="!!errors.email"
+                :error-message="errors.email"
+                @blur="validateField('email', account.email)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Password *</label>
+              <q-input 
+                v-model="account.password" 
+                type="password"
+                placeholder="Create a strong password"
+                outlined 
+                dense 
+                :error="!!errors.password"
+                :error-message="errors.password"
+                @blur="validateField('password', account.password)"
+                class="custom-input"
+              >
+                <template v-slot:append>
+                  <q-icon 
+                    :name="showPassword ? 'visibility' : 'visibility_off'" 
+                    @click="showPassword = !showPassword"
+                    class="cursor-pointer"
+                  />
+                </template>
+              </q-input>
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Confirm Password *</label>
+              <q-input 
+                v-model="account.confirmPassword" 
+                type="password"
+                placeholder="Confirm your password"
+                outlined 
+                dense 
+                :error="!!errors.confirmPassword"
+                :error-message="errors.confirmPassword"
+                @blur="validateField('confirmPassword', account.confirmPassword)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Role *</label>
+              <q-select 
+                v-model="account.role" 
+                :options="roleOptions" 
+                placeholder="Select your role"
+                outlined 
+                dense 
+                emit-value 
+                map-options
+                :error="!!errors.role"
+                :error-message="errors.role"
+                @blur="validateField('role', account.role)"
+                class="custom-input"
+              />
+            </div>
           </div>
         </div>
       </q-step>
 
-      <!-- Step 2: Merchant Details (only if merchant) -->
-      <q-step v-if="isMerchant" :name="2" title="Merchant Details" icon="store" :done="step > 2" class="dark-panel">
-        <!-- Business -->
-        <div class="text-subtitle2 q-mb-sm text-soft">Business</div>
-        <div class="row q-col-gutter-md">
-          <div class="col-12">
-            <q-input v-model="merchant.business_name" label="Business Name" outlined dense required
-              :rules="[val => !!val || 'Business name is required']" />
+      <!-- Step 2: Business Details (only if merchant) -->
+      <q-step v-if="isMerchant" :name="2" title="Business" icon="store" :done="currentStep > 2">
+        <div class="step-content">
+          <div class="step-header">
+            <h3 class="step-title">Business Information</h3>
+            <p class="step-description">Tell us about your business</p>
           </div>
-          <div class="col-12">
-            <q-input v-model="merchant.website" label="Website" outlined dense
-              :rules="[val => !val || /^https?:\/\/.+\..+/.test(val) || 'Enter a valid website URL']" />
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="field-label">Business Name *</label>
+              <q-input 
+                v-model="business.business_name" 
+                placeholder="Enter your business name"
+                outlined 
+                dense 
+                :error="!!errors.business_name"
+                :error-message="errors.business_name"
+                @blur="validateField('business_name', business.business_name)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Business Type</label>
+              <q-select 
+                v-model="business.business_type" 
+                :options="businessTypeOptions" 
+                placeholder="Select business type"
+                outlined 
+                dense 
+                emit-value 
+                map-options
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Website</label>
+              <q-input 
+                v-model="business.website" 
+                placeholder="https://yourwebsite.com"
+                outlined 
+                dense 
+                :error="!!errors.website"
+                :error-message="errors.website"
+                @blur="validateField('website', business.website)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Phone Number</label>
+              <q-input 
+                v-model="business.phone" 
+                placeholder="+1 (555) 123-4567"
+                outlined 
+                dense 
+                :error="!!errors.phone"
+                :error-message="errors.phone"
+                @blur="validateField('phone', business.phone)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Business Address</label>
+              <q-input 
+                v-model="business.address" 
+                placeholder="Enter your business address"
+                outlined 
+                dense 
+                type="textarea"
+                rows="3"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Industry</label>
+              <q-select 
+                v-model="business.industry" 
+                :options="industryOptions" 
+                placeholder="Select your industry"
+                outlined 
+                dense 
+                emit-value 
+                map-options
+                class="custom-input"
+              />
+            </div>
           </div>
         </div>
+      </q-step>
 
-        <!-- Branding -->
-        <div class="text-subtitle2 q-mt-md q-mb-sm text-soft">Branding</div>
-        <div class="row items-center q-col-gutter-md">
-          <div class="col-auto">
-            <q-avatar size="72px" square class="logo-preview dark-tile">
-              <img :src="logoPreview || placeholderLogo" />
-              <div class="logo-overlay" v-if="!logoPreview">
-                <q-icon name="add_a_photo" size="24px" />
+      <!-- Step 3: Branding & Logo -->
+      <q-step v-if="isMerchant" :name="3" title="Branding" icon="palette" :done="currentStep > 3">
+        <div class="step-content">
+          <div class="step-header">
+            <h3 class="step-title">Branding & Logo</h3>
+            <p class="step-description">Customize your business appearance</p>
+          </div>
+          
+          <div class="branding-section">
+            <div class="logo-upload">
+              <div class="upload-area" @click="triggerFileUpload">
+                <div v-if="!logoPreview" class="upload-placeholder">
+                  <q-icon name="add_a_photo" size="48px" color="lime" />
+                  <p>Click to upload your logo</p>
+                  <span class="upload-hint">PNG, JPG up to 5MB</span>
+                </div>
+                <div v-else class="logo-preview">
+                  <img :src="logoPreview" alt="Logo Preview" />
+                  <div class="logo-overlay">
+                    <q-icon name="edit" size="24px" />
+                  </div>
+                </div>
               </div>
-            </q-avatar>
-          </div>
-          <div class="col-12">
-            <q-file v-model="logoFile" label="Upload Logo" outlined dense accept="image/*" @rejected="onReject"
-              class="file-uploader dark-field">
-              <template v-slot:prepend>
-                <q-icon name="attach_file" />
-              </template>
-            </q-file>
-            <q-linear-progress v-if="uploadProgress > 0" class="q-mt-md progress-bar" stripe rounded size="10px"
-              :value="uploadProgress / 100" color="green" animation="glow" />
-          </div>
-        </div>
-
-        <!-- Bank -->
-        <div class="text-subtitle2 q-mt-md q-mb-sm text-soft">Bank</div>
-        <div class="row q-col-gutter-md">
-          <div class="col-12">
-            <q-input v-model="merchant.bank_account_name" label="Account Holder Name" outlined dense />
-          </div>
-          <div class="col-12">
-            <q-input v-model="merchant.bank_account_number" label="Account Number" outlined dense />
-          </div>
-          <div class="col-12">
-            <q-input v-model="merchant.bank_ifsc_swift" label="IFSC / SWIFT" outlined dense />
-          </div>
-          <div class="col-12">
-            <q-select v-model="merchant.payout_preferences" :options="payoutOptions" label="Payout Preferences" multiple
-              outlined dense class="payout-selector dark-field" />
+              
+              <input 
+                ref="fileInput"
+                type="file" 
+                accept="image/*" 
+                @change="handleLogoUpload"
+                style="display: none"
+              />
+              
+              <div class="upload-actions">
+                <q-btn 
+                  v-if="logoPreview" 
+                  flat 
+                  color="negative" 
+                  icon="delete" 
+                  label="Remove" 
+                  @click="removeLogo"
+                  size="sm"
+                />
+                <q-btn 
+                  flat 
+                  color="lime" 
+                  icon="upload" 
+                  label="Change Logo" 
+                  @click="triggerFileUpload"
+                  size="sm"
+                />
+              </div>
+            </div>
+            
+            <div class="branding-options">
+              <div class="form-group">
+                <label class="field-label">Brand Colors</label>
+                <div class="color-picker">
+                  <div class="color-option">
+                    <label>Primary Color</label>
+                    <q-input 
+                      v-model="branding.primary_color" 
+                      type="color"
+                      outlined 
+                      dense 
+                      class="color-input"
+                    />
+                  </div>
+                  <div class="color-option">
+                    <label>Secondary Color</label>
+                    <q-input 
+                      v-model="branding.secondary_color" 
+                      type="color"
+                      outlined 
+                      dense 
+                      class="color-input"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="field-label">Tagline</label>
+                <q-input 
+                  v-model="branding.tagline" 
+                  placeholder="Your business tagline"
+                  outlined 
+                  dense 
+                  class="custom-input"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </q-step>
 
-      <!-- Step 3: Review (only if merchant) -->
-      <q-step v-if="isMerchant" :name="3" title="Review" icon="check_circle" class="dark-panel">
-        <q-card flat bordered class="q-pa-md summary-card dark-card">
-          <div class="text-subtitle1 q-mb-sm text-lime">Summary</div>
-          <div class="text-caption summary-item text-soft">Name: {{ account.name }}</div>
-          <div class="text-caption summary-item text-soft">Email: {{ account.email }}</div>
-          <div class="text-caption summary-item text-soft">Role: {{ account.role }}</div>
-          <q-separator class="q-my-md" />
-          <div class="text-caption summary-item text-soft">Business: {{ merchant.business_name || '—' }}</div>
-          <div class="text-caption summary-item text-soft">Website: {{ merchant.website || '—' }}</div>
-          <div class="text-caption summary-item text-soft">Payouts: {{ (merchant.payout_preferences || []).join(', ') || '—' }}</div>
-        </q-card>
-        <div class="row items-center q-col-gutter-md q-mt-md">
-          <div class="col-auto">
-            <q-avatar size="64px" square class="logo-review dark-tile">
-              <img :src="logoPreview || placeholderLogo" />
-            </q-avatar>
+      <!-- Step 4: Banking & Payouts -->
+      <q-step v-if="isMerchant" :name="4" title="Banking" icon="account_balance" :done="currentStep > 4">
+        <div class="step-content">
+          <div class="step-header">
+            <h3 class="step-title">Banking & Payout Preferences</h3>
+            <p class="step-description">Set up your payment receiving details</p>
           </div>
-          <div class="col">
-            <q-chip color="orange" text-color="white" icon="hourglass_empty" square class="status-chip">Pending verification</q-chip>
-            <div class="text-caption status-text text-soft">After submission your account goes for verification.</div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="field-label">Account Holder Name *</label>
+              <q-input 
+                v-model="banking.account_holder_name" 
+                placeholder="Enter account holder name"
+                outlined 
+                dense 
+                :error="!!errors.account_holder_name"
+                :error-message="errors.account_holder_name"
+                @blur="validateField('account_holder_name', banking.account_holder_name)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Bank Name *</label>
+              <q-input 
+                v-model="banking.bank_name" 
+                placeholder="Enter your bank name"
+                outlined 
+                dense 
+                :error="!!errors.bank_name"
+                :error-message="errors.bank_name"
+                @blur="validateField('bank_name', banking.bank_name)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Account Number *</label>
+              <q-input 
+                v-model="banking.account_number" 
+                placeholder="Enter account number"
+                outlined 
+                dense 
+                :error="!!errors.account_number"
+                :error-message="errors.account_number"
+                @blur="validateField('account_number', banking.account_number)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Routing Number *</label>
+              <q-input 
+                v-model="banking.routing_number" 
+                placeholder="Enter routing number"
+                outlined 
+                dense 
+                :error="!!errors.routing_number"
+                :error-message="errors.routing_number"
+                @blur="validateField('routing_number', banking.routing_number)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Payout Preferences *</label>
+              <q-select 
+                v-model="banking.payout_preferences" 
+                :options="payoutOptions" 
+                placeholder="Select payout methods"
+                outlined 
+                dense 
+                multiple
+                emit-value 
+                map-options
+                :error="!!errors.payout_preferences"
+                :error-message="errors.payout_preferences"
+                @blur="validateField('payout_preferences', banking.payout_preferences)"
+                class="custom-input"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="field-label">Payout Schedule</label>
+              <q-select 
+                v-model="banking.payout_schedule" 
+                :options="scheduleOptions" 
+                placeholder="Select payout schedule"
+                outlined 
+                dense 
+                emit-value 
+                map-options
+                class="custom-input"
+              />
+            </div>
           </div>
         </div>
       </q-step>
 
-      <template #navigation>
-        <q-stepper-navigation class="stepper-navigation">
-          <q-btn :label="primaryCta" class="btn-gradient" :loading="submitting" @click="handleSubmit" />
-          <q-btn v-if="step > 1" flat class="q-ml-sm btn-outline-light" label="Back" @click="prev" />
-        </q-stepper-navigation>
-      </template>
+      <!-- Step 5: Review & Submit -->
+      <q-step v-if="isMerchant" :name="5" title="Review" icon="check_circle">
+        <div class="step-content">
+          <div class="step-header">
+            <h3 class="step-title">Review Your Information</h3>
+            <p class="step-description">Please review all details before submitting</p>
+          </div>
+          
+          <div class="review-sections">
+            <!-- Account Review -->
+            <div class="review-section">
+              <h4 class="review-title">
+                <q-icon name="person" color="lime" />
+                Account Information
+              </h4>
+              <div class="review-content">
+                <div class="review-row">
+                  <span class="label">Name:</span>
+                  <span class="value">{{ account.name }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Email:</span>
+                  <span class="value">{{ account.email }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Role:</span>
+                  <span class="value">{{ getRoleLabel(account.role) }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Business Review -->
+            <div class="review-section">
+              <h4 class="review-title">
+                <q-icon name="store" color="lime" />
+                Business Information
+              </h4>
+              <div class="review-content">
+                <div class="review-row">
+                  <span class="label">Business Name:</span>
+                  <span class="value">{{ business.business_name }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Business Type:</span>
+                  <span class="value">{{ getBusinessTypeLabel(business.business_type) }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Website:</span>
+                  <span class="value">{{ business.website || 'Not provided' }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Phone:</span>
+                  <span class="value">{{ business.phone || 'Not provided' }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Banking Review -->
+            <div class="review-section">
+              <h4 class="review-title">
+                <q-icon name="account_balance" color="lime" />
+                Banking Information
+              </h4>
+              <div class="review-content">
+                <div class="review-row">
+                  <span class="label">Account Holder:</span>
+                  <span class="value">{{ banking.account_holder_name }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Bank:</span>
+                  <span class="value">{{ banking.bank_name }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Account Number:</span>
+                  <span class="value">••••••••{{ banking.account_number.slice(-4) }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="label">Payout Methods:</span>
+                  <span class="value">{{ getPayoutLabels(banking.payout_preferences) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Terms & Conditions -->
+          <div class="terms-section">
+            <q-checkbox 
+              v-model="termsAccepted" 
+              label="I agree to the Terms & Conditions and Privacy Policy"
+              color="lime"
+            />
+            <div class="terms-links">
+              <a href="#" @click.prevent="showTerms">Terms & Conditions</a>
+              <span class="separator">|</span>
+              <a href="#" @click.prevent="showPrivacy">Privacy Policy</a>
+            </div>
+          </div>
+        </div>
+      </q-step>
+
+      <!-- Step 6: Success -->
+      <q-step v-if="isMerchant" :name="6" title="Success" icon="celebration">
+        <div class="step-content">
+          <div class="success-content">
+            <div class="success-icon">
+              <q-icon name="check_circle" size="80px" color="green" />
+            </div>
+            <h2 class="success-title">Welcome to FinteckX!</h2>
+            <p class="success-message">Your account has been created successfully. We're reviewing your business information and will notify you once approved.</p>
+            
+            <div class="next-steps">
+              <h4>What happens next?</h4>
+              <ul>
+                <li>We'll review your business information (1-2 business days)</li>
+                <li>You'll receive an approval email</li>
+                <li>Start accepting payments immediately after approval</li>
+                <li>Access your dashboard to manage transactions</li>
+              </ul>
+            </div>
+            
+            <div class="success-actions">
+              <q-btn
+                color="lime"
+                icon="dashboard"
+                label="Go to Dashboard"
+                @click="goToDashboard"
+                size="lg"
+              />
+              <q-btn
+                outline
+                color="lime"
+                icon="email"
+                label="Check Email"
+                @click="checkEmail"
+                class="q-ml-md"
+              />
+            </div>
+          </div>
+        </div>
+      </q-step>
     </q-stepper>
-  </q-form>
+
+    <!-- Navigation Buttons -->
+    <div class="stepper-navigation">
+      <q-btn
+        v-if="currentStep > 1 && currentStep < 6"
+        flat
+        color="lime"
+        icon="arrow_back"
+        label="Previous"
+        @click="previousStep"
+        class="nav-btn"
+      />
+      
+      <q-space />
+      
+      <q-btn
+        v-if="currentStep < 5"
+        color="lime"
+        icon="arrow_forward"
+        :label="currentStep === 4 ? 'Review' : 'Next'"
+        @click="nextStep"
+        :disable="!canProceed"
+        class="nav-btn"
+      />
+      
+      <q-btn
+        v-if="currentStep === 5"
+        color="lime"
+        icon="check"
+        label="Submit Application"
+        @click="submitApplication"
+        :loading="submitting"
+        :disable="!canSubmit"
+        class="nav-btn"
+      />
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-section">
+      <div class="progress-info">
+        <span>Step {{ currentStep }} of {{ totalSteps }}</span>
+        <span>{{ Math.round((currentStep / totalSteps) * 100) }}% Complete</span>
+      </div>
+      <q-linear-progress 
+        :value="currentStep / totalSteps" 
+        color="lime" 
+        size="md"
+        class="progress-bar"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { Notify } from 'quasar'
-import api from '../../boot/axios'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../store/auth'
 import { useMerchantStore } from '../../store/merchant'
+import { Notify } from 'quasar'
 import { pinia } from '../../store/pinia'
 
-const store = useMerchantStore(pinia)
+const router = useRouter()
+const authStore = useAuthStore(pinia)
+const merchantStore = useMerchantStore(pinia)
 
-const step = ref(1)
+// Reactive data
+const currentStep = ref(1)
 const submitting = ref(false)
-const uploadProgress = ref(0)
+const termsAccepted = ref(false)
+const showPassword = ref(false)
+const fileInput = ref(null)
+const logoPreview = ref(null)
+const logoFile = ref(null)
 
-const roleOptions = [
-  { label: 'Admin', value: 'admin' },
-  { label: 'Merchant', value: 'merchant' }
-]
-const payoutOptions = ['daily', 'weekly', 'monthly']
-
+// Form data
 const account = ref({
   name: '',
   email: '',
@@ -146,313 +618,727 @@ const account = ref({
   role: 'merchant'
 })
 
-const merchant = ref({
+const business = ref({
   business_name: '',
+  business_type: '',
   website: '',
-  bank_account_name: '',
-  bank_account_number: '',
-  bank_ifsc_swift: '',
-  payout_preferences: []
+  phone: '',
+  address: '',
+  industry: ''
 })
 
-const logoFile = ref(null)
-const logoPreview = ref('')
-const placeholderLogo = 'https://placehold.co/120x120/121018/bdf000?text=LOGO'
-
-watch(logoFile, (file) => {
-  if (!file) { logoPreview.value = ''; return }
-  const reader = new FileReader()
-  reader.onload = (e) => { logoPreview.value = e.target?.result || '' }
-  reader.readAsDataURL(file)
+const branding = ref({
+  primary_color: '#bdf000',
+  secondary_color: '#121018',
+  tagline: ''
 })
 
-const isMerchant = computed(() => (account.value.role || '').toLowerCase() === 'merchant')
-const primaryCta = computed(() => {
-  if (step.value === 1 && !isMerchant.value) return 'Create Admin Account'
-  if (step.value < (isMerchant.value ? 3 : 1)) return 'Next'
-  return 'Submit'
+const banking = ref({
+  account_holder_name: '',
+  bank_name: '',
+  account_number: '',
+  routing_number: '',
+  payout_preferences: [],
+  payout_schedule: 'weekly'
 })
 
-const onReject = () => {
-  Notify.create({
-    type: 'warning',
-    message: 'Only image files allowed',
-    position: 'top',
-    timeout: 2000,
-    actions: [{ icon: 'close', color: 'white' }]
-  })
-}
+// Validation errors
+const errors = ref({})
 
-const prev = () => {
-  if (step.value > 1) {
-    step.value -= 1
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+// Options
+const roleOptions = [
+  { label: 'Merchant', value: 'merchant' },
+  { label: 'Admin', value: 'admin' }
+]
+
+const businessTypeOptions = [
+  { label: 'Sole Proprietorship', value: 'sole_proprietorship' },
+  { label: 'Partnership', value: 'partnership' },
+  { label: 'Corporation', value: 'corporation' },
+  { label: 'LLC', value: 'llc' },
+  { label: 'Non-profit', value: 'non_profit' }
+]
+
+const industryOptions = [
+  { label: 'E-commerce', value: 'ecommerce' },
+  { label: 'Technology', value: 'technology' },
+  { label: 'Healthcare', value: 'healthcare' },
+  { label: 'Finance', value: 'finance' },
+  { label: 'Education', value: 'education' },
+  { label: 'Food & Beverage', value: 'food_beverage' },
+  { label: 'Retail', value: 'retail' },
+  { label: 'Other', value: 'other' }
+]
+
+const payoutOptions = [
+  { label: 'Bank Transfer', value: 'bank_transfer' },
+  { label: 'PayPal', value: 'paypal' },
+  { label: 'Stripe', value: 'stripe' },
+  { label: 'Check', value: 'check' }
+]
+
+const scheduleOptions = [
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' }
+]
+
+// Computed properties
+const isMerchant = computed(() => account.value.role === 'merchant')
+const totalSteps = computed(() => isMerchant.value ? 6 : 1)
+
+const canProceed = computed(() => {
+  switch (currentStep.value) {
+    case 1:
+      return account.value.name && account.value.email && account.value.password && 
+             account.value.confirmPassword && account.value.role && 
+             account.value.password === account.value.confirmPassword
+    case 2:
+      return business.value.business_name
+    case 3:
+      return true // Logo is optional
+    case 4:
+      return banking.value.account_holder_name && banking.value.bank_name && 
+             banking.value.account_number && banking.value.routing_number && 
+             banking.value.payout_preferences.length > 0
+    default:
+      return true
+  }
+})
+
+const canSubmit = computed(() => {
+  return termsAccepted.value && canProceed.value
+})
+
+// Methods
+const validateField = (field, value) => {
+  const validations = {
+    name: () => {
+      if (!value) return 'Name is required'
+      if (value.length < 2) return 'Name must be at least 2 characters'
+      return null
+    },
+    email: () => {
+      if (!value) return 'Email is required'
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email'
+      return null
+    },
+    password: () => {
+      if (!value) return 'Password is required'
+      if (value.length < 6) return 'Password must be at least 6 characters'
+      return null
+    },
+    confirmPassword: () => {
+      if (!value) return 'Please confirm password'
+      if (value !== account.value.password) return 'Passwords do not match'
+      return null
+    },
+    role: () => {
+      if (!value) return 'Please select a role'
+      return null
+    },
+    business_name: () => {
+      if (!value) return 'Business name is required'
+      return null
+    },
+    website: () => {
+      if (value && !/^https?:\/\/.+\..+/.test(value)) return 'Enter a valid website URL'
+      return null
+    },
+    phone: () => {
+  if (value && !/^[+]? [1-9]\d{0,15}$/.test(value.replace(/\D/g, ''))) 
+    return 'Enter a valid phone number'
+  return null
+},
+    account_holder_name: () => {
+      if (!value) return 'Account holder name is required'
+      return null
+    },
+    bank_name: () => {
+      if (!value) return 'Bank name is required'
+      return null
+    },
+    account_number: () => {
+      if (!value) return 'Account number is required'
+      if (!/^\d{8,17}$/.test(value)) return 'Enter a valid account number'
+      return null
+    },
+    routing_number: () => {
+      if (!value) return 'Routing number is required'
+      if (!/^\d{9}$/.test(value)) return 'Enter a valid routing number'
+      return null
+    },
+    payout_preferences: () => {
+      if (!value || value.length === 0) return 'Please select at least one payout method'
+      return null
+    }
+  }
+
+  const validation = validations[field]
+  if (validation) {
+    const error = validation()
+    if (error) {
+      errors.value[field] = error
+    } else {
+      delete errors.value[field]
+    }
   }
 }
 
-const handleSubmit = async () => {
-  if (step.value === 1) {
-    if (!account.value.name || !account.value.email || !account.value.password || !account.value.confirmPassword) {
-      return Notify.create({ type: 'warning', message: 'Please fill in all fields', position: 'top', timeout: 2000 })
-    }
-    if (account.value.password !== account.value.confirmPassword) {
-      return Notify.create({ type: 'negative', message: 'Passwords do not match', position: 'top', timeout: 2000 })
-    }
-    if (isMerchant.value) {
-      step.value = 2
-      setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, 300)
+const nextStep = () => {
+  if (canProceed.value) {
+    currentStep.value++
+  }
+}
+
+const previousStep = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
+
+const triggerFileUpload = () => {
+  fileInput.value.click()
+}
+
+const handleLogoUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    if (file.size > 5 * 1024 * 1024) {
+      Notify.create({
+        type: 'negative',
+        message: 'File size must be less than 5MB',
+        position: 'top'
+      })
       return
     }
-  }
-
-  if (step.value === 2 && isMerchant.value) {
-    if (!merchant.value.business_name) {
-      return Notify.create({ type: 'warning', message: 'Please provide business name', position: 'top', timeout: 2000 })
+    
+    logoFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      logoPreview.value = e.target.result
     }
-    step.value = 3
-    setTimeout(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, 300)
-    return
+    reader.readAsDataURL(file)
   }
+}
 
+const removeLogo = () => {
+  logoFile.value = null
+  logoPreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+const submitApplication = async () => {
+  if (!canSubmit.value) return
+  
   try {
     submitting.value = true
-
-    await api.post('/api/auth/register', {
+    
+    // Create user account
+    await authStore.register({
       name: account.value.name,
       email: account.value.email,
       password: account.value.password,
+      password_confirmation: account.value.confirmPassword,
       role: account.value.role
     })
-
+    
+    // Login user
+    await authStore.login({
+      email: account.value.email,
+      password: account.value.password
+    })
+    
+    // Register business if merchant
     if (isMerchant.value) {
-      const fd = new FormData()
-      fd.append('business_name', merchant.value.business_name || '')
-      fd.append('email', account.value.email || '')
-      fd.append('website', merchant.value.website || '')
-      fd.append('bank_account_name', merchant.value.bank_account_name || '')
-      fd.append('bank_account_number', merchant.value.bank_account_number || '')
-      fd.append('bank_ifsc_swift', merchant.value.bank_ifsc_swift || '')
-      ;(merchant.value.payout_preferences || []).forEach((v) => fd.append('payout_preferences[]', v))
-      if (logoFile.value) fd.append('logo', logoFile.value)
-
-      await store.register(fd, (e) => {
-        if (!e?.total) return
-        uploadProgress.value = Math.round((e.loaded * 100) / e.total)
-      })
+      const businessData = {
+        ...business.value,
+        ...banking.value,
+        logo: logoFile.value,
+        branding: branding.value
+      }
+      
+      await merchantStore.registerBusiness(businessData)
     }
-
-    Notify.create({ type: 'positive', message: 'Account created. Please log in.', position: 'top', timeout: 3000, icon: 'check_circle' })
-    setTimeout(() => { window.location.href = '/login' }, 1500)
-  } catch (e) {
-    console.error(e)
-    Notify.create({ type: 'negative', message: 'Registration failed. Please try again.', position: 'top', timeout: 3000, icon: 'error' })
+    
+    // Move to success step
+    currentStep.value = 6
+    
+    Notify.create({
+      type: 'positive',
+      message: 'Account created successfully!',
+      position: 'top'
+    })
+    
+  } catch (error) {
+    console.error('Registration error:', error)
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to create account',
+      position: 'top'
+    })
   } finally {
     submitting.value = false
   }
 }
+
+const goToDashboard = () => {
+  router.push('/dashboard')
+}
+
+const checkEmail = () => {
+  // Implement email checking logic
+  console.log('Checking email...')
+}
+
+const showTerms = () => {
+  // Show terms and conditions
+  console.log('Showing terms...')
+}
+
+const showPrivacy = () => {
+  // Show privacy policy
+  console.log('Showing privacy...')
+}
+
+const getRoleLabel = (role) => {
+  const roleMap = { merchant: 'Merchant', admin: 'Admin' }
+  return roleMap[role] || role
+}
+
+const getBusinessTypeLabel = (type) => {
+  const typeMap = {
+    sole_proprietorship: 'Sole Proprietorship',
+    partnership: 'Partnership',
+    corporation: 'Corporation',
+    llc: 'LLC',
+    non_profit: 'Non-profit'
+  }
+  return typeMap[type] || type
+}
+
+const getPayoutLabels = (preferences) => {
+  if (!preferences || preferences.length === 0) return 'None selected'
+  return preferences.map(p => {
+    const option = payoutOptions.find(opt => opt.value === p)
+    return option ? option.label : p
+  }).join(', ')
+}
+
+// Lifecycle
+onMounted(() => {
+  // Initialize with any existing data
+})
 </script>
 
 <style scoped>
-/* Dark surfaces */
-.dark-surface {
-  background: #0e0f13 !important;
-  border: 1px solid rgba(189, 240, 0, 0.12);
-  border-radius: 16px;
+.onboarding-wizard {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
+  min-height: 100vh;
+  color: #ffffff;
 }
 
-.dark-panel {
-  background: transparent;
-  color: #e9e9ea;
-}
-
-.dark-card {
-  background: rgba(12, 12, 14, 0.85);
-  border: 1px solid rgba(189, 240, 0, 0.12);
-  color: #e9e9ea;
-}
-
-.dark-tile {
-  background: rgba(20, 22, 26, 0.8);
-  border: 1px solid rgba(189, 240, 0, 0.14);
-}
-
-/* Quasar Stepper theming */
-:deep(.q-stepper__header) {
-  background: #0f1116;
-  border-bottom: 1px solid rgba(189, 240, 0, 0.12);
-}
-
-:deep(.q-stepper__tab) {
-  background: transparent;
-  color: #cfd2d6;
-}
-
-:deep(.q-stepper__tab--active) {
-  background: rgba(189, 240, 0, 0.08);
-  color: #bdf000;
-  border-radius: 10px;
-}
-
-:deep(.q-stepper__dot) {
-  background: rgba(189, 240, 0, 0.18);
-}
-
-:deep(.q-stepper__dot .q-icon) {
-  color: #0b0c10;
-}
-
-:deep(.q-stepper__content) {
-  background: rgba(10, 11, 14, 0.9);
-}
-
-/* Inputs and selects - dark */
-.dark-field,
-:deep(.q-field--outlined .q-field__control) {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(189, 240, 0, 0.14) !important;
-  border-radius: 12px !important;
-}
-
-:deep(.q-field--outlined .q-field__control:hover) {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(189, 240, 0, 0.22) !important;
-}
-
-:deep(.q-field__native),
-:deep(.q-field__label),
-:deep(.q-file__label) {
-  color: #e2e5e9 !important;
-}
-
-:deep(.q-field__bottom) {
-  color: #e07a7a !important;
-}
-
-/* Buttons */
-.btn-outline-light {
-  border: 1px solid rgba(189, 240, 0, 0.24);
-  color: #e9e9ea;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-light:hover {
-  background-color: rgba(189, 240, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-.btn-gradient {
-  background: linear-gradient(135deg, #bdf000, #ffffff);
-  color: #09050d;
-  font-weight: 700;
-  border: 1px solid rgba(189, 240, 0, 0.5);
-  transition: all 0.3s ease;
-}
-
-.btn-gradient:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(189, 240, 0, 0.3);
-}
-
-/* Stepper container */
+/* Custom Stepper */
 .custom-stepper {
-  border-radius: 16px;
-  overflow: hidden;
+  background: transparent;
 }
 
-/* Logo/file blocks */
+.custom-stepper :deep(.q-stepper__header) {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.custom-stepper :deep(.q-stepper__step) {
+  color: #cfcfcf;
+}
+
+.custom-stepper :deep(.q-stepper__step--active) {
+  color: #bdf000;
+}
+
+.custom-stepper :deep(.q-stepper__step--done) {
+  color: #4caf50;
+}
+
+/* Step Content */
+.step-content {
+  padding: 24px 0;
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.step-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #bdf000;
+}
+
+.step-description {
+  color: #cfcfcf;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Custom Inputs */
+
+.custom-input :deep(.q-field__control) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px;
+}
+
+.custom-input :deep(.q-field__native) {
+  color: #ffffff !important;
+}
+
+.custom-input :deep(.q-field__label) {
+  color: #cfcfcf !important;
+}
+
+.custom-input :deep(.q-field__control-container) {
+  color: #ffffff !important;
+}
+
+/* Branding Section */
+.branding-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.logo-upload {
+  text-align: center;
+}
+
+.upload-area {
+  width: 200px;
+  height: 200px;
+  border: 2px dashed rgba(189, 240, 0.3);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 auto 16px;
+}
+
+.upload-area:hover {
+  border-color: #bdf000;
+  background: rgba(189, 240, 0.05);
+}
+
+.upload-placeholder {
+  text-align: center;
+}
+
+.upload-placeholder p {
+  margin: 16px 0 8px 0;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.upload-hint {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
 .logo-preview {
   position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  border: 2px dashed rgba(189, 240, 0, 0.3);
+  width: 100%;
+  height: 100%;
 }
 
-.logo-preview:hover {
-  border-color: #bdf000;
-  transform: scale(1.05);
+.logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
 }
 
 .logo-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(9, 9, 11, 0.55);
-  color: #bdf000;
+  border-radius: 14px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.file-uploader {
-  transition: all 0.3s ease;
-}
-
-.file-uploader:hover {
-  transform: translateY(-2px);
-}
-
-.progress-bar {
-  transition: width 0.3s ease;
-}
-
-/* Payout selector */
-.payout-selector {
-  transition: all 0.3s ease;
-}
-
-.payout-selector:hover {
-  transform: translateY(-2px);
-}
-
-/* Summary */
-.summary-card {
-  transition: all 0.3s ease;
-}
-
-.summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(189, 240, 0, 0.12);
-}
-
-.summary-item {
-  padding: 4px 0;
-  transition: all 0.3s ease;
-}
-
-.summary-item:hover {
-  padding-left: 8px;
-  color: #bdf000;
-}
-
-/* Logo review */
-.logo-review {
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
-
-.logo-review:hover {
-  border-color: #bdf000;
-  transform: scale(1.1);
-}
-
-/* Status */
-.status-chip {
-  animation: pulse 2s infinite;
-}
-
-.status-text {
-  opacity: 0.85;
-  transition: all 0.3s ease;
-}
-
-.status-text:hover {
+.logo-preview:hover .logo-overlay {
   opacity: 1;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Color Picker */
+.color-picker {
+  display: flex;
+  gap: 16px;
+}
+
+.color-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-option label {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
+.color-input {
+  width: 60px;
+}
+
+.color-input :deep(.q-field__control) {
+  background: transparent !important;
+}
+
+/* Review Sections */
+.review-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.review-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.review-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px 0;
   color: #bdf000;
+  font-size: 1.1rem;
+}
+
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.review-row:last-child {
+  border-bottom: none;
+}
+
+.review-row .label {
+  color: #cfcfcf;
+  font-weight: 500;
+}
+
+.review-row .value {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Terms Section */
+.terms-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 32px;
+}
+
+.terms-links {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.terms-links a {
+  color: #bdf000;
+  text-decoration: none;
+  margin: 0 8px;
+}
+
+.terms-links a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: #cfcfcf;
+}
+
+/* Success Content */
+.success-content {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.success-icon {
+  margin-bottom: 24px;
+}
+
+.success-title {
+  color: #4caf50;
+  margin: 0 0 16px 0;
+  font-size: 2rem;
+}
+
+.success-message {
+  color: #cfcfcf;
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.next-steps {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.next-steps h4 {
+  color: #bdf000;
+  margin: 0 0 16px 0;
+}
+
+.next-steps ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #cfcfcf;
+}
+
+.next-steps li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.success-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* Navigation */
 .stepper-navigation {
-  padding: 16px 0;
-  border-top: 1px solid rgba(189, 240, 0, 0.12);
+  display: flex;
+  align-items: center;
+  padding: 24px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 32px;
+}
+
+.nav-btn {
+  min-width: 120px;
+}
+
+/* Progress Section */
+.progress-section {
   margin-top: 24px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #cfcfcf;
+  font-weight: 500;
+}
+
+.progress-bar {
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .onboarding-wizard {
+    padding: 16px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .branding-section {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .upload-area {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .stepper-navigation {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .nav-btn {
+    min-width: 200px;
+  }
+  
+  .success-actions {
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>

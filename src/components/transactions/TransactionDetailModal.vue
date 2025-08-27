@@ -100,310 +100,294 @@
                 <div class="merchant-details">
                   <div class="merchant-name">{{ transaction.merchant?.business_name || 'Unknown Merchant' }}</div>
                   <div class="merchant-email">{{ transaction.merchant?.email || 'No email' }}</div>
-                  <div class="merchant-website" v-if="transaction.merchant?.website">
-                    <a :href="transaction.merchant.website" target="_blank">{{ transaction.merchant.website }}</a>
-                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Transaction Timeline -->
-            <div class="detail-section timeline-section">
+            <div class="detail-section full-width">
               <h4 class="section-title">Transaction Timeline</h4>
               <div class="timeline">
-                <div v-for="(event, index) in transaction.timeline || getDefaultTimeline(transaction)" :key="index"
-                  class="timeline-item" :class="{ active: event.completed }">
+                <div class="timeline-item" v-for="(event, index) in transaction.timeline" :key="index">
                   <div class="timeline-icon">
-                    <q-icon :name="event.icon" :color="event.completed ? 'green' : 'grey'" />
+                    <q-icon :name="getTimelineIcon(event.type)" :color="getTimelineColor(event.type)" />
                   </div>
                   <div class="timeline-content">
                     <div class="timeline-title">{{ event.title }}</div>
                     <div class="timeline-time">{{ formatDateTime(event.timestamp) }}</div>
-                    <div class="timeline-description" v-if="event.description">{{ event.description }}</div>
+                    <div class="timeline-description" v-if="event.description">
+                      {{ event.description }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Additional Details -->
-            <div class="detail-section">
-              <h4 class="section-title">Additional Details</h4>
-              <div class="additional-details">
-                <div class="detail-row">
-                  <span class="label">Transaction Date:</span>
-                  <span class="value">{{ formatDateTime(transaction.created_at) }}</span>
-                </div>
-                <div class="detail-row" v-if="transaction.updated_at">
-                  <span class="label">Last Updated:</span>
-                  <span class="value">{{ formatDateTime(transaction.updated_at) }}</span>
-                </div>
-                <div class="detail-row" v-if="transaction.description">
-                  <span class="label">Description:</span>
-                  <span class="value">{{ transaction.description }}</span>
-                </div>
-                <div class="detail-row" v-if="transaction.metadata">
-                  <span class="label">Metadata:</span>
-                  <span class="value">
-                    <pre class="metadata-json">{{ JSON.stringify(transaction.metadata, null, 2) }}</pre>
-                  </span>
-                </div>
+            <!-- Actions -->
+            <div class="detail-section full-width">
+              <h4 class="section-title">Actions</h4>
+              <div class="action-buttons">
+                <q-btn
+                  v-if="transaction.status === 'success'"
+                  color="orange"
+                  icon="undo"
+                  label="Initiate Refund"
+                  @click="initiateRefund"
+                  :loading="refunding"
+                />
+                <q-btn
+                  color="blue"
+                  icon="download"
+                  label="Download Receipt"
+                  @click="downloadReceipt"
+                />
+                <q-btn
+                  color="grey"
+                  icon="print"
+                  label="Print Details"
+                  @click="printDetails"
+                />
+                <q-btn
+                  color="lime"
+                  icon="share"
+                  label="Share Transaction"
+                  @click="shareTransaction"
+                />
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Loading State -->
-        <div v-else class="loading-state">
-          <q-spinner color="lime" size="48px" />
-          <div class="loading-text">Loading transaction details...</div>
-        </div>
-      </q-card-section>
-
-      <!-- Footer Actions -->
-      <q-card-section class="modal-footer">
-        <div class="footer-actions">
-          <div class="action-left">
-            <q-btn @click="downloadReceipt" :loading="downloading" icon="download" label="Download Receipt" outline
-              color="lime" />
-            <q-btn @click="copyTransactionId" icon="content_copy" label="Copy ID" flat color="grey" />
-          </div>
-
-          <div class="action-right">
-            <q-btn v-if="canRefund" @click="showRefundDialog = true" icon="money_off" label="Refund Transaction"
-              color="orange" />
-            <q-btn @click="emit('update:modelValue', false)" label="Close" flat color="grey" />
-          </div>
-        </div>
       </q-card-section>
     </q-card>
-
-    <!-- Refund Dialog -->
-    <q-dialog v-model="showRefundDialog" persistent>
-      <q-card class="refund-dialog">
-        <q-card-section class="refund-header">
-          <h4>Initiate Refund</h4>
-          <p>Refund amount for transaction {{ transaction?.id }}</p>
-        </q-card-section>
-
-        <q-card-section>
-          <div class="refund-options">
-            <div class="refund-option">
-              <q-radio v-model="refundType" val="full" label="Full Refund" color="lime" />
-              <div class="refund-amount">{{ formatCurrency(transaction?.amount || 0) }}</div>
-            </div>
-
-            <div class="refund-option">
-              <q-radio v-model="refundType" val="partial" label="Partial Refund" color="lime" />
-              <q-input v-if="refundType === 'partial'" v-model.number="partialAmount" type="number"
-                label="Refund Amount (cents)" outlined dense :min="1" :max="transaction?.amount || 0"
-                class="partial-amount-input" />
-            </div>
-          </div>
-
-          <div class="refund-reason">
-            <q-input v-model="refundReason" label="Refund Reason (optional)" outlined dense type="textarea" rows="3"
-              placeholder="Please provide a reason for the refund..." />
-          </div>
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" @click="showRefundDialog = false" />
-          <q-btn color="orange" label="Process Refund" @click="processRefund" :loading="processingRefund"
-            :disable="!canProcessRefund" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { Notify } from 'quasar'
 import api from '../../boot/axios'
 
+// Props
 const props = defineProps({
-  modelValue: { type: Boolean, required: true },
-  transaction: { type: Object, default: null }
-})
-const emit = defineEmits(['update:modelValue', 'refund'])
-
-const downloading = ref(false)
-const showRefundDialog = ref(false)
-const processingRefund = ref(false)
-const refundType = ref('full')
-const partialAmount = ref(0)
-const refundReason = ref('')
-
-const placeholderLogo = 'https://placehold.co/48x48/121018/bdf000?text=FX'
-
-const canRefund = computed(() => {
-  return props.transaction?.status === 'completed' &&
-    !props.transaction?.refunded &&
-    props.transaction?.amount > 0
-})
-const canProcessRefund = computed(() => {
-  if (refundType.value === 'full') return true
-  return partialAmount.value > 0 && partialAmount.value <= (props.transaction?.amount || 0)
-})
-
-const formatAmount = (amount) => (amount / 100).toFixed(2)
-const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100)
-const formatDateTime = (dateString) => new Date(dateString).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
-const getCurrencySymbol = (currency) => ({ USD: '$', EUR: '€', GBP: '£', JPY: '¥' }[currency] || '$')
-
-const getStatusClass = (status) => ({
-  completed: 'status-success',
-  pending: 'status-pending',
-  failed: 'status-failed',
-  refunded: 'status-refunded',
-  cancelled: 'status-cancelled'
-}[status] || 'status-unknown')
-
-const getStatusIcon = (status) => ({
-  completed: 'check_circle',
-  pending: 'hourglass_empty',
-  failed: 'error',
-  refunded: 'money_off',
-  cancelled: 'cancel'
-}[status] || 'help')
-
-const getStatusTitle = (status) => ({
-  completed: 'Payment Completed',
-  pending: 'Payment Pending',
-  failed: 'Payment Failed',
-  refunded: 'Payment Refunded',
-  cancelled: 'Payment Cancelled'
-}[status] || 'Unknown Status')
-
-const getStatusDescription = (status) => ({
-  completed: 'The payment has been successfully processed',
-  pending: 'The payment is being processed',
-  failed: 'The payment could not be completed',
-  refunded: 'The payment has been refunded to the customer',
-  cancelled: 'The payment was cancelled'
-}[status] || 'Status information unavailable')
-
-const getMethodIcon = (method) => ({
-  card: 'credit_card',
-  apple_pay: 'phone_iphone',
-  google_pay: 'android',
-  paypal: 'payment',
-  bank_transfer: 'account_balance'
-}[method] || 'payment')
-
-const getMethodColor = (method) => ({
-  card: 'blue',
-  apple_pay: 'black',
-  google_pay: 'green',
-  paypal: 'blue',
-  bank_transfer: 'purple'
-}[method] || 'grey')
-
-const getMethodName = (method) => ({
-  card: 'Credit Card',
-  apple_pay: 'Apple Pay',
-  google_pay: 'Google Pay',
-  paypal: 'PayPal',
-  bank_transfer: 'Bank Transfer'
-}[method] || 'Unknown Method')
-
-const getDefaultTimeline = (transaction) => {
-  const timeline = [
-    { title: 'Transaction Created', timestamp: transaction.created_at, icon: 'receipt', completed: true, description: 'Payment request initiated' }
-  ]
-  if (transaction.status === 'completed') {
-    timeline.push({ title: 'Payment Processed', timestamp: transaction.updated_at || transaction.created_at, icon: 'check_circle', completed: true, description: 'Payment successfully completed' })
-  } else if (transaction.status === 'failed') {
-    timeline.push({ title: 'Payment Failed', timestamp: transaction.updated_at || transaction.created_at, icon: 'error', completed: true, description: 'Payment processing failed' })
+  modelValue: {
+    type: Boolean,
+    required: true
+  },
+  transaction: {
+    type: Object,
+    default: () => ({})
   }
-  return timeline
-}
+})
 
-const downloadReceipt = async () => {
-  if (!props.transaction) return
-  try {
-    downloading.value = true
-    const response = await api.get(`/api/transactions/${props.transaction.id}/receipt`, { responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `receipt_${props.transaction.id}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-  } catch {
-    Notify.create({ type: 'negative', message: 'Failed to download receipt' })
-  } finally {
-    downloading.value = false
+// Emits
+const emit = defineEmits(['update:modelValue'])
+
+// Reactive data
+const refunding = ref(false)
+const placeholderLogo = 'https://dummyimage.com/200x200/121018/bdf000.png&text=Logo'
+
+// Methods
+const getStatusClass = (status) => {
+  const classes = {
+    success: 'status-success',
+    pending: 'status-pending',
+    failed: 'status-failed',
+    refunded: 'status-refunded',
+    cancelled: 'status-cancelled'
   }
+  return classes[status] || 'status-unknown'
 }
 
-const copyTransactionId = () => {
-  if (!props.transaction?.id) return
-  navigator.clipboard.writeText(String(props.transaction.id))
-  Notify.create({ type: 'positive', message: 'Transaction ID copied' })
+const getStatusIcon = (status) => {
+  const icons = {
+    success: 'check_circle',
+    pending: 'hourglass_empty',
+    failed: 'error',
+    refunded: 'undo',
+    cancelled: 'cancel'
+  }
+  return icons[status] || 'help'
 }
 
-const processRefund = async () => {
-  if (!props.transaction) return
+const getStatusTitle = (status) => {
+  const titles = {
+    success: 'Payment Successful',
+    pending: 'Payment Pending',
+    failed: 'Payment Failed',
+    refunded: 'Payment Refunded',
+    cancelled: 'Payment Cancelled'
+  }
+  return titles[status] || 'Unknown Status'
+}
+
+const getStatusDescription = (status) => {
+  const descriptions = {
+    success: 'Your payment has been processed successfully',
+    pending: 'Your payment is being processed',
+    failed: 'Your payment could not be processed',
+    refunded: 'Your payment has been refunded',
+    cancelled: 'Your payment was cancelled'
+  }
+  return descriptions[status] || 'Status information unavailable'
+}
+
+const getCurrencySymbol = (currency) => {
+  const symbols = {
+    usd: '$',
+    eur: '€',
+    gbp: '£',
+    inr: '₹'
+  }
+  return symbols[currency?.toLowerCase()] || '$'
+}
+
+const formatAmount = (amount) => {
+  return (amount / 100).toFixed(2)
+}
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amount / 100)
+}
+
+const getMethodIcon = (method) => {
+  const icons = {
+    card: 'credit_card',
+    bank_transfer: 'account_balance',
+    wallet: 'account_balance_wallet',
+    upi: 'smartphone'
+  }
+  return icons[method] || 'payment'
+}
+
+const getMethodColor = (method) => {
+  const colors = {
+    card: 'blue',
+    bank_transfer: 'green',
+    wallet: 'purple',
+    upi: 'orange'
+  }
+  return colors[method] || 'grey'
+}
+
+const getMethodName = (method) => {
+  const names = {
+    card: 'Credit/Debit Card',
+    bank_transfer: 'Bank Transfer',
+    wallet: 'Digital Wallet',
+    upi: 'UPI Payment'
+  }
+  return names[method] || 'Unknown Method'
+}
+
+const getTimelineIcon = (type) => {
+  const icons = {
+    created: 'add_circle',
+    processing: 'sync',
+    completed: 'check_circle',
+    failed: 'error',
+    refunded: 'undo'
+  }
+  return icons[type] || 'info'
+}
+
+const getTimelineColor = (type) => {
+  const colors = {
+    created: 'blue',
+    processing: 'orange',
+    completed: 'green',
+    failed: 'red',
+    refunded: 'grey'
+  }
+  return colors[type] || 'grey'
+}
+
+const formatDateTime = (timestamp) => {
+  if (!timestamp) return 'N/A'
+  return new Date(timestamp).toLocaleString()
+}
+
+const initiateRefund = async () => {
   try {
-    processingRefund.value = true
-    const refundAmount = refundType.value === 'full' ? props.transaction.amount : partialAmount.value
-    await api.post(`/api/transactions/${props.transaction.id}/refund`, {
-      amount: refundAmount,
-      reason: refundReason.value
+    refunding.value = true
+    await api.post(`/api/transactions/${props.transaction.id}/refund`)
+    Notify.create({
+      type: 'positive',
+      message: 'Refund initiated successfully',
+      position: 'top'
     })
-    Notify.create({ type: 'positive', message: 'Refund initiated successfully' })
-    emit('refund', props.transaction.id, refundAmount)
-    showRefundDialog.value = false
-    refundType.value = 'full'
-    partialAmount.value = 0
-    refundReason.value = ''
+    emit('update:modelValue', false)
   } catch {
-    Notify.create({ type: 'negative', message: 'Failed to process refund' })
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to initiate refund',
+      position: 'top'
+    })
   } finally {
-    processingRefund.value = false
+    refunding.value = false
   }
 }
 
-watch(refundType, (newType) => {
-  if (newType === 'partial' && props.transaction) {
-    partialAmount.value = Math.floor(props.transaction.amount / 2)
-  }
-})
+const downloadReceipt = () => {
+  // Implement receipt download
+  console.log('Downloading receipt for transaction:', props.transaction.id)
+}
+
+const printDetails = () => {
+  window.print()
+}
+
+const shareTransaction = () => {
+  // Implement sharing functionality
+  console.log('Sharing transaction:', props.transaction.id)
+}
 </script>
 
 <style scoped>
 .transaction-detail-modal {
-  background: linear-gradient(135deg, #000000 0%, #121018 100%);
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   color: #ffffff;
-  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .modal-header {
-  border-bottom: 1px solid rgba(189, 240, 0, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 24px;
 }
 
 .header-content {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
 .modal-title {
-  margin: 0;
-  color: #bdf000;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.transaction-id {
+  color: #cfcfcf;
+  font-size: 0.875rem;
 }
 
 .modal-content {
-  padding-top: 0;
+  padding: 32px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
+/* Status Banner */
 .status-banner {
-  border: 1px solid;
+  padding: 20px;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 32px;
+  border: 1px solid;
 }
 
 .status-success {
@@ -422,114 +406,211 @@ watch(refundType, (newType) => {
 }
 
 .status-refunded {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.status-cancelled {
   background: rgba(158, 158, 158, 0.1);
   border-color: rgba(158, 158, 158, 0.3);
 }
 
-.details-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
+.status-cancelled {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
   gap: 16px;
 }
 
+.status-text {
+  flex: 1;
+}
+
+.status-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.status-subtitle {
+  color: #cfcfcf;
+}
+
+/* Details Grid */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
 .detail-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(189, 240, 0, 0.15);
-  border-radius: 12px;
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.amount-section .amount-display {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
+.detail-section.full-width {
+  grid-column: 1 / -1;
 }
 
-.amount-section .currency {
-  font-size: 20px;
-}
-
-.amount-section .amount {
-  font-size: 36px;
-  font-weight: 800;
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 20px 0;
   color: #bdf000;
 }
 
-.profile-stats,
-.amount-details,
-.additional-details {
-  margin-top: 12px;
+/* Amount Section */
+.amount-display {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.currency {
+  font-size: 2rem;
+  color: #cfcfcf;
+  margin-right: 8px;
+}
+
+.amount {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #bdf000;
+}
+
+.amount-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .detail-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  align-items: center;
 }
 
-.detail-row:last-child {
-  border-bottom: none;
+.label {
+  color: #cfcfcf;
 }
 
-.section-title {
-  margin: 0 0 12px 0;
-  color: #bdf000;
+.value {
+  font-weight: 600;
+  color: #ffffff;
 }
 
+/* Customer Info */
+.customer-info, .payment-method, .merchant-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.customer-avatar, .merchant-avatar {
+  flex-shrink: 0;
+}
+
+.customer-details, .merchant-details {
+  flex: 1;
+}
+
+.customer-name, .merchant-name {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.customer-email, .customer-phone, .merchant-email {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
+/* Payment Method */
+.method-icon {
+  flex-shrink: 0;
+}
+
+.method-details {
+  flex: 1;
+}
+
+.method-name {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.method-meta {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
+/* Timeline */
 .timeline {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .timeline-item {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.timeline-item.active {
-  background: rgba(189, 240, 0, 0.06);
-  border-color: rgba(189, 240, 0, 0.2);
-}
-
-.modal-footer {
-  border-top: 1px solid rgba(189, 240, 0, 0.15);
-}
-
-.footer-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
 }
 
-.loading-state {
+.timeline-icon {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.timeline-title {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.timeline-time {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+
+.timeline-description {
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.action-buttons {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-}
-
-.loading-text {
-  margin-top: 12px;
-  color: #bdf000;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .details-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    padding: 16px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .amount {
+    font-size: 2rem;
+  }
+  
+  .currency {
+    font-size: 1.5rem;
   }
 }
 </style>

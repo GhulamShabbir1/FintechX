@@ -102,8 +102,6 @@ const props = defineProps({
   } 
 })
 
-const { filters } = toRefs(props)
-
 // Reactive data
 const loading = ref(false)
 const revenueData = ref([])
@@ -114,115 +112,166 @@ const checkoutTimeLabels = ref([])
 const geographyData = ref([])
 const geographyLabels = ref([])
 
+// Destructure props for watchers
+const { filters } = toRefs(props)
+
 // Methods
-const fetchAll = async () => {
+const loadRevenueData = async () => {
+  try {
+    const { data } = await api.get('/api/stats/revenue', { params: filters.value })
+    revenueData.value = data.data || []
+  } catch (error) {
+    console.error('Error loading revenue data:', error)
+    revenueData.value = generateMockRevenueData()
+  }
+}
+
+const loadMethodsData = async () => {
+  try {
+    const { data } = await api.get('/api/stats/methods', { params: filters.value })
+    methodsData.value = data.data || []
+  } catch (error) {
+    console.error('Error loading methods data:', error)
+    methodsData.value = generateMockMethodsData()
+  }
+}
+
+const loadTrendsData = async () => {
+  try {
+    const { data } = await api.get('/api/stats/transactions', { params: filters.value })
+    trendsData.value = data.data || []
+  } catch (error) {
+    console.error('Error loading trends data:', error)
+    trendsData.value = generateMockTrendsData()
+  }
+}
+
+const loadCheckoutTimeData = async () => {
+  try {
+    const { data } = await api.get('/api/stats/checkout-time', { params: filters.value })
+    checkoutTimeData.value = data.data || []
+    checkoutTimeLabels.value = data.labels || []
+  } catch (error) {
+    console.error('Error loading checkout time data:', error)
+    const mockData = generateMockCheckoutTimeData()
+    checkoutTimeData.value = mockData.data
+    checkoutTimeLabels.value = mockData.labels
+  }
+}
+
+const loadGeographyData = async () => {
+  try {
+    const { data } = await api.get('/api/stats/geography', { params: filters.value })
+    geographyData.value = data.data || []
+    geographyLabels.value = data.labels || []
+  } catch (error) {
+    console.error('Error loading geography data:', error)
+    const mockData = generateMockGeographyData()
+    geographyData.value = mockData.data
+    geographyLabels.value = mockData.labels
+  }
+}
+
+const loadAllData = async () => {
   loading.value = true
   try {
-    const params = { 
-      startDate: filters.value.startDate, 
-      endDate: filters.value.endDate, 
-      merchantId: filters.value.merchantId 
-    }
-    
-    const [r, m, t, c, g] = await Promise.all([
-      api.get('/stats/revenue', { params }),
-      api.get('/stats/methods', { params }),
-      api.get('/stats/transactions', { params }),
-      api.get('/stats/checkout-time', { params }),
-      api.get('/stats/geography', { params })
+    await Promise.all([
+      loadRevenueData(),
+      loadMethodsData(),
+      loadTrendsData(),
+      loadCheckoutTimeData(),
+      loadGeographyData()
     ])
-    
-    revenueData.value = r.data
-    methodsData.value = m.data
-    trendsData.value = t.data
-    checkoutTimeData.value = c.data.values || []
-    checkoutTimeLabels.value = c.data.labels || []
-    geographyData.value = g.data.values || []
-    geographyLabels.value = g.data.labels || []
   } catch (error) {
-    console.error('Failed to fetch stats data:', error)
-    // Use demo data on error
-    loadDemoData()
+    console.error('Error loading stats data:', error)
   } finally {
     loading.value = false
   }
 }
 
-const loadDemoData = () => {
-  // Demo revenue data
-  revenueData.value = [
-    { month: 'Jan', revenue: 45000 },
-    { month: 'Feb', revenue: 52000 },
-    { month: 'Mar', revenue: 48000 },
-    { month: 'Apr', revenue: 61000 },
-    { month: 'May', revenue: 55000 },
-    { month: 'Jun', revenue: 68000 }
-  ]
-  
-  // Demo methods data
-  methodsData.value = [
-    { method: 'Credit Card', percentage: 45 },
-    { method: 'Debit Card', percentage: 28 },
-    { method: 'Digital Wallet', percentage: 18 },
-    { method: 'Bank Transfer', percentage: 9 }
-  ]
-  
-  // Demo trends data
-  trendsData.value = [
-    { month: 'Jan', successful: 120, failed: 8 },
-    { month: 'Feb', successful: 135, failed: 6 },
-    { month: 'Mar', successful: 142, failed: 12 },
-    { month: 'Apr', successful: 158, failed: 9 },
-    { month: 'May', successful: 165, failed: 7 },
-    { month: 'Jun', successful: 184, failed: 11 }
-  ]
-  
-  // Demo checkout time data
-  checkoutTimeData.value = [2.3, 2.1, 2.5, 2.0, 1.8, 2.2, 1.9]
-  checkoutTimeLabels.value = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  
-  // Demo geography data
-  geographyData.value = [45, 32, 28, 22, 18]
-  geographyLabels.value = ['United States', 'United Kingdom', 'Canada', 'Germany', 'Australia']
-}
-
 const refreshData = () => {
-  fetchAll()
+  loadAllData()
 }
 
-// Watch for filter changes
-watch(filters, fetchAll, { deep: true, immediate: true })
+// Mock data generators for development
+const generateMockRevenueData = () => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+  return months.map(month => ({
+    month,
+    revenue: Math.floor(Math.random() * 50000) + 10000,
+    transactions: Math.floor(Math.random() * 1000) + 200
+  }))
+}
 
-// Initialize
+const generateMockMethodsData = () => [
+  { method: 'Card', percentage: 65, count: 1300 },
+  { method: 'Bank Transfer', percentage: 20, count: 400 },
+  { method: 'Wallet', percentage: 10, count: 200 },
+  { method: 'UPI', percentage: 5, count: 100 }
+]
+
+const generateMockTrendsData = () => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  return days.map(day => ({
+    day,
+    successful: Math.floor(Math.random() * 100) + 50,
+    failed: Math.floor(Math.random() * 20) + 5,
+    pending: Math.floor(Math.random() * 30) + 10
+  }))
+}
+
+const generateMockCheckoutTimeData = () => {
+  const timeRanges = ['0-30s', '30-60s', '1-2m', '2-5m', '5m+']
+  return {
+    data: timeRanges.map(() => Math.floor(Math.random() * 100) + 20),
+    labels: timeRanges
+  }
+}
+
+const generateMockGeographyData = () => {
+  const countries = ['USA', 'UK', 'Canada', 'Germany', 'France', 'India', 'Australia']
+  return {
+    data: countries.map(() => Math.floor(Math.random() * 1000) + 100),
+    labels: countries
+  }
+}
+
+// Watchers
+watch(filters, () => {
+  loadAllData()
+}, { deep: true })
+
+// Lifecycle
 onMounted(() => {
-  fetchAll()
+  loadAllData()
 })
 </script>
 
 <style scoped>
 .stats-dashboard {
   position: relative;
-  min-height: 400px;
+  min-height: 600px;
 }
 
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  margin-bottom: 32px;
 }
 
 .chart-card {
-  background: #121212;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 24px;
-  border: 1px solid rgba(189, 240, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 .chart-card:hover {
-  border-color: rgba(189, 240, 0, 0.2);
+  border-color: rgba(189, 240, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .chart-card.full-width {
@@ -237,8 +286,8 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #ffffff;
   margin: 0;
 }
@@ -250,7 +299,12 @@ onMounted(() => {
 
 .chart-container {
   height: 300px;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  color: #cfcfcf;
 }
 
 .loading-overlay {
@@ -264,18 +318,17 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 10;
   border-radius: 16px;
+  z-index: 10;
 }
 
 .loading-text {
-  color: #bdf000;
+  color: #ffffff;
   margin-top: 16px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 1.1rem;
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 1024px) {
   .charts-grid {
     grid-template-columns: 1fr;
@@ -284,25 +337,15 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .chart-card {
-    padding: 20px;
+    padding: 16px;
   }
   
   .card-title {
-    font-size: 16px;
+    font-size: 1.1rem;
   }
   
   .chart-container {
     height: 250px;
-  }
-}
-
-@media (max-width: 480px) {
-  .chart-card {
-    padding: 16px;
-  }
-  
-  .chart-container {
-    height: 200px;
   }
 }
 </style>

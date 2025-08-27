@@ -98,335 +98,227 @@
             </div>
           </div>
           <div class="chart-container">
-            <canvas ref="revenueChart" height="300"></canvas>
+            <RevenueChart :data="revenueData" />
           </div>
         </div>
 
-        <!-- Recent Activity -->
-        <div class="activity-card animate-fade-in" style="animation-delay: 0.5s">
+        <!-- Recent Transactions -->
+        <div class="transactions-card animate-fade-in" style="animation-delay: 0.5s">
           <div class="card-header">
-            <h3 class="card-title">Recent Activity</h3>
-            <q-btn flat round dense icon="more_vert" color="lime" />
+            <h3 class="card-title">Recent Transactions</h3>
+            <q-btn flat round dense icon="visibility" color="lime" @click="viewAllTransactions" class="view-all-btn" />
           </div>
-          
-          <div class="activity-list">
-            <div 
-              v-for="activity in recentActivity" 
-              :key="activity.id" 
-              class="activity-item"
-              :class="`activity-${activity.color}`"
-              @click="viewActivity(activity)"
-            >
-              <div class="activity-icon">
-                <q-icon :name="activity.icon" :color="activity.color" size="20px" />
+          <div class="transactions-list">
+            <div v-for="transaction in recentTransactions" :key="transaction.id" class="transaction-item">
+              <div class="transaction-info">
+                <div class="customer-name">{{ transaction.customer_name }}</div>
+                <div class="transaction-date">{{ formatDate(transaction.created_at) }}</div>
               </div>
-              <div class="activity-content">
-                <div class="activity-title">{{ activity.title }}</div>
-                <div class="activity-time">{{ formatTime(activity.timestamp) }}</div>
-              </div>
-              <div class="activity-amount" v-if="activity.amount">
-                {{ formatCurrency(activity.amount) }}
+              <div class="transaction-amount">
+                <span class="amount">{{ formatCurrency(transaction.amount) }}</span>
+                <q-chip :color="getStatusColor(transaction.status)" :label="transaction.status" size="sm" />
               </div>
             </div>
-          </div>
-          
-          <div class="activity-footer">
-            <q-btn flat color="lime" label="View All Activity" @click="viewAllActivity" class="view-all-btn" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="quick-actions q-mt-xl animate-fade-in" style="animation-delay: 0.6s">
+    <div class="quick-actions animate-fade-in" style="animation-delay: 0.6s">
       <h3 class="section-title">Quick Actions</h3>
       <div class="actions-grid">
-        <div 
-          v-for="(action, index) in quickActions" 
-          :key="action.id"
-          class="action-item"
-          :style="`animation-delay: ${0.7 + index * 0.1}s`"
-          @click="executeAction(action)"
-        >
+        <q-card class="action-card" @click="generateInvoice">
           <div class="action-icon">
-            <q-icon :name="action.icon" color="lime" size="24px" />
+            <q-icon name="receipt" size="32px" color="lime" />
           </div>
-          <div class="action-content">
-            <h4 class="action-title">{{ action.title }}</h4>
-            <p class="action-description">{{ action.description }}</p>
+          <div class="action-text">Generate Invoice</div>
+        </q-card>
+        
+        <q-card class="action-card" @click="exportData">
+          <div class="action-icon">
+            <q-icon name="download" size="32px" color="lime" />
           </div>
-          <div class="action-arrow">
-            <q-icon name="arrow_forward" color="lime" size="20px" />
+          <div class="action-text">Export Data</div>
+        </q-card>
+        
+        <q-card class="action-card" @click="contactSupport">
+          <div class="action-icon">
+            <q-icon name="support_agent" size="32px" color="lime" />
           </div>
-        </div>
+          <div class="action-text">Contact Support</div>
+        </q-card>
+        
+        <q-card class="action-card" @click="viewAnalytics">
+          <div class="action-icon">
+            <q-icon name="analytics" size="32px" color="lime" />
+          </div>
+          <div class="action-text">View Analytics</div>
+        </q-card>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../store/auth'
 import { useMerchantStore } from '../../store/merchant'
+import { useTransactionsStore } from '../../store/transactions'
 import { pinia } from '../../store/pinia'
-import { Chart, registerables } from 'chart.js'
 import TopKpiCards from '../stats/TopKpiCards.vue'
 import MerchantStatusCard from './MerchantStatusCard.vue'
-
-Chart.register(...registerables)
+import RevenueChart from '../stats/charts/RevenueChart.vue'
 
 const router = useRouter()
+const auth = useAuthStore(pinia)
 const merchant = useMerchantStore(pinia)
+const transactions = useTransactionsStore(pinia)
 
 // Reactive data
-const user = ref({
-  name: 'John Doe',
-  email: 'john@business.com'
+const loading = ref(false)
+const profile = ref({})
+const profileStats = ref({})
+const revenueData = ref([])
+const recentTransactions = ref([])
+
+// Computed properties
+const user = computed(() => auth.user || {})
+const merchantStatus = computed(() => profile.value.status || 'pending')
+const onboardingProgress = computed(() => {
+  const required = ['business_name', 'logo_url', 'bank_account_name', 'bank_account_number']
+  const completed = required.filter(field => profile.value[field])
+  return Math.round((completed.length / required.length) * 100)
 })
 
-const profile = ref({
-  business_name: 'TechCorp Inc',
-  email: 'contact@techcorp.com',
-  website: 'www.techcorp.com',
-  logo_url: null
-})
-
-const profileStats = ref({
-  transactions: 1247,
-  customers: 892,
-  rating: '4.8'
-})
-
-const merchantStatus = ref('verified')
-const onboardingProgress = ref(85)
-
-const kpiData = ref({
-  revenue: 284750,
-  revenueChange: 12.5,
-  revenueProgress: 75,
-  transactions: 1247,
-  transactionsChange: 8.3,
-  transactionsProgress: 85,
-  successRate: 98.7,
-  successRateChange: 2.1,
-  successRateProgress: 90,
-  averageOrder: 228,
-  averageOrderChange: -1.2,
-  averageOrderProgress: 65
-})
-
-const recentActivity = ref([
+const kpiData = computed(() => [
   {
-    id: 1,
-    title: 'Payment received from Customer A',
-    amount: 1250.00,
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    icon: 'payments',
-    color: 'green'
+    title: 'Total Revenue',
+    value: formatCurrency(profileStats.value.total_revenue || 0),
+    change: '+12.5%',
+    trend: 'up',
+    icon: 'trending_up',
+    color: 'lime'
   },
   {
-    id: 2,
-    title: 'New customer registered',
-    amount: null,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60),
-    icon: 'person_add',
+    title: 'Transactions',
+    value: profileStats.value.transactions || 0,
+    change: '+8.2%',
+    trend: 'up',
+    icon: 'receipt',
     color: 'blue'
   },
   {
-    id: 3,
-    title: 'Refund processed',
-    amount: -89.99,
-    timestamp: new Date(Date.now() - 1000 * 60 * 120),
-    icon: 'money_off',
-    color: 'orange'
+    title: 'Success Rate',
+    value: `${profileStats.value.success_rate || 0}%`,
+    change: '+2.1%',
+    trend: 'up',
+    icon: 'check_circle',
+    color: 'green'
   },
   {
-    id: 4,
-    title: 'Payment failed',
-    amount: null,
-    timestamp: new Date(Date.now() - 1000 * 60 * 180),
-    icon: 'error',
-    color: 'red'
-  }
-])
-
-const quickActions = ref([
-  {
-    id: 1,
-    title: 'Create Payment Link',
-    description: 'Generate a payment link for your customers',
-    icon: 'link',
-    action: 'create-payment-link'
-  },
-  {
-    id: 2,
-    title: 'View Reports',
-    description: 'Access detailed analytics and reports',
-    icon: 'analytics',
-    action: 'view-reports'
-  },
-  {
-    id: 3,
-    title: 'Manage Customers',
-    description: 'View and manage your customer database',
+    title: 'Active Customers',
+    value: profileStats.value.customers || 0,
+    change: '+15.3%',
+    trend: 'up',
     icon: 'people',
-    action: 'manage-customers'
-  },
-  {
-    id: 4,
-    title: 'Support Center',
-    description: 'Get help and contact support',
-    icon: 'support_agent',
-    action: 'support'
+    color: 'purple'
   }
 ])
 
-// Template refs
-const revenueChart = ref(null)
-let chartInstance = null
-
-// Computed properties
-const placeholderLogo = computed(() => 'https://placehold.co/80x80/121018/bdf000?text=B')
+const placeholderLogo = 'https://dummyimage.com/200x200/121018/bdf000.png&text=Logo'
 
 // Methods
+const loadDashboardData = async () => {
+  try {
+    loading.value = true
+    
+    // Load merchant profile
+    const profileData = await merchant.getBusinessInfo()
+    profile.value = profileData || {}
+    
+    // Load transactions
+    const transactionsData = await transactions.fetchForMerchant()
+    recentTransactions.value = transactionsData.slice(0, 5)
+    
+    // Load stats
+    const statsData = await merchant.getStats()
+    profileStats.value = statsData || {}
+    
+    // Load revenue data
+    const revenueResponse = await merchant.getRevenueData()
+    revenueData.value = revenueResponse || []
+    
+  } catch (error) {
+    console.error('Error loading dashboard data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 const createTransaction = () => {
-  router.push('/transactions/new')
+  router.push('/checkout')
 }
 
 const openSettings = () => {
-  router.push('/business/settings')
+  router.push('/settings')
 }
 
 const editProfile = () => {
-  router.push('/business/profile')
+  router.push('/profile')
 }
 
 const refreshChart = () => {
-  console.log('Refreshing chart...')
+  loadDashboardData()
 }
 
-const viewActivity = (activity) => {
-  console.log('Viewing activity:', activity)
+const viewAllTransactions = () => {
+  router.push('/transactions')
 }
 
-const viewAllActivity = () => {
-  router.push('/activity')
+const generateInvoice = () => {
+  // Implement invoice generation
+  console.log('Generate invoice')
 }
 
-const executeAction = (action) => {
-  switch (action.action) {
-    case 'create-payment-link':
-      router.push('/payments/create-link')
-      break
-    case 'view-reports':
-      router.push('/reports')
-      break
-    case 'manage-customers':
-      router.push('/customers')
-      break
-    case 'support':
-      router.push('/support')
-      break
-  }
+const exportData = () => {
+  // Implement data export
+  console.log('Export data')
 }
 
-const formatTime = (timestamp) => {
-  const now = new Date()
-  const time = new Date(timestamp)
-  const diff = now - time
-  
-  if (diff < 60000) return 'Just now'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
-  return time.toLocaleDateString()
+const contactSupport = () => {
+  router.push('/support')
+}
+
+const viewAnalytics = () => {
+  router.push('/stats')
 }
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
-  }).format(amount)
+  }).format(amount / 100)
 }
 
-const createRevenueChart = () => {
-  const ctx = revenueChart.value.getContext('2d')
-  
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [{
-        label: 'Revenue',
-        data: [45000, 52000, 48000, 61000, 55000, 68000],
-        borderColor: '#bdf000',
-        backgroundColor: 'rgba(189, 240, 0, 0.1)',
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: '#bdf000',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
-          },
-          ticks: {
-            color: '#ccc',
-            callback: function(value) {
-              return '$' + (value / 1000) + 'K'
-            }
-          }
-        },
-        x: {
-          grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
-          },
-          ticks: {
-            color: '#ccc'
-          }
-        }
-      },
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-      animation: {
-        duration: 2000,
-        easing: 'easeOutQuart'
-      }
-    }
-  })
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString()
+}
+
+const getStatusColor = (status) => {
+  const colors = {
+    success: 'green',
+    pending: 'orange',
+    failed: 'red',
+    refunded: 'grey'
+  }
+  return colors[status] || 'grey'
 }
 
 // Lifecycle
-onMounted(async () => {
-  if (merchant.profile) {
-    profile.value = { ...merchant.profile }
-  }
-  
-  // Add slight delay for smooth chart animation
-  setTimeout(() => {
-    createRevenueChart()
-  }, 500)
-})
-
-onBeforeUnmount(() => {
-  if (chartInstance) {
-    chartInstance.destroy()
-  }
+onMounted(() => {
+  loadDashboardData()
 })
 </script>
 
