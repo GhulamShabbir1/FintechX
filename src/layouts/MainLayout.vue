@@ -16,6 +16,7 @@
           <q-btn flat dense label="Home" to="/" class="nav-btn" />
           <q-btn flat dense label="Advantages" to="/" @click.prevent="scrollTo('advantages')" class="nav-btn" />
           <q-btn flat dense label="Services" to="/" @click.prevent="scrollTo('services')" class="nav-btn" />
+          <q-btn flat dense label="Reviews" to="/" @click.prevent="scrollTo('reviews')" class="nav-btn" />
           <q-btn flat dense label="Users" to="/" @click.prevent="scrollTo('metrics')" class="nav-btn" />
           <q-btn flat dense label="Partners" to="/" @click.prevent="scrollTo('partners')" class="nav-btn" />
         </div>
@@ -60,21 +61,22 @@
           </div>
           <div class="col-12 col-md-6 text-center hero-visual">
             <q-img :src="heroImg" alt="Fintech 3D" class="hero-img floating-3d" fit="contain" ratio="16/10"
-              crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('hero')" />
+              @error="onImgError('hero')" />
             <div class="hero-glow"></div>
           </div>
         </section>
 
-        <!-- Advantages (Row 1: card left + 3D image right; Row 2: 3D image left + card right) -->
+        <!-- Advantages Section - Left and Right Cards -->
         <section id="advantages" class="section-advantages q-px-xl q-pt-xl q-pb-lg">
           <div class="text-center q-mb-xl section-header">
             <div class="text-h4 text-lime text-bold">Why Choose FinteckX</div>
             <p class="text-subtitle2 section-subtitle">Powerful features designed for growth</p>
           </div>
           
+          <!-- First Advantage: Left Card, Right Image -->
           <div class="row items-center q-mb-xl advantage-item">
             <div class="col-12 col-md-6 advantage-content">
-              <q-card class="advantage-card card-glass lime-glow">
+              <q-card class="advantage-card card-glass lime-glow slide-in-left">
                 <div class="advantage-icon">
                   <q-icon name="public" size="32px" class="text-lime" />
                 </div>
@@ -87,18 +89,19 @@
               </q-card>
             </div>
             <div class="col-12 col-md-6 text-center advantage-visual">
-              <q-img :src="reachImg" alt="Global Reach" class="advantage-img floating" fit="contain" ratio="16/10"
-                crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('reach')" />
+              <q-img :src="reachImg" alt="Global Reach" class="advantage-img floating slide-in-right" fit="contain" ratio="16/10"
+                @error="onImgError('reach')" />
             </div>
           </div>
 
+          <!-- Second Advantage: Left Image, Right Card -->
           <div class="row items-center q-mb-xl advantage-item advantage-reverse">
             <div class="col-12 col-md-6 text-center advantage-visual">
-              <q-img :src="securityImg" alt="Security" class="advantage-img floating" fit="contain" ratio="16/10"
-                crossorigin="anonymous" referrerpolicy="no-referrer" @error="onImgError('security')" />
+              <q-img :src="securityImg" alt="Security" class="advantage-img floating slide-in-left" fit="contain" ratio="16/10"
+                @error="onImgError('security')" />
             </div>
             <div class="col-12 col-md-6 advantage-content">
-              <q-card class="advantage-card card-glass lime-glow">
+              <q-card class="advantage-card card-glass lime-glow slide-in-right">
                 <div class="advantage-icon">
                   <q-icon name="security" size="32px" class="text-lime" />
                 </div>
@@ -111,6 +114,27 @@
               </q-card>
             </div>
           </div>
+
+          <!-- Third Advantage: Left Card, Right Image -->
+          <div class="row items-center q-mb-xl advantage-item">
+            <div class="col-12 col-md-6 advantage-content">
+              <q-card class="advantage-card card-glass lime-glow slide-in-left">
+                <div class="advantage-icon">
+                  <q-icon name="trending_up" size="32px" class="text-lime" />
+                </div>
+                <div class="text-h5 text-lime text-bold q-mt-md">Smart Analytics</div>
+                <p class="q-mt-sm advantage-description">
+                  AI-powered insights and real-time analytics help you make data-driven decisions for business growth.
+                </p>
+                <div class="text-h3 text-lime q-mt-lg">+45%</div>
+                <div class="text-caption advantage-stat-label">Revenue Growth</div>
+              </q-card>
+            </div>
+            <div class="col-12 col-md-6 text-center advantage-visual">
+              <q-img :src="analyticsImg" alt="Analytics" class="advantage-img floating slide-in-right" fit="contain" ratio="16/10"
+                @error="onImgError('analytics')" />
+            </div>
+          </div>
         </section>
 
         <!-- Services -->
@@ -121,13 +145,39 @@
           </div>
           <div class="row q-col-gutter-xl">
             <div class="col-12 col-md-4" v-for="(service, index) in services" :key="index">
-              <q-card class="service-card card-glass text-center" :class="{'lime-glow': index === 1}">
+              <q-card class="service-card card-glass text-center hover-lift" :class="{'lime-glow': index === 1}">
                 <div class="service-icon">
                   <q-icon :name="service.icon" size="40px" :class="index === 1 ? 'text-lime' : 'text-white'" />
                 </div>
                 <div class="text-h6 text-bold q-mt-md" :class="index === 1 ? 'text-lime' : 'text-white'">{{ service.title }}</div>
                 <p class="q-mt-sm service-description">{{ service.description }}</p>
                 <q-btn flat :color="index === 1 ? 'lime' : 'white'" label="Learn more" class="q-mt-md" />
+              </q-card>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reviews Section -->
+        <section id="reviews" class="section-reviews q-px-xl q-py-lg">
+          <div class="text-center q-mb-xl section-header">
+            <div class="text-h4 text-lime text-bold">What Our Users Say</div>
+            <p class="text-subtitle2 section-subtitle">Trusted by thousands of merchants worldwide</p>
+          </div>
+          <div class="row q-col-gutter-xl">
+            <div class="col-12 col-md-4" v-for="(review, index) in reviews" :key="index">
+              <q-card class="review-card card-glass text-center hover-lift">
+                <div class="review-avatar">
+                  <q-avatar size="80px" class="review-avatar-img">
+                    <q-img :src="review.avatar" @error="onAvatarError(index)" />
+                  </q-avatar>
+                </div>
+                <div class="review-rating q-mt-md">
+                  <q-icon v-for="star in 5" :key="star" name="star" size="20px" 
+                    :class="star <= review.rating ? 'text-yellow' : 'text-grey-6'" />
+                </div>
+                <div class="text-h6 text-bold q-mt-md text-white">{{ review.name }}</div>
+                <div class="text-caption text-lime q-mb-md">{{ review.position }}</div>
+                <p class="review-text">{{ review.comment }}</p>
               </q-card>
             </div>
           </div>
@@ -141,12 +191,31 @@
           </div>
           <div class="row q-col-gutter-xl">
             <div class="col-12 col-md-4" v-for="(step, index) in howItWorks" :key="index">
-              <q-card class="how-card card-glass text-center">
+              <q-card class="how-card card-glass text-center hover-lift">
                 <div class="step-number">{{ index + 1 }}</div>
-                <q-img :src="step.image" ratio="1" fit="contain" class="q-mb-md floating-slow" crossorigin="anonymous"
-                  referrerpolicy="no-referrer" @error="onHowImgError(index + 1)" />
+                <q-img :src="step.image" ratio="1" fit="contain" class="q-mb-md floating-slow" 
+                  @error="onHowImgError(index + 1)" />
                 <div class="text-h6 text-lime text-bold">{{ step.title }}</div>
                 <p class="q-mt-sm how-description">{{ step.description }}</p>
+              </q-card>
+            </div>
+          </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="section-features q-px-xl q-py-lg">
+          <div class="text-center q-mb-xl section-header">
+            <div class="text-h4 text-lime text-bold">Advanced Features</div>
+            <p class="text-subtitle2 section-subtitle">Everything you need to scale your business</p>
+          </div>
+          <div class="row q-col-gutter-lg">
+            <div class="col-12 col-md-6 col-lg-3" v-for="(feature, index) in features" :key="index">
+              <q-card class="feature-card card-glass text-center hover-lift">
+                <div class="feature-icon">
+                  <q-icon :name="feature.icon" size="32px" class="text-lime" />
+                </div>
+                <div class="text-h6 text-bold q-mt-md text-white">{{ feature.title }}</div>
+                <p class="q-mt-sm feature-description">{{ feature.description }}</p>
               </q-card>
             </div>
           </div>
@@ -255,19 +324,86 @@ const services = ref([
   }
 ])
 
+const reviews = ref([
+  {
+    name: 'Sarah Johnson',
+    position: 'CEO, TechStart Inc.',
+    rating: 5,
+    comment: 'FinteckX transformed our payment processing. The analytics helped us increase revenue by 40% in just 3 months.',
+    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    name: 'Michael Chen',
+    position: 'Founder, GlobalCommerce',
+    rating: 5,
+    comment: 'The global reach and security features are unmatched. Our customers trust us more than ever.',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+  },
+  {
+    name: 'Emma Rodriguez',
+    position: 'CTO, PaymentFlow',
+    rating: 5,
+    comment: 'Integration was seamless and the support team is incredibly responsive. Highly recommended!',
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+  }
+])
+
+const features = ref([
+  {
+    icon: 'api',
+    title: 'REST API',
+    description: 'Powerful API for custom integrations and automation.'
+  },
+  {
+    icon: 'webhook',
+    title: 'Webhooks',
+    description: 'Real-time notifications for all payment events.'
+  },
+  {
+    icon: 'shield',
+    title: 'Fraud Protection',
+    description: 'Advanced AI-powered fraud detection system.'
+  },
+  {
+    icon: 'language',
+    title: 'Multi-language',
+    description: 'Support for 15+ languages and local currencies.'
+  },
+  {
+    icon: 'mobile_friendly',
+    title: 'Mobile First',
+    description: 'Optimized for all devices and screen sizes.'
+  },
+  {
+    icon: 'sync',
+    title: 'Real-time Sync',
+    description: 'Instant synchronization across all platforms.'
+  },
+  {
+    icon: 'backup',
+    title: 'Auto Backup',
+    description: 'Automatic data backup and disaster recovery.'
+  },
+  {
+    icon: 'speed',
+    title: 'High Performance',
+    description: 'Lightning-fast processing with 99.99% uptime.'
+  }
+])
+
 const howItWorks = ref([
   {
-    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/sign-up-3d-illustration-9727193-7887060.png',
+    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
     title: 'Sign Up',
     description: 'Create your merchant profile and upload required documents.'
   },
   {
-    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/payment-gateway-3d-illustration-8470841-6716425.png',
+    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
     title: 'Integrate',
     description: 'Use our hosted checkout or API to start processing securely.'
   },
   {
-    image: 'https://cdn3d.iconscout.com/3d/premium/thumb/growth-3d-illustration-5930862-4918115.png',
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
     title: 'Grow',
     description: 'Analyze performance and scale with insights and automation.'
   }
@@ -307,58 +443,42 @@ const footerLinks = ref([
   }
 ])
 
-/**
- * Multi-tier image fallbacks to ensure visibility:
- * - Primary: 3D illustration source
- * - Secondary: Unsplash backup
- * - Tertiary: Dummy branded placeholder
- */
+// Fixed image sources using reliable CDNs
 const imageSources = {
   hero: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/online-payment-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--ecommerce-finance-cashless-transaction-pack-illustrations-7517833.png',
     'https://images.unsplash.com/photo-1556742400-b5d3f1b2a9f9?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80',
     'https://dummyimage.com/1200x675/121018/bdf000.png&text=FinteckX+Payments'
   ],
   reach: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/global-network-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--world-map-connections-earth-business-pack-illustrations-6303322.png',
     'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
     'https://dummyimage.com/1200x675/121018/bdf000.png&text=Global+Reach'
   ],
   security: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/secure-payment-3d-illustration-download-in-png-blend-fbx-gltf-file-formats--security-finance-cashless-transaction-pack-illustrations-7517831.png',
     'https://images.unsplash.com/photo-1605901309584-818e25960a8b?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
     'https://dummyimage.com/1200x675/121018/bdf000.png&text=Bank+Grade+Security'
-  ]
-}
-
-const howSources = {
-  1: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/sign-up-3d-illustration-9727193-7887060.png',
-    'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
-    'https://dummyimage.com/800x800/121018/bdf000.png&text=Sign+Up'
   ],
-  2: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/payment-gateway-3d-illustration-8470841-6716425.png',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-    'https://dummyimage.com/800x800/121018/bdf000.png&text=Integrate'
-  ],
-  3: [
-    'https://cdn3d.iconscout.com/3d/premium/thumb/growth-3d-illustration-5930862-4918115.png',
-    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
-    'https://dummyimage.com/800x800/121018/bdf000.png&text=Grow'
+  analytics: [
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
+    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Smart+Analytics'
   ]
 }
 
 const heroImg = ref(imageSources.hero[0])
 const reachImg = ref(imageSources.reach[0])
 const securityImg = ref(imageSources.security[0])
+const analyticsImg = ref(imageSources.analytics[0])
 
 const appLogo = ref('https://dummyimage.com/200x200/121018/bdf000.png&text=FX')
 
 const imageRefs = {
   hero: heroImg,
   reach: reachImg,
-  security: securityImg
+  security: securityImg,
+  analytics: analyticsImg
 }
 
 const onImgError = (key) => {
@@ -373,6 +493,25 @@ const onImgError = (key) => {
 }
 
 const onHowImgError = (index) => {
+  // Fallback image sources for how it works section
+  const howSources = {
+    1: [
+      'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+      'https://dummyimage.com/800x800/121018/bdf000.png&text=Sign+Up'
+    ],
+    2: [
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+      'https://dummyimage.com/800x800/121018/bdf000.png&text=Integrate'
+    ],
+    3: [
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+      'https://dummyimage.com/800x800/121018/bdf000.png&text=Grow'
+    ]
+  }
+  
   const list = howSources[index] || []
   const map = { 1: howItWorks.value[0], 2: howItWorks.value[1], 3: howItWorks.value[2] }
   const currentRef = map[index]
@@ -382,6 +521,10 @@ const onHowImgError = (index) => {
   if (nextIdx < list.length) {
     currentRef.image = list[nextIdx]
   }
+}
+
+const onAvatarError = (index) => {
+  reviews.value[index].avatar = 'https://dummyimage.com/150x150/121018/bdf000.png&text=User'
 }
 
 const onLogoError = () => {
@@ -465,7 +608,7 @@ watch(() => route.fullPath, refreshAuth)
 .btn-secondary {
   background: rgba(189, 240, 0, 0.1);
   color: #bdf000;
-  border: 1px solid rgba(189, 240, 0, 0.4);
+  border: 1px solid rgba(189, 240, 0.4);
   font-weight: 500;
   transition: all 0.3s ease;
 }
@@ -500,6 +643,15 @@ watch(() => route.fullPath, refreshAuth)
 
 .lime-glow {
   box-shadow: 0 0 25px rgba(189, 240, 0, 0.25);
+}
+
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
 /* Hero Section */
@@ -668,6 +820,58 @@ watch(() => route.fullPath, refreshAuth)
   color: #cfcfcf;
   font-size: 0.95rem;
   line-height: 1.6;
+}
+
+/* Reviews Section */
+.review-card {
+  padding: 30px;
+  height: 100%;
+  position: relative;
+}
+
+.review-avatar {
+  position: relative;
+}
+
+.review-avatar-img {
+  border: 3px solid rgba(189, 240, 0.3);
+  border-radius: 50%;
+}
+
+.review-rating {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.review-text {
+  color: #cfcfcf;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* Features Section */
+.feature-card {
+  padding: 25px;
+  height: 100%;
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(189, 240, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.feature-description {
+  color: #cfcfcf;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 /* How It Works Section */
@@ -865,6 +1069,37 @@ watch(() => route.fullPath, refreshAuth)
   }
   50% {
     transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+/* Slide-in animations */
+.slide-in-left {
+  animation: slideInLeft 0.8s ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

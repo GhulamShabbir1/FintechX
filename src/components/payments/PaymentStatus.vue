@@ -1,719 +1,814 @@
 <template>
-  <q-page class="q-pa-md flex flex-center payment-status-page">
-    <q-card class="payment-status-card lime-glow">
-      <q-card-section class="status-icon-section">
-        <div class="icon-container">
-          <q-icon
-            :name="statusIcon"
-            :color="statusColor"
-            size="80px"
-            class="status-icon"
+  <div class="payment-status-page">
+    <!-- Success State -->
+    <div v-if="status === 'success'" class="status-container success">
+      <div class="status-content">
+        <div class="status-icon">
+          <q-icon name="check_circle" size="80px" color="green" />
+        </div>
+        <h1 class="status-title">Payment Successful!</h1>
+        <p class="status-subtitle">Your transaction has been processed successfully</p>
+        
+        <!-- Transaction Details -->
+        <div class="transaction-details">
+          <div class="detail-card">
+            <div class="detail-header">
+              <q-icon name="receipt" color="lime" />
+              <span>Transaction Details</span>
+            </div>
+            <div class="detail-content">
+              <div class="detail-row">
+                <span class="label">Transaction ID:</span>
+                <span class="value">{{ transactionId }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Amount:</span>
+                <span class="value">{{ formatCurrency(amount) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Date:</span>
+                <span class="value">{{ formatDate(transactionDate) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Payment Method:</span>
+                <span class="value">{{ paymentMethod }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="label">Status:</span>
+                <q-chip color="green" text-color="white" label="Completed" size="sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant Information -->
+        <div class="merchant-info" v-if="merchantData">
+          <div class="merchant-card">
+            <div class="merchant-header">
+              <q-avatar size="40px" square class="merchant-logo">
+                <img :src="merchantData.logo_url || placeholderLogo" :alt="merchantData.business_name" />
+              </q-avatar>
+              <div class="merchant-details">
+                <h4 class="merchant-name">{{ merchantData.business_name }}</h4>
+                <p class="merchant-email">{{ merchantData.email }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <q-btn
+            color="lime"
+            icon="download"
+            label="Download Receipt"
+            @click="downloadReceipt"
+            class="action-btn"
           />
-          <div class="icon-ring" :class="statusColor"></div>
-          <div class="icon-particles" v-if="isSuccess">
-            <div class="particle" v-for="n in 12" :key="n" :style="getParticleStyle(n)"></div>
-          </div>
+          <q-btn
+            outline
+            color="lime"
+            icon="print"
+            label="Print Receipt"
+            @click="printReceipt"
+            class="action-btn"
+          />
+          <q-btn
+            flat
+            color="lime"
+            icon="email"
+            label="Email Receipt"
+            @click="emailReceipt"
+            class="action-btn"
+          />
         </div>
-      </q-card-section>
 
-      <q-card-section class="status-message-section">
-        <div class="text-h5 text-center status-title" :class="`text-${statusColor}`">{{ statusTitle }}</div>
-        <div class="text-subtitle1 text-center text-grey-5 q-mt-sm status-message">{{ statusMessage }}</div>
-      </q-card-section>
-
-      <q-card-section v-if="isSuccess" class="payment-details-section">
-        <div class="detail-item" v-for="(detail, index) in successDetails" :key="detail.label" :style="{ animationDelay: `${index * 0.1}s` }">
-          <div class="detail-label">
-            <q-icon :name="detail.icon" size="sm" class="q-mr-sm" />
-            {{ detail.label }}:
-          </div>
-          <div class="detail-value" :class="detail.valueClass">{{ detail.value }}</div>
+        <!-- Return Links -->
+        <div class="return-links">
+          <q-btn
+            color="primary"
+            icon="home"
+            label="Return to Merchant"
+            @click="returnToMerchant"
+            class="return-btn"
+          />
+          <q-btn
+            flat
+            color="white"
+            icon="close"
+            label="Close"
+            @click="closeWindow"
+            class="close-btn"
+          />
         </div>
-      </q-card-section>
-
-      <q-card-section v-else-if="isFailed" class="error-details-section">
-        <div class="detail-item" v-for="(detail, index) in errorDetails" :key="detail.label" :style="{ animationDelay: `${index * 0.1}s` }">
-          <div class="detail-label">
-            <q-icon :name="detail.icon" size="sm" class="q-mr-sm" />
-            {{ detail.label }}:
-          </div>
-          <div class="detail-value" :class="detail.valueClass">{{ detail.value }}</div>
-        </div>
-      </q-card-section>
-
-      <q-card-section v-else-if="isPending" class="pending-details-section">
-        <div class="text-center">
-          <q-spinner-dots color="orange" size="40px" class="q-mb-md" />
-          <div class="text-body1">Processing your payment...</div>
-          <div class="text-caption text-grey-5">This may take a few moments</div>
-        </div>
-      </q-card-section>
-
-      <q-card-actions align="center" class="q-pa-md action-buttons">
-        <q-btn
-          v-if="isSuccess"
-          label="Back to Merchant"
-          class="btn-gradient"
-          @click="goToMerchant"
-          icon="store"
-        />
-        <q-btn
-          v-else-if="isFailed"
-          label="Try Again"
-          class="btn-gradient"
-          @click="tryAgain"
-          icon="refresh"
-        />
-        <q-btn
-          v-else-if="isPending"
-          label="Check Status"
-          class="btn-gradient"
-          @click="checkStatus"
-          icon="refresh"
-          :loading="checking"
-        />
-        <q-btn
-          flat
-          label="Go to Home"
-          class="q-ml-sm btn-outline-light"
-          @click="goToHome"
-          icon="home"
-        />
-      </q-card-actions>
-
-      <q-card-section class="security-badges">
-        <div class="security-item" v-for="(badge, index) in securityBadges" :key="badge.text" :style="{ animationDelay: `${index * 0.2}s` }">
-          <q-icon :name="badge.icon" :color="badge.color" size="sm" />
-          <span>{{ badge.text }}</span>
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <div v-if="isSuccess" class="confetti-container">
-      <div class="confetti" v-for="n in 50" :key="n" :style="getConfettiStyle(n)"></div>
+      </div>
     </div>
-  </q-page>
+
+    <!-- Failure State -->
+    <div v-else-if="status === 'failed'" class="status-container failure">
+      <div class="status-content">
+        <div class="status-icon">
+          <q-icon name="error" size="80px" color="red" />
+        </div>
+        <h1 class="status-title">Payment Failed</h1>
+        <p class="status-subtitle">{{ errorMessage || 'Your transaction could not be processed' }}</p>
+        
+        <!-- Error Details -->
+        <div class="error-details">
+          <div class="error-card">
+            <div class="error-header">
+              <q-icon name="info" color="orange" />
+              <span>Error Information</span>
+            </div>
+            <div class="error-content">
+              <div class="error-row">
+                <span class="label">Error Code:</span>
+                <span class="value">{{ errorCode || 'PAYMENT_FAILED' }}</span>
+              </div>
+              <div class="error-row">
+                <span class="label">Transaction ID:</span>
+                <span class="value">{{ transactionId || 'N/A' }}</span>
+              </div>
+              <div class="error-row">
+                <span class="label">Date:</span>
+                <span class="value">{{ formatDate(new Date()) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggested Actions -->
+        <div class="suggested-actions">
+          <h4>What you can do:</h4>
+          <ul class="action-list">
+            <li>Check your payment method details</li>
+            <li>Ensure you have sufficient funds</li>
+            <li>Try using a different payment method</li>
+            <li>Contact your bank if the issue persists</li>
+          </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <q-btn
+            color="lime"
+            icon="refresh"
+            label="Try Again"
+            @click="retryPayment"
+            class="action-btn"
+          />
+          <q-btn
+            outline
+            color="lime"
+            icon="support_agent"
+            label="Contact Support"
+            @click="contactSupport"
+            class="action-btn"
+          />
+        </div>
+
+        <!-- Return Links -->
+        <div class="return-links">
+          <q-btn
+            color="primary"
+            icon="arrow_back"
+            label="Back to Checkout"
+            @click="backToCheckout"
+            class="return-btn"
+          />
+          <q-btn
+            flat
+            color="white"
+            icon="close"
+            label="Close"
+            @click="closeWindow"
+            class="close-btn"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending State -->
+    <div v-else-if="status === 'pending'" class="status-container pending">
+      <div class="status-content">
+        <div class="status-icon">
+          <q-spinner-dots size="80px" color="orange" />
+        </div>
+        <h1 class="status-title">Payment Processing</h1>
+        <p class="status-subtitle">Your payment is being processed. Please wait...</p>
+        
+        <!-- Processing Details -->
+        <div class="processing-details">
+          <div class="processing-card">
+            <div class="processing-header">
+              <q-icon name="hourglass_empty" color="orange" />
+              <span>Processing Information</span>
+            </div>
+            <div class="processing-content">
+              <div class="processing-row">
+                <span class="label">Transaction ID:</span>
+                <span class="value">{{ transactionId || 'Generating...' }}</span>
+              </div>
+              <div class="processing-row">
+                <span class="label">Status:</span>
+                <q-chip color="orange" text-color="white" label="Processing" size="sm" />
+              </div>
+              <div class="processing-row">
+                <span class="label">Started:</span>
+                <span class="value">{{ formatDate(new Date()) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+          <div class="progress-info">
+            <span>Processing Progress</span>
+            <span>{{ progressPercentage }}%</span>
+          </div>
+          <q-linear-progress 
+            :value="progressPercentage / 100" 
+            color="orange" 
+            size="md"
+            class="progress-bar"
+          />
+        </div>
+
+        <!-- Estimated Time -->
+        <div class="estimated-time">
+          <q-icon name="schedule" color="orange" />
+          <span>Estimated completion time: {{ estimatedTime }}</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <q-btn
+            outline
+            color="orange"
+            icon="refresh"
+            label="Refresh Status"
+            @click="refreshStatus"
+            class="action-btn"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-else class="status-container loading">
+      <div class="status-content">
+        <q-spinner-dots size="80px" color="lime" />
+        <h1 class="status-title">Loading Payment Status</h1>
+        <p class="status-subtitle">Please wait while we retrieve your payment information...</p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify } from 'quasar'
 import api from '../../boot/axios'
-
-// Props
-const props = defineProps({
-  paymentId: {
-    type: String,
-    default: null
-  }
-})
 
 const route = useRoute()
 const router = useRouter()
 
 // Reactive data
-const checking = ref(false)
-const paymentData = ref(null)
-const loading = ref(false)
+const status = ref('')
+const transactionId = ref('')
+const amount = ref(0)
+const paymentMethod = ref('')
+const transactionDate = ref(new Date())
+const merchantData = ref(null)
+const errorMessage = ref('')
+const errorCode = ref('')
+const progressPercentage = ref(0)
+const estimatedTime = ref('2-3 minutes')
 
-// Get payment status from multiple sources
-const paymentStatus = computed(() => {
-  if (paymentData.value?.status) {
-    return paymentData.value.status
-  }
-  return route.query.status || 'pending'
-})
-
-const transactionId = computed(() => {
-  if (paymentData.value?.transaction_id) {
-    return paymentData.value.transaction_id
-  }
-  if (props.paymentId && props.paymentId !== 'failed') {
-    return props.paymentId
-  }
-  return route.query.transaction_id || 'N/A'
-})
-
-const amount = computed(() => {
-  if (paymentData.value?.amount) {
-    return paymentData.value.amount
-  }
-  return parseFloat(route.query.amount) || 0
-})
-
-const errorMessage = computed(() => {
-  if (paymentData.value?.error_message) {
-    return paymentData.value.error_message
-  }
-  return route.query.error || 'Payment could not be completed.'
-})
-
-const merchantId = computed(() => {
-  if (paymentData.value?.merchant_id) {
-    return paymentData.value.merchant_id
-  }
-  return route.query.merchantId || route.query.merchant_id || null
-})
-
-const merchantName = computed(() => {
-  if (paymentData.value?.merchant_name) {
-    return paymentData.value.merchant_name
-  }
-  return route.query.merchantName || route.query.merchant_name || 'Unknown Merchant'
-})
-
-const transactionDate = computed(() => {
-  if (paymentData.value?.created_at) {
-    return new Date(paymentData.value.created_at).toLocaleDateString()
-  }
-  return new Date().toLocaleDateString()
-})
-
-const currency = ref('$')
-
-// Status computed properties
-const isSuccess = computed(() => paymentStatus.value === 'success' || paymentStatus.value === 'completed')
-const isFailed = computed(() => paymentStatus.value === 'failed' || paymentStatus.value === 'error')
-const isPending = computed(() => paymentStatus.value === 'pending' || paymentStatus.value === 'processing')
-
-const statusIcon = computed(() => {
-  if (isSuccess.value) return 'check_circle'
-  if (isFailed.value) return 'cancel'
-  if (isPending.value) return 'schedule'
-  return 'help_outline'
-})
-
-const statusColor = computed(() => {
-  if (isSuccess.value) return 'green'
-  if (isFailed.value) return 'red'
-  if (isPending.value) return 'orange'
-  return 'grey'
-})
-
-const statusTitle = computed(() => {
-  if (isSuccess.value) return 'Payment Successful!'
-  if (isFailed.value) return 'Payment Failed'
-  if (isPending.value) return 'Payment Processing'
-  return 'Payment Status Unknown'
-})
-
-const statusMessage = computed(() => {
-  if (isSuccess.value) return 'Your transaction has been completed successfully.'
-  if (isFailed.value) return 'There was an issue processing your payment.'
-  if (isPending.value) return 'Your payment is being processed. Please wait...'
-  return 'We could not determine the status of your payment.'
-})
-
-
-const successDetails = computed(() => [
-  { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
-  { label: 'Amount Paid', value: `${currency.value}${formatAmount(amount.value)}`, icon: 'attach_money', valueClass: 'text-lime' },
-  { label: 'Merchant', value: merchantName.value || 'N/A', icon: 'store', valueClass: '' },
-  { label: 'Date', value: transactionDate.value, icon: 'event', valueClass: '' }
-])
-
-const errorDetails = computed(() => [
-  { label: 'Error', value: errorMessage.value || 'Unknown error', icon: 'error', valueClass: 'text-red' },
-  { label: 'Transaction ID', value: transactionId.value || 'N/A', icon: 'receipt', valueClass: '' },
-  { label: 'Next Steps', value: 'Please try again or contact support if the problem persists.', icon: 'support_agent', valueClass: 'text-grey-5' }
-])
-
-const securityBadges = computed(() => [
-  { icon: 'security', color: 'green', text: 'SSL Encrypted' },
-  { icon: 'verified_user', color: 'blue', text: 'PCI Compliant' },
-  { icon: 'lock', color: 'lime', text: '256-bit Encryption' }
-])
-
+// Constants
+const placeholderLogo = 'https://dummyimage.com/200x200/121018/bdf000.png&text=Logo'
 
 // Methods
-const formatAmount = (val) => {
-  if (!val) return '0.00'
-  return (val / 100).toFixed(2)
-}
-
-const fetchPaymentDetails = async () => {
-  if (!props.paymentId || props.paymentId === 'failed') {
-    return
-  }
-
+const loadPaymentStatus = async () => {
   try {
-    loading.value = true
-    const response = await api.get(`/api/payments/status/${props.paymentId}`)
-    paymentData.value = response.data
-    
-    // Update currency if provided
-    if (response.data.currency) {
-      currency.value = getCurrencySymbol(response.data.currency)
-
+    const paymentId = route.params.id
+    if (!paymentId) {
+      throw new Error('Payment ID not found')
     }
-  } catch (error) {
-    console.error('Failed to fetch payment details:', error)
-    // Don't show error notification as we have fallback data from query params
-  } finally {
-    loading.value = false
+
+    // Load payment status from API
+    const response = await api.get(`/api/payments/status/${paymentId}`)
+    const paymentData = response.data
+
+    // Update component state
+    status.value = paymentData.status
+    transactionId.value = paymentData.id
+    amount.value = paymentData.amount
+    paymentMethod.value = paymentData.method
+    transactionDate.value = new Date(paymentData.created_at)
+    merchantData.value = paymentData.merchant
+    errorMessage.value = paymentData.error_message
+    errorCode.value = paymentData.error_code
+
+    // If pending, start progress simulation
+    if (status.value === 'pending') {
+      simulateProgress()
+    }
+
+  } catch {
+    status.value = 'failed'
+    errorMessage.value = 'Failed to load payment status'
   }
 }
 
-const getCurrencySymbol = (currencyCode) => {
-  const symbols = {
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    JPY: '¥',
-    CAD: 'C$',
-    AUD: 'A$'
-  }
-  return symbols[currencyCode] || '$'
+const simulateProgress = () => {
+  const interval = setInterval(() => {
+    if (progressPercentage.value < 90) {
+      progressPercentage.value += Math.random() * 15
+    } else {
+      clearInterval(interval)
+      // Simulate completion after a delay
+      setTimeout(() => {
+        status.value = 'success'
+        progressPercentage.value = 100
+      }, 2000)
+    }
+  }, 1000)
 }
 
-const checkStatus = async () => {
-  if (!props.paymentId || props.paymentId === 'failed') {
-    return
-  }
-
+const downloadReceipt = async () => {
   try {
-    checking.value = true
-    await fetchPaymentDetails()
+    const response = await api.get(`/api/payments/${transactionId.value}/receipt`, {
+      responseType: 'blob'
+    })
     
-    if (paymentData.value?.status === 'completed' || paymentData.value?.status === 'success') {
-      Notify.create({
-        type: 'positive',
-        message: 'Payment completed successfully!',
-        position: 'top'
-      })
-    } else if (paymentData.value?.status === 'failed' || paymentData.value?.status === 'error') {
-      Notify.create({
-        type: 'negative',
-        message: 'Payment failed. Please try again.',
-        position: 'top'
-      })
-    }
-  } catch (error) {
-    console.error('Failed to check payment status:', error)
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `receipt-${transactionId.value}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
     Notify.create({
-      type: 'negative',
-      message: 'Unable to check payment status. Please try again.',
+      type: 'positive',
+      message: 'Receipt downloaded successfully',
       position: 'top'
     })
-  } finally {
-    checking.value = false
+  } catch (error) {
+    console.error('Error downloading receipt:', error)
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to download receipt',
+      position: 'top'
+    })
   }
 }
 
-const goToMerchant = () => {
+const printReceipt = () => {
+  window.print()
+}
 
-  const returnUrl = route.query.returnUrl || route.query.return_url
-  if (returnUrl) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    setTimeout(() => { 
-      window.location.href = returnUrl 
-    }, 500)
+const emailReceipt = async () => {
+  try {
+    await api.post(`/api/payments/${transactionId.value}/email-receipt`)
+    Notify.create({
+      type: 'positive',
+      message: 'Receipt sent to your email',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Error emailing receipt:', error)
+    Notify.create({
+      type: 'negative',
+      message: 'Failed to send receipt',
+      position: 'top'
+    })
+  }
+}
 
+const returnToMerchant = () => {
+  if (merchantData.value?.return_url) {
+    window.location.href = merchantData.value.return_url
   } else {
     router.push('/')
   }
 }
 
-const tryAgain = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-  setTimeout(() => {
-
-    const checkoutParams = {
-      merchantId: merchantId.value,
-      amount: amount.value
-    }
-    
-    const returnUrl = route.query.returnUrl || route.query.return_url
-    if (returnUrl) {
-      checkoutParams.returnUrl = returnUrl
-    }
-    
-    router.push({ 
-      name: 'checkout', 
-      query: checkoutParams
-    })
-
-  }, 500)
+const closeWindow = () => {
+  window.close()
 }
 
-const goToHome = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-
-  setTimeout(() => { 
-    router.push('/') 
-  }, 500)
-
-}
-
-const getParticleStyle = (index) => {
-  const angle = (index / 12) * Math.PI * 2
-  const distance = 60
-
-  return { 
-    transform: `rotate(${angle}rad) translate(${distance}px) rotate(-${angle}rad)`, 
-    animationDelay: `${index * 0.1}s` 
-  }
-
-}
-const getConfettiStyle = (index) => {
-  const colors = ['#bdf000', '#4caf50', '#2196f3', '#ff9800', '#e91e63']
-  const shapes = ['circle', 'rectangle', 'triangle']
-  return {
-    left: `${Math.random() * 100}%`,
-    animationDelay: `${Math.random() * 2}s`,
-    backgroundColor: colors[index % colors.length],
-    width: `${5 + Math.random() * 10}px`,
-    height: `${5 + Math.random() * 10}px`,
-    borderRadius: shapes[index % shapes.length] === 'circle' ? '50%' : '2px'
+const retryPayment = () => {
+  if (merchantData.value?.checkout_url) {
+    window.location.href = merchantData.value.checkout_url
+  } else {
+    router.push('/checkout')
   }
 }
 
-// Watchers
-watch(() => props.paymentId, (newId) => {
-  if (newId && newId !== 'failed') {
-    fetchPaymentDetails()
+const contactSupport = () => {
+  // Implement support contact logic
+  const supportEmail = merchantData.value?.support_email || 'support@finteckx.com'
+  const supportPhone = merchantData.value?.support_phone || '+1-800-123-4567'
+  
+  Notify.create({
+    type: 'info',
+    message: `Contact support at ${supportEmail} or ${supportPhone}`,
+    position: 'top',
+    timeout: 5000
+  })
+}
+
+const backToCheckout = () => {
+  if (merchantData.value?.checkout_url) {
+    window.location.href = merchantData.value.checkout_url
+  } else {
+    router.push('/checkout')
   }
-}, { immediate: true })
+}
+
+const refreshStatus = async () => {
+  await loadPaymentStatus()
+}
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amount / 100)
+}
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 // Lifecycle
 onMounted(() => {
-  document.documentElement.style.scrollBehavior = 'smooth'
-
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-  
-  // Auto-refresh for pending payments
-  if (isPending.value && props.paymentId && props.paymentId !== 'failed') {
-    const interval = setInterval(() => {
-      if (!isPending.value) {
-        clearInterval(interval)
-        return
-      }
-      fetchPaymentDetails()
-    }, 5000) // Check every 5 seconds
-    
-    // Clear interval after 5 minutes
-    setTimeout(() => {
-      clearInterval(interval)
-    }, 300000)
-  }
-
+  loadPaymentStatus()
 })
 </script>
 
-// ... existing styles remain the same ...
 <style scoped>
 .payment-status-page {
-  background: linear-gradient(135deg, #09050d 0%, #121018 100%);
   min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
+  color: #ffffff;
+  padding: 24px;
 }
 
-.payment-status-card {
-  background: #000;
-  color: #fff;
-  border-radius: 20px;
-  padding: 30px;
-  max-width: 550px;
-  width: 100%;
+.status-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+}
+
+.status-content {
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
-  z-index: 10;
-  transform: translateY(20px);
-  opacity: 0;
-  animation: slideUpFadeIn 0.8s ease forwards;
-}
-
-.lime-glow {
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(189, 240, 0, 0.2),
-    0 0 30px rgba(189, 240, 0, 0.1);
-}
-
-.status-icon-section {
-  padding-bottom: 0;
-}
-
-.icon-container {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 20px;
+  max-width: 600px;
+  width: 100%;
 }
 
 .status-icon {
-  animation: bounceIn 0.8s ease-out;
-  position: relative;
-  z-index: 2;
-}
-
-.icon-ring {
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-  border: 2px solid;
-  border-radius: 50%;
-  opacity: 0;
-  animation: pulseRing 2s ease-out infinite;
-}
-
-.icon-ring.green { border-color: #4caf50; }
-.icon-ring.red { border-color: #f44336; }
-.icon-ring.orange { border-color: #ff9800; }
-.icon-ring.grey { border-color: #9e9e9e; }
-
-.icon-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background-color: #bdf000;
-  border-radius: 50%;
-  animation: particleFloat 1.5s ease-in-out infinite;
-}
-
-.status-message-section {
-  padding-top: 10px;
-  padding-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .status-title {
-  animation: fadeInUp 0.6s ease 0.3s forwards;
-  opacity: 0;
-  transform: translateY(20px);
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
 }
 
-.status-message {
-  animation: fadeInUp 0.6s ease 0.4s forwards;
-  opacity: 0;
-  transform: translateY(20px);
+.status-subtitle {
+  font-size: 1.2rem;
+  color: #cfcfcf;
+  margin-bottom: 32px;
 }
 
-.payment-details-section, 
-.error-details-section,
-.pending-details-section {
-  background: rgba(189, 240, 0, 0.05);
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 20px;
-  border: 1px solid rgba(189, 240, 0, 0.2);
+/* Transaction Details */
+.transaction-details {
+  margin-bottom: 32px;
 }
 
-.detail-item {
+.detail-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #bdf000;
+  font-weight: 600;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-  opacity: 0;
-  transform: translateX(-20px);
-  animation: slideInRight 0.5s ease forwards;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.detail-item:last-child {
+.detail-row:last-child {
   border-bottom: none;
 }
 
-.detail-label {
+.detail-row .label {
+  color: #cfcfcf;
   font-weight: 500;
-  color: #bdf000;
-  display: flex;
-  align-items: center;
 }
 
-.detail-value {
+.detail-row .value {
   color: #ffffff;
+  font-weight: 600;
+}
+
+/* Merchant Information */
+.merchant-info {
+  margin-bottom: 32px;
+}
+
+.merchant-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: inline-block;
+}
+
+.merchant-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.merchant-logo {
+  border: 2px solid rgba(189, 240, 0.3);
+}
+
+.merchant-name {
+  margin: 0 0 4px 0;
+  color: #bdf000;
+  font-size: 1.1rem;
+}
+
+.merchant-email {
+  margin: 0;
+  color: #cfcfcf;
+  font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  min-width: 160px;
+}
+
+/* Return Links */
+.return-links {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.return-btn, .close-btn {
+  min-width: 160px;
+}
+
+/* Error Details */
+.error-details {
+  margin-bottom: 32px;
+}
+
+.error-card {
+  background: rgba(244, 67, 54, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(244, 67, 54, 0.2);
+  text-align: left;
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #f44336;
+  font-weight: 600;
+}
+
+.error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.error-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.error-row:last-child {
+  border-bottom: none;
+}
+
+.error-row .label {
+  color: #cfcfcf;
   font-weight: 500;
 }
 
-.action-buttons {
-  padding-top: 30px;
+.error-row .value {
+  color: #ffffff;
+  font-weight: 600;
 }
 
-.btn-gradient {
-  background: linear-gradient(135deg, #bdf000, #a0d000);
-  color: #000000;
-  font-weight: 700;
-  border-radius: 8px;
-  padding: 12px 24px;
-  box-shadow: 0 4px 15px rgba(189, 240, 0, 0.3);
-  transition: all 0.3s ease;
+/* Suggested Actions */
+.suggested-actions {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  text-align: left;
 }
 
-.btn-gradient:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(189, 240, 0, 0.4);
+.suggested-actions h4 {
+  margin: 0 0 16px 0;
+  color: #bdf000;
 }
 
-.btn-outline-light {
-  border: 1px solid #fff;
-  color: #fff;
-  border-radius: 8px;
-  padding: 12px 24px;
-  transition: all 0.3s ease;
+.action-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #cfcfcf;
 }
 
-.btn-outline-light:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+.action-list li {
+  margin-bottom: 8px;
 }
 
-.security-badges {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* Processing Details */
+.processing-details {
+  margin-bottom: 32px;
 }
 
-.security-item {
+.processing-card {
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 152, 0, 0.2);
+  text-align: left;
+}
+
+.processing-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: #a0a0a0;
-  opacity: 0;
-  animation: fadeIn 0.6s ease forwards;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #ff9800;
+  font-weight: 600;
 }
 
-.confetti-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
+.processing-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.confetti {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  opacity: 0;
-  animation: confettiFall 5s linear forwards;
+.processing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 152, 0, 0.2);
 }
 
-/* Animations */
-@keyframes slideUpFadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.processing-row:last-child {
+  border-bottom: none;
 }
 
-@keyframes bounceIn {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    transform: scale(1);
-  }
+.processing-row .label {
+  color: #cfcfcf;
+  font-weight: 500;
 }
 
-@keyframes pulseRing {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
+.processing-row .value {
+  color: #ffffff;
+  font-weight: 600;
 }
 
-@keyframes particleFloat {
-  0%, 100% {
-    transform: translate(0, 0);
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
+/* Progress Section */
+.progress-section {
+  margin-bottom: 24px;
 }
 
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #cfcfcf;
+  font-weight: 500;
 }
 
-@keyframes slideInRight {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.progress-bar {
+  border-radius: 8px;
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
+/* Estimated Time */
+.estimated-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  color: #ff9800;
+  font-weight: 500;
+  margin-bottom: 32px;
 }
 
-@keyframes confettiFall {
-  0% {
-    transform: translateY(-100px) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
+/* Success State */
+.success .status-title {
+  color: #4caf50;
 }
 
-/* Color classes */
-.text-lime { color: #bdf000; }
-.text-red { color: #f44336; }
-.text-green { color: #4caf50; }
-.text-orange { color: #ff9800; }
-.text-grey-5 { color: #aaa; }
+/* Failure State */
+.failure .status-title {
+  color: #f44336;
+}
 
-/* Responsive design */
+/* Pending State */
+.pending .status-title {
+  color: #ff9800;
+}
+
+/* Loading State */
+.loading .status-title {
+  color: #bdf000;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .payment-status-card {
-    padding: 20px;
-    margin: 16px;
+  .payment-status-page {
+    padding: 16px;
   }
   
-  .detail-item {
+  .status-title {
+    font-size: 2rem;
+  }
+  
+  .status-subtitle {
+    font-size: 1rem;
+  }
+  
+  .action-buttons, .return-links {
     flex-direction: column;
-    gap: 8px;
-    text-align: center;
+    align-items: center;
   }
   
-  .security-badges {
+  .action-btn, .return-btn, .close-btn {
+    min-width: 200px;
+  }
+  
+  .detail-card, .error-card, .processing-card {
+    padding: 16px;
+  }
+  
+  .detail-row, .error-row, .processing-row {
     flex-direction: column;
-    gap: 12px;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .btn-outline-light {
-    margin-left: 0 !important;
+    align-items: flex-start;
+    gap: 4px;
   }
 }
 </style>

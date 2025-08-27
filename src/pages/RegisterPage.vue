@@ -14,7 +14,7 @@
           </div>
         </div>
 
-        <!-- Right Pane - Simple Register Form -->
+        <!-- Right Pane - Registration Form -->
         <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
           <div class="form-container">
             <div class="text-center q-mb-lg">
@@ -24,19 +24,126 @@
 
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
               <q-form @submit.prevent="onSubmit" class="q-gutter-md">
-                <q-input v-model="name" label="Full Name" outlined dense required
-                  :rules="[v => !!v || 'Name is required']" />
-                <q-input v-model="email" type="email" label="Email" outlined dense required
-                  :rules="[v => !!v || 'Email is required', v => /.+@.+\\..+/.test(v) || 'Enter a valid email']" />
-                <q-input v-model="password" type="password" label="Password" outlined dense required
-                  :rules="[v => !!v || 'Password is required', v => String(v || '').length >= 6 || 'Min 6 characters']" />
-                <q-input v-model="confirmPassword" type="password" label="Confirm Password" outlined dense required
-                  :rules="[v => !!v || 'Please confirm password', v => v === password || 'Passwords do not match']" />
+                <!-- User Registration Fields -->
+                <div class="text-subtitle2 text-lime q-mb-sm">Account Information</div>
+                <q-input 
+                  v-model="userData.name" 
+                  label="Full Name" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Name is required']" 
+                />
+                <q-input 
+                  v-model="userData.email" 
+                  type="email" 
+                  label="Email" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Email is required', v => /.+@.+\\..+/.test(v) || 'Enter a valid email']" 
+                />
+                <q-input 
+                  v-model="userData.password" 
+                  type="password" 
+                  label="Password" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Password is required', v => String(v || '').length >= 6 || 'Min 6 characters']" 
+                />
+                <q-input 
+                  v-model="confirmPassword" 
+                  type="password" 
+                  label="Confirm Password" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Please confirm password', v => v === userData.password || 'Passwords do not match']" 
+                />
 
-                <!-- Optional: allow choosing role, defaults to merchant -->
-                <q-select v-model="role" :options="roleOptions" label="Role" outlined dense emit-value map-options />
+                <!-- Business Information Fields -->
+                <div class="text-subtitle2 text-lime q-mt-lg q-mb-sm">Business Information</div>
+                <q-input 
+                  v-model="businessData.business_name" 
+                  label="Business Name" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Business name is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_account_name" 
+                  label="Bank Account Holder Name" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank account holder name is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_account_number" 
+                  label="Bank Account Number" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank account number is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_ifsc_swift" 
+                  label="Bank IFSC/SWIFT Code" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank IFSC/SWIFT code is required']" 
+                />
 
-                <q-btn type="submit" class="btn-lime full-width q-mt-md" label="Register" :loading="loading" no-caps />
+                <!-- Logo Upload -->
+                <div class="q-mt-md">
+                  <q-file
+                    v-model="businessData.logo"
+                    label="Business Logo (Optional)"
+                    outlined
+                    dense
+                    accept=".jpg,.jpeg,.png,.gif"
+                    class="custom-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="image" />
+                    </template>
+                  </q-file>
+                </div>
+
+                <!-- Payout Preferences -->
+                <div class="q-mt-md">
+                  <q-select
+                    v-model="businessData.payout_preferences"
+                    :options="payoutOptions"
+                    label="Payout Preferences"
+                    outlined
+                    dense
+                    multiple
+                    use-chips
+                    class="custom-input"
+                    :rules="[v => v && v.length > 0 || 'Please select at least one payout preference']"
+                  />
+                </div>
+
+                <q-btn 
+                  type="submit" 
+                  class="btn-lime full-width q-mt-lg" 
+                  label="Create Account & Register Business" 
+                  :loading="loading" 
+                  no-caps 
+                  size="lg"
+                />
               </q-form>
             </div>
 
@@ -64,27 +171,46 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
+import { useMerchantStore } from '../store/merchant'
 import { pinia } from '../store/pinia'
 
 const router = useRouter()
 const auth = useAuthStore(pinia)
+const merchant = useMerchantStore(pinia)
 
-const name = ref('')
-const email = ref('')
-const password = ref('')
+// User registration data
+const userData = reactive({
+  name: '',
+  email: '',
+  password: '',
+  role: 'merchant' // Always merchant for business registration
+})
+
+// Business registration data
+const businessData = reactive({
+  business_name: '',
+  logo: null,
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_ifsc_swift: '',
+  payout_preferences: []
+})
+
 const confirmPassword = ref('')
-const role = ref('merchant')
-const roleOptions = [
-  { label: 'Merchant', value: 'merchant' },
-  { label: 'Admin', value: 'admin' }
-]
-
 const loading = ref(false)
 const error = ref(null)
+
+// Payout preference options
+const payoutOptions = [
+  { label: 'Bank Transfer', value: 'bank_transfer' },
+  { label: 'UPI', value: 'upi' },
+  { label: 'PayPal', value: 'paypal' },
+  { label: 'Stripe', value: 'stripe' }
+]
 
 const illustrationSources = [
   'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
@@ -105,34 +231,89 @@ const onSubmit = async () => {
     error.value = null
     loading.value = true
 
-    // 1) Register
+    // Step 1: Register user account
+    Notify.create({ 
+      type: 'info', 
+      message: 'Creating your account...', 
+      position: 'top',
+      timeout: 2000 
+    })
+
     await auth.register({
-      name: name.value,
-      email: email.value,
-      password: password.value,
-      role: role.value
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+      password_confirmation: userData.password,
+      role: userData.role
     })
 
-    // 2) Login
-    const { user } = await auth.login({
-      email: email.value,
-      password: password.value
+    // Step 2: Login to get authentication token
+    Notify.create({ 
+      type: 'info', 
+      message: 'Logging you in...', 
+      position: 'top',
+      timeout: 2000 
     })
 
-    // 3) Route by role
-    const userRole = String(user?.role || '').toLowerCase()
-    if (userRole === 'admin') {
-      Notify.create({ type: 'positive', message: 'Welcome, Admin!' })
-      router.push({ name: 'admin-dashboard' })
-    } else {
-      // Merchant: route to dashboard
-      Notify.create({ type: 'positive', message: 'Welcome! Approval pending.' })
-      router.push({ name: 'dashboard', query: { approval: 'pending' } })
-    }
+    await auth.login({
+      email: userData.email,
+      password: userData.password
+    })
+
+    // Step 3: Register business with the authenticated user
+    Notify.create({ 
+      type: 'info', 
+      message: 'Registering your business...', 
+      position: 'top',
+      timeout: 2000 
+    })
+
+    await merchant.registerBusiness({
+      business_name: businessData.business_name,
+      logo: businessData.logo,
+      bank_account_name: businessData.bank_account_name,
+      bank_account_number: businessData.bank_account_number,
+      bank_ifsc_swift: businessData.bank_ifsc_swift,
+      payout_preferences: businessData.payout_preferences
+    })
+
+    // Step 4: Success and redirect
+    Notify.create({ 
+      type: 'positive', 
+      message: 'Account and business registered successfully! Approval pending.', 
+      position: 'top',
+      timeout: 4000 
+    })
+
+    // Redirect to merchant dashboard with approval pending status
+    setTimeout(() => {
+      router.push({ 
+        name: 'dashboard', 
+        query: { approval: 'pending' } 
+      })
+    }, 1000)
+
   } catch (e) {
-    console.error('Register/Login error:', e.response?.data || e.message)
-    error.value = e.response?.data?.message || 'Registration failed. Please try again.'
-    Notify.create({ type: 'negative', message: error.value })
+    console.error('Registration error:', e)
+    
+    // Handle different types of errors
+    if (e.response?.data?.message) {
+      error.value = e.response.data.message
+    } else if (e.response?.data?.error) {
+      error.value = e.response.data.error
+    } else if (e.message) {
+      error.value = e.message
+    } else {
+      error.value = 'Registration failed. Please try again.'
+    }
+    
+    Notify.create({ 
+      type: 'negative', 
+      message: error.value,
+      position: 'top',
+      timeout: 5000 
+    })
+    
   } finally {
     loading.value = false
   }
@@ -165,7 +346,7 @@ const onSubmit = async () => {
 }
 
 .full-height {
-  min-height: 600px;
+  min-height: 700px;
   height: auto;
 }
 
@@ -203,13 +384,13 @@ const onSubmit = async () => {
 
 .form-container {
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
   background: transparent;
 }
 
 .glass-panel {
   background: rgba(18, 18, 18, 0.7);
-  border: 1px solid rgba(189, 240, 0, 0.14);
+  border: 1px solid rgba(189, 240, 0, 14);
   backdrop-filter: blur(8px);
   border-radius: 16px;
   transition: all 0.3s ease;
@@ -222,6 +403,29 @@ const onSubmit = async () => {
 
 .form-inner {
   animation: fadeInUp 0.8s ease;
+}
+
+.custom-input :deep(.q-field__control) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.custom-input :deep(.q-field__control):hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.custom-input :deep(.q-field__label) {
+  font-weight: 500;
+  color: #cfcfcf !important;
+}
+
+.custom-input :deep(.q-field__native) {
+  color: #ffffff !important;
+}
+
+.custom-input :deep(.q-field__control-container) {
+  color: #ffffff !important;
 }
 
 .text-lime {
@@ -308,7 +512,6 @@ const onSubmit = async () => {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0) rotate(0deg);
@@ -423,6 +626,26 @@ const onSubmit = async () => {
 
   100% {
     transform: translateY(0) rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .onboarding-card {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .full-height {
+    min-height: auto;
+  }
+  
+  .left-pane {
+    display: none;
+  }
+  
+  .right-pane {
+    border-left: none;
   }
 }
 </style>

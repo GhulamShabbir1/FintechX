@@ -1,914 +1,398 @@
 <template>
-  <div class="status-card-container">
-    <div class="status-card" :class="statusClass">
-      <!-- Background effects -->
-      <div class="card-background">
-        <div class="status-glow" :class="statusClass"></div>
-        <div class="pattern-dots"></div>
-        <div class="gradient-overlay"></div>
+  <q-card class="status-card">
+    <q-card-section class="status-header">
+      <div class="status-title">
+        <q-icon name="info" color="lime" size="24px" />
+        <span>Account Status</span>
       </div>
-      
-      <div class="card-content">
-        <!-- Status Header -->
-        <div class="status-header">
-          <div class="status-icon-container">
-            <q-icon :name="statusIcon" class="status-icon" />
-            <div class="icon-ring" :class="statusClass"></div>
-            <div class="icon-pulse" :class="statusClass"></div>
-          </div>
-          <div class="status-info">
-            <div class="status-title">{{ statusTitle }}</div>
-            <div class="status-subtitle">{{ statusSubtitle }}</div>
-          </div>
-        </div>
-        
-        <!-- Progress Section -->
-        <div class="progress-section">
-          <div class="progress-info">
-            <span class="progress-label">Onboarding Progress</span>
-            <span class="progress-percentage">{{ progressPercentage }}%</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar">
-              <div 
-                class="progress-fill" 
-                :class="statusClass"
-                :style="{ width: progressPercentage + '%' }"
-              >
-                <div class="progress-shimmer"></div>
-              </div>
-            </div>
-          </div>
-          <div class="progress-steps">
-            <div 
-              v-for="(step, index) in onboardingSteps" 
-              :key="index"
-              class="step-item"
-              :class="{ 
-                completed: step.completed, 
-                current: step.current,
-                [statusClass]: step.current
-              }"
-            >
-              <div class="step-dot">
-                <q-icon v-if="step.completed" name="check" size="12px" />
-                <div v-else class="step-number">{{ index + 1 }}</div>
-              </div>
-              <span class="step-label">{{ step.label }}</span>
-              <div class="step-connector" v-if="index < onboardingSteps.length - 1"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Action Section -->
-        <div class="action-section" v-if="showActions">
-          <q-btn
-            v-if="status === 'pending'"
-            color="lime"
-            icon="check"
-            label="Complete Setup"
-            class="action-btn btn-primary"
-            @click="completeSetup"
-            :disable="progressPercentage < 100"
-          >
-            <q-tooltip v-if="progressPercentage < 100">
-              Complete all steps to activate
-            </q-tooltip>
-          </q-btn>
-          <q-btn
-            v-if="status === 'verified'"
-            flat
-            color="lime"
-            icon="settings"
-            label="Manage Account"
-            class="action-btn btn-outline"
-            @click="manageAccount"
-          />
-          <q-btn
-            v-if="status === 'rejected'"
-            color="orange"
-            icon="refresh"
-            label="Resubmit Application"
-            class="action-btn btn-warning"
-            @click="resubmit"
-          />
-          <q-btn
-            v-if="status === 'suspended'"
-            color="grey"
-            icon="support_agent"
-            label="Contact Support"
-            class="action-btn btn-secondary"
-            @click="contactSupport"
-          />
-        </div>
+      <q-chip :color="getStatusColor(status)" :label="getStatusLabel(status)" size="sm" class="status-chip" />
+    </q-card-section>
 
-        <!-- Status Badge -->
-        <div class="status-badge" :class="statusClass">
-          <q-icon :name="statusIcon" size="16px" />
-          <span>{{ statusDisplay }}</span>
+    <q-card-section class="status-content">
+      <div class="status-description">
+        {{ getStatusDescription(status) }}
+      </div>
+
+      <!-- Progress Bar for Onboarding -->
+      <div v-if="showProgress" class="progress-section">
+        <div class="progress-info">
+          <span>Onboarding Progress</span>
+          <span>{{ progress }}%</span>
+        </div>
+        <q-linear-progress :value="progress / 100" :color="getProgressColor(progress)" size="md" class="progress-bar" />
+        <div class="progress-steps">
+          <div v-for="(step, index) in onboardingSteps" :key="index" class="progress-step"
+            :class="{ completed: index < completedSteps, current: index === completedSteps }">
+            <q-icon :name="getStepIcon(index, completedSteps)" :color="getStepColor(index, completedSteps)" size="sm" />
+            <span>{{ step }}</span>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+
+      <!-- Status Actions -->
+      <div v-if="showActions" class="status-actions">
+        <q-btn v-if="status === 'pending'" color="lime" icon="refresh" label="Check Status" @click="checkStatus"
+          size="sm" class="action-btn" />
+        <q-btn v-if="status === 'rejected'" color="orange" icon="edit" label="Update Information" @click="updateInfo"
+          size="sm" class="action-btn" />
+        <q-btn v-if="status === 'suspended'" color="red" icon="support_agent" label="Contact Support"
+          @click="contactSupport" size="sm" class="action-btn" />
+      </div>
+    </q-card-section>
+
+    <!-- Status Timeline -->
+    <q-card-section v-if="showTimeline" class="status-timeline">
+      <div class="timeline-header">
+        <h4>Status History</h4>
+      </div>
+      <div class="timeline">
+        <div v-for="(event, index) in statusTimeline" :key="index" class="timeline-item">
+          <div class="timeline-icon">
+            <q-icon :name="event.icon" :color="event.color" size="sm" />
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-title">{{ event.title }}</div>
+            <div class="timeline-time">{{ formatDate(event.timestamp) }}</div>
+            <div class="timeline-description" v-if="event.description">
+              {{ event.description }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import { computed } from 'vue'
 
 // Props
 const props = defineProps({
   status: {
     type: String,
-    default: 'pending',
-    validator: (value) => ['pending', 'verified', 'rejected', 'suspended'].includes(value)
+    default: 'pending'
   },
   progress: {
     type: Number,
-    default: 0,
-    validator: (value) => value >= 0 && value <= 100
+    default: 0
   },
   showActions: {
     type: Boolean,
     default: true
+  },
+  showProgress: {
+    type: Boolean,
+    default: true
+  },
+  showTimeline: {
+    type: Boolean,
+    default: false
   }
 })
-
-// Reactive data
-const onboardingSteps = ref([
-  { label: 'Account Created', completed: true, current: false },
-  { label: 'Business Details', completed: false, current: true },
-  { label: 'Documents Uploaded', completed: false, current: false },
-  { label: 'Verification Complete', completed: false, current: false }
-])
 
 // Computed properties
-const statusClass = computed(() => {
-  return `status-${props.status}`
-})
+const completedSteps = computed(() => Math.floor(props.progress / 20))
 
-const statusIcon = computed(() => {
-  const icons = {
-    verified: 'check_circle',
-    rejected: 'cancel',
-    suspended: 'block',
-    pending: 'pending_actions'
+const onboardingSteps = [
+  'Account Created',
+  'Business Info',
+  'Documents',
+  'Verification',
+  'Approval'
+]
+
+const statusTimeline = computed(() => [
+  {
+    title: 'Account Created',
+    description: 'Your account has been successfully created',
+    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+    icon: 'person_add',
+    color: 'green'
+  },
+  {
+    title: 'Business Information Submitted',
+    description: 'Business details have been submitted for review',
+    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+    icon: 'store',
+    color: 'blue'
+  },
+  {
+    title: 'Under Review',
+    description: 'Your application is currently being reviewed',
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    icon: 'search',
+    color: 'orange'
   }
-  return icons[props.status] || 'help'
-})
-
-const statusTitle = computed(() => {
-  const titles = {
-    verified: 'Account Verified',
-    rejected: 'Application Rejected',
-    suspended: 'Account Suspended',
-    pending: 'Pending Verification'
-  }
-  return titles[props.status] || 'Unknown Status'
-})
-
-const statusSubtitle = computed(() => {
-  const subtitles = {
-    verified: 'Your account is fully active and ready to process payments',
-    rejected: 'Please review the feedback and resubmit your application',
-    suspended: 'Your account has been temporarily suspended',
-    pending: 'We are reviewing your application. Complete all steps to activate.'
-  }
-  return subtitles[props.status] || 'Please contact support for assistance'
-})
-
-const statusDisplay = computed(() => {
-  return props.status.charAt(0).toUpperCase() + props.status.slice(1)
-})
-
-const progressPercentage = computed(() => {
-  return Math.min(100, Math.max(0, props.progress))
-})
+])
 
 // Methods
-const completeSetup = () => {
-  if (progressPercentage.value < 100) {
-    return // Prevent action if not complete
+const getStatusColor = (status) => {
+  const colors = {
+    approved: 'green',
+    pending: 'orange',
+    rejected: 'red',
+    suspended: 'red',
+    under_review: 'blue'
   }
-  router.push('/business/setup')
+  return colors[status] || 'grey'
 }
 
-const manageAccount = () => {
-  router.push('/business/settings')
+const getStatusLabel = (status) => {
+  const labels = {
+    approved: 'Approved',
+    pending: 'Pending',
+    rejected: 'Rejected',
+    suspended: 'Suspended',
+    under_review: 'Under Review'
+  }
+  return labels[status] || 'Unknown'
 }
 
-const resubmit = () => {
-  router.push('/business/resubmit')
+const getStatusDescription = (status) => {
+  const descriptions = {
+    approved: 'Your account has been approved and you can start accepting payments.',
+    pending: 'Your application is being reviewed. This usually takes 1-2 business days.',
+    rejected: 'Your application was not approved. Please update your information and try again.',
+    suspended: 'Your account has been suspended. Please contact support for assistance.',
+    under_review: 'Your application is currently under review by our team.'
+  }
+  return descriptions[status] || 'Status information not available.'
+}
+
+const getProgressColor = (progress) => {
+  if (progress >= 80) return 'green'
+  if (progress >= 60) return 'blue'
+  if (progress >= 40) return 'orange'
+  return 'red'
+}
+
+const getStepIcon = (index, completed) => {
+  if (index < completed) return 'check_circle'
+  if (index === completed) return 'pending'
+  return 'radio_button_unchecked'
+}
+
+const getStepColor = (index, completed) => {
+  if (index < completed) return 'green'
+  if (index === completed) return 'orange'
+  return 'grey'
+}
+
+const checkStatus = () => {
+  // Emit event to parent component
+  emit('check-status')
+}
+
+const updateInfo = () => {
+  // Emit event to parent component
+  emit('update-info')
 }
 
 const contactSupport = () => {
-  router.push('/support')
+  // Emit event to parent component
+  emit('contact-support')
 }
 
-const updateProgressSteps = () => {
-  const progress = props.progress
-  const steps = onboardingSteps.value
-  
-  // Reset all steps
-  steps.forEach((step, index) => {
-    step.completed = index === 0 // Only first step completed by default
-    step.current = index === 1 // Second step current by default
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   })
-  
-  // Update based on progress
-  if (progress >= 25) {
-    steps[0].completed = true
-    steps[0].current = false
-    steps[1].current = true
-  }
-  
-  if (progress >= 50) {
-    steps[1].completed = true
-    steps[1].current = false
-    steps[2].current = true
-  }
-  
-  if (progress >= 75) {
-    steps[2].completed = true
-    steps[2].current = false
-    steps[3].current = true
-  }
-  
-  if (progress >= 100) {
-    steps[3].completed = true
-    steps[3].current = false
-  }
 }
 
-// Watch for progress changes
-watch(() => props.progress, updateProgressSteps)
-
-// Lifecycle
-onMounted(() => {
-  updateProgressSteps()
-})
+// Emits
+const emit = defineEmits(['check-status', 'update-info', 'contact-support'])
 </script>
 
 <style scoped>
-.status-card-container {
-  margin-bottom: 2rem;
-  perspective: 1000px;
-}
-
 .status-card {
-  position: relative;
-  background: rgba(18, 18, 18, 0.95);
-  border-radius: 20px;
-  padding: 28px;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transform-style: preserve-3d;
-}
-
-.status-card:hover {
-  transform: translateY(-6px) rotateX(2deg);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(189, 240, 0, 0.2),
-    0 0 40px rgba(189, 240, 0, 0.15);
-}
-
-.card-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.status-glow {
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  animation: rotate 20s linear infinite;
-}
-
-.status-glow.status-verified {
-  --glow-color: rgba(76, 175, 80, 0.15);
-}
-
-.status-glow.status-pending {
-  --glow-color: rgba(255, 152, 0, 0.15);
-}
-
-.status-glow.status-rejected {
-  --glow-color: rgba(244, 67, 54, 0.15);
-}
-
-.status-glow.status-suspended {
-  --glow-color: rgba(158, 158, 158, 0.15);
-}
-
-.status-card:hover .status-glow {
-  opacity: 0.6;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.pattern-dots {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 24px 24px;
-  opacity: 0.4;
-}
-
-.gradient-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, rgba(0, 0, 0, 0.7), transparent);
-  opacity: 0.8;
-}
-
-.card-content {
-  position: relative;
-  z-index: 2;
-}
-
-.status-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 28px;
-  gap: 20px;
-}
-
-.status-icon-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 70px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  transition: all 0.4s ease;
-  flex-shrink: 0;
-}
-
-.status-card:hover .status-icon-container {
-  transform: scale(1.1) rotate(5deg);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.status-icon {
-  font-size: 32px;
-  z-index: 3;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
-.status-verified .status-icon {
-  color: #4CAF50;
-  filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.5));
+.status-card:hover {
+  border-color: rgba(189, 240, 0.3);
+  transform: translateY(-2px);
 }
 
-.status-pending .status-icon {
-  color: #FF9800;
-  filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
-}
-
-.status-rejected .status-icon {
-  color: #F44336;
-  filter: drop-shadow(0 0 10px rgba(244, 67, 54, 0.5));
-}
-
-.status-suspended .status-icon {
-  color: #9E9E9E;
-  filter: drop-shadow(0 0 10px rgba(158, 158, 158, 0.5));
-}
-
-.icon-ring {
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border: 2px solid transparent;
-  border-radius: 18px;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.icon-ring.status-verified {
-  border-color: #4CAF50;
-  background: linear-gradient(45deg, transparent, rgba(76, 175, 80, 0.2), transparent);
-}
-
-.icon-ring.status-pending {
-  border-color: #FF9800;
-  background: linear-gradient(45deg, transparent, rgba(255, 152, 0, 0.2), transparent);
-}
-
-.icon-ring.status-rejected {
-  border-color: #F44336;
-  background: linear-gradient(45deg, transparent, rgba(244, 67, 54, 0.2), transparent);
-}
-
-.icon-ring.status-suspended {
-  border-color: #9E9E9E;
-  background: linear-gradient(45deg, transparent, rgba(158, 158, 158, 0.2), transparent);
-}
-
-.status-card:hover .icon-ring {
-  opacity: 1;
-  animation: pulseRing 2s ease-in-out infinite;
-}
-
-.icon-pulse {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 16px;
-  opacity: 0;
-  animation: pulse 3s ease-in-out infinite;
-}
-
-.icon-pulse.status-verified {
-  background: rgba(76, 175, 80, 0.3);
-}
-
-.icon-pulse.status-pending {
-  background: rgba(255, 152, 0, 0.3);
-}
-
-.icon-pulse.status-rejected {
-  background: rgba(244, 67, 54, 0.3);
-}
-
-.icon-pulse.status-suspended {
-  background: rgba(158, 158, 158, 0.3);
-}
-
-@keyframes pulseRing {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
-.status-info {
-  flex: 1;
+/* Status Header */
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .status-title {
-  font-size: 1.4rem;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   color: #ffffff;
-  margin-bottom: 8px;
-  line-height: 1.2;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
-.status-subtitle {
-  font-size: 0.95rem;
-  color: #ccc;
-  line-height: 1.4;
-  opacity: 0.9;
+.status-chip {
+  font-weight: 500;
 }
 
+/* Status Content */
+.status-content {
+  padding-top: 20px;
+}
+
+.status-description {
+  color: #cfcfcf;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Progress Section */
 .progress-section {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .progress-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.progress-label {
-  font-size: 0.95rem;
-  color: #ccc;
+  margin-bottom: 12px;
+  color: #cfcfcf;
   font-weight: 500;
-}
-
-.progress-percentage {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #bdf000;
-}
-
-.progress-bar-container {
-  margin-bottom: 24px;
+  font-size: 0.875rem;
 }
 
 .progress-bar {
-  width: 100%;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 5px;
-  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.progress-fill.status-verified {
-  background: linear-gradient(90deg, #4CAF50, #66BB6A);
-}
-
-.progress-fill.status-pending {
-  background: linear-gradient(90deg, #FF9800, #FFB74D);
-}
-
-.progress-fill.status-rejected {
-  background: linear-gradient(90deg, #F44336, #EF5350);
-}
-
-.progress-fill.status-suspended {
-  background: linear-gradient(90deg, #9E9E9E, #BDBDBD);
-}
-
-.progress-shimmer {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 2s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .progress-steps {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  position: relative;
-}
-
-.step-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  position: relative;
-  z-index: 2;
+  gap: 12px;
 }
 
-.step-dot {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+.progress-step {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  transition: all 0.4s ease;
-  border: 2px solid transparent;
-  position: relative;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-.step-item.completed .step-dot {
-  background: #4CAF50;
-  border-color: #4CAF50;
-  color: white;
-  transform: scale(1.1);
+.progress-step.completed {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
 }
 
-.step-item.current .step-dot {
-  background: #bdf000;
-  border-color: #bdf000;
-  color: #000;
-  box-shadow: 0 0 20px rgba(189, 240, 0, 0.6);
-  animation: pulse 2s ease-in-out infinite;
+.progress-step.current {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
 }
 
-.step-item.current.status-verified .step-dot {
-  background: #4CAF50;
-  border-color: #4CAF50;
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+.progress-step:not(.completed):not(.current) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cfcfcf;
 }
 
-.step-item.current.status-pending .step-dot {
-  background: #FF9800;
-  border-color: #FF9800;
-  box-shadow: 0 0 20px rgba(255, 152, 0, 0.6);
-}
-
-.step-item.current.status-rejected .step-dot {
-  background: #F44336;
-  border-color: #F44336;
-  box-shadow: 0 0 20px rgba(244, 67, 54, 0.6);
-}
-
-.step-item.current.status-suspended .step-dot {
-  background: #9E9E9E;
-  border-color: #9E9E9E;
-  box-shadow: 0 0 20px rgba(158, 158, 158, 0.6);
-}
-
-.step-number {
-  font-size: 12px;
-  font-weight: 600;
-  color: #ccc;
-}
-
-.step-item.completed .step-number,
-.step-item.current .step-number {
-  color: white;
-}
-
-.step-label {
-  font-size: 0.8rem;
-  color: #999;
-  text-align: center;
-  line-height: 1.2;
-  transition: all 0.3s ease;
+.progress-step span {
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
-.step-item.completed .step-label {
-  color: #4CAF50;
-  font-weight: 600;
-}
-
-.step-item.current .step-label {
-  color: #bdf000;
-  font-weight: 700;
-}
-
-.step-connector {
-  position: absolute;
-  top: 16px;
-  right: -6px;
-  width: calc(100% + 12px);
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  z-index: 1;
-}
-
-.step-item:last-child .step-connector {
-  display: none;
-}
-
-.step-item.completed .step-connector {
-  background: #4CAF50;
-}
-
-.action-section {
+/* Status Actions */
+.status-actions {
   display: flex;
   gap: 12px;
-  margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
   flex: 1;
-  border-radius: 10px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  padding: 12px 20px;
+  min-width: 120px;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #bdf000, #a0d000);
-  color: #000;
-  border: none;
+/* Status Timeline */
+.status-timeline {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(189, 240, 0, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-outline {
-  border: 2px solid rgba(189, 240, 0, 0.3);
+.timeline-header h4 {
+  margin: 0 0 20px 0;
   color: #bdf000;
-  background: rgba(189, 240, 0, 0.1);
+  font-size: 1.1rem;
 }
 
-.btn-outline:hover {
-  border-color: #bdf000;
-  background: rgba(189, 240, 0, 0.2);
-  transform: translateY(-2px);
-}
-
-.btn-warning {
-  background: linear-gradient(135deg, #FF9800, #FFB74D);
-  color: #000;
-  border: none;
-}
-
-.btn-warning:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 152, 0, 0.4);
-}
-
-.btn-secondary {
-  background: rgba(158, 158, 158, 0.2);
-  color: #e0e0e0;
-  border: 1px solid rgba(158, 158, 158, 0.3);
-}
-
-.btn-secondary:hover {
-  background: rgba(158, 158, 158, 0.3);
-  transform: translateY(-2px);
-}
-
-.status-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+.timeline {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.timeline-icon {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.timeline-title {
   font-weight: 600;
-  z-index: 3;
+  color: #ffffff;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
 }
 
-.status-badge.status-verified {
-  background: rgba(76, 175, 80, 0.2);
-  color: #4CAF50;
-  border: 1px solid rgba(76, 175, 80, 0.3);
+.timeline-time {
+  color: #cfcfcf;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
 }
 
-.status-badge.status-pending {
-  background: rgba(255, 152, 0, 0.2);
-  color: #FF9800;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+.timeline-description {
+  color: #cfcfcf;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
-.status-badge.status-rejected {
-  background: rgba(244, 67, 54, 0.2);
-  color: #F44336;
-  border: 1px solid rgba(244, 67, 54, 0.3);
-}
-
-.status-badge.status-suspended {
-  background: rgba(158, 158, 158, 0.2);
-  color: #9E9E9E;
-  border: 1px solid rgba(158, 158, 158, 0.3);
-}
-
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 768px) {
-  .status-card {
-    padding: 24px;
-    border-radius: 16px;
-  }
-  
   .status-header {
     flex-direction: column;
-    text-align: center;
     gap: 16px;
-    margin-bottom: 24px;
+    align-items: flex-start;
   }
-  
-  .status-icon-container {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .progress-steps {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-  
-  .step-connector {
-    display: none;
-  }
-  
-  .action-section {
+
+  .status-actions {
     flex-direction: column;
   }
-  
-  .status-title {
-    font-size: 1.2rem;
-  }
-  
-  .status-subtitle {
-    font-size: 0.9rem;
-  }
-}
 
-@media (max-width: 480px) {
-  .status-card {
-    padding: 20px;
+  .action-btn {
+    min-width: 100%;
   }
-  
+
   .progress-steps {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 8px;
   }
-  
-  .step-item {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .step-dot {
-    margin-bottom: 0;
-    flex-shrink: 0;
-  }
-  
-  .step-label {
-    text-align: left;
-    flex: 1;
-  }
-  
-  .status-badge {
-    top: 16px;
-    right: 16px;
-    font-size: 0.7rem;
-    padding: 4px 10px;
-  }
-}
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .status-card,
-  .status-icon-container,
-  .progress-fill,
-  .step-dot,
-  .action-btn,
-  .status-glow,
-  .icon-ring,
-  .icon-pulse,
-  .progress-shimmer {
-    animation: none;
-    transition: none;
+  .progress-step {
+    padding: 6px 8px;
   }
-  
-  .status-card:hover {
-    transform: none;
-  }
-  
-  .status-card:hover .status-icon-container {
-    transform: none;
-  }
-}
-
-/* Enhanced focus states */
-.action-btn:focus-visible {
-  outline: 2px solid #bdf000;
-  outline-offset: 2px;
 }
 </style>

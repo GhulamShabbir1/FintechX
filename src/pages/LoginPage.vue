@@ -1,4 +1,3 @@
-<!-- /workspace/src/pages/LoginPage.vue -->
 <template>
   <q-page class="q-pa-md flex flex-center fintech-bg">
     <q-card class="login-card glass-surface elevate-on-hover">
@@ -85,18 +84,88 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
 
 const onSubmit = async () => {
   try {
+    error.value = null
     loading.value = true
-    const { user } = await auth.login({ email: email.value, password: password.value })
-    const role = String(user?.role || '').toLowerCase()
-    const redirect = route.query.redirect
-    const fallback = role === 'admin' ? { name: 'admin-dashboard' } : { name: 'dashboard' }
 
-    Notify.create({ type: 'positive', message: 'Welcome back!' })
-    router.push(redirect || fallback)
+    // Call the login method from auth store
+    const response = await auth.login({ email: email.value, password: password.value })
+    
+    // Get the user data from the response
+    const user = response.user || response.data?.user || auth.user
+    
+    if (!user) {
+      throw new Error('No user data received from login')
+    }
+
+    // Extract role from user object
+    const role = String(user.role || '').toLowerCase()
+    
+    // Check if there's a redirect query parameter
+    const redirect = route.query.redirect
+
+    if (role === 'admin') {
+      // Admin user - redirect to admin dashboard
+      Notify.create({ 
+        type: 'positive', 
+        message: 'Welcome, Admin!', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      // Wait a bit for the notification to show, then redirect
+      setTimeout(() => {
+        router.push(redirect || '/admin-dashboard')
+      }, 500)
+      
+    } else if (role === 'merchant') {
+      // Merchant user - redirect to merchant dashboard
+      Notify.create({ 
+        type: 'positive', 
+        message: 'Welcome, Merchant!', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      // Wait a bit for the notification to show, then redirect
+      setTimeout(() => {
+        router.push(redirect || '/dashboard')
+      }, 500)
+      
+    } else {
+      // Unknown role - redirect to default dashboard
+      Notify.create({ 
+        type: 'warning', 
+        message: 'Welcome! Redirecting to dashboard...', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      setTimeout(() => {
+        router.push(redirect || '/dashboard')
+      }, 500)
+    }
+
   } catch (e) {
-    console.error('Login error:', e.response?.data || e.message)
-    error.value = e.response?.data?.message || 'Login failed. Please try again.'
-    Notify.create({ type: 'negative', message: error.value })
+    console.error('Login error:', e)
+    
+    // Handle different types of errors
+    if (e.response?.data?.message) {
+      error.value = e.response.data.message
+    } else if (e.response?.data?.error) {
+      error.value = e.response.data.error
+    } else if (e.message) {
+      error.value = e.message
+    } else {
+      error.value = 'Login failed. Please try again.'
+    }
+    
+    Notify.create({ 
+      type: 'negative', 
+      message: error.value,
+      position: 'top',
+      timeout: 3000 
+    })
+    
   } finally {
     loading.value = false
   }
@@ -395,30 +464,6 @@ const onSubmit = async () => {
 
   100% {
     transform: translateY(0) rotate(360deg);
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 1023px) {
-  .full-height {
-    height: auto;
-  }
-
-  .left-pane {
-    padding: 40px 24px;
-    height: 300px;
-  }
-
-  .right-pane {
-    padding: 40px 24px;
-  }
-
-  .text-content {
-    margin-top: 24px;
-  }
-
-  .text-content .text-h4 {
-    font-size: 1.5rem;
   }
 }
 </style>
