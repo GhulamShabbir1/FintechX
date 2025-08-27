@@ -43,7 +43,10 @@
                   dense 
                   required
                   class="custom-input"
-                  :rules="[v => !!v || 'Email is required', v => /.+@.+\\..+/.test(v) || 'Enter a valid email']" 
+                  :rules="[
+    v => !!v || 'Email is required',
+    v => /.+@.+\..+/.test(v) || 'Enter a valid email'
+  ]" 
                 />
                 <q-input 
                   v-model="userData.password" 
