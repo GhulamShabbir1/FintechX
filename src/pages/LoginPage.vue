@@ -61,12 +61,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Notify } from 'quasar'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from '../store/auth'
 import { pinia } from '../store/pinia'
 
 const router = useRouter()
 const route = useRoute()
+const $q = useQuasar()
 const auth = useAuthStore(pinia)
 
 const email = ref('')
@@ -80,17 +81,21 @@ const onImgError = () => { illustration.value = 'https://placehold.co/900x700/12
 const onSubmit = async () => {
   try {
     loading.value = true
-    const { user } = await auth.login({ email: email.value, password: password.value })
-    const role = String(user?.role || '').toLowerCase()
+    const loginResp = await auth.login({ email: email.value, password: password.value })
+    const userObj = loginResp?.user || auth.user
+    if (!userObj) {
+      throw new Error('No user data received from login')
+    }
+    const role = String(userObj?.role || '').toLowerCase()
     const redirect = route.query.redirect
     const fallback = role === 'admin' ? { name: 'admin-dashboard' } : { name: 'dashboard' }
 
-    Notify.create({ type: 'positive', message: 'Welcome back!' })
+    $q.notify({ type: 'positive', message: 'Welcome back!' })
     router.push(redirect || fallback)
   } catch (e) {
-    console.error('Login error:', e.response?.data || e.message)
-    error.value = e.response?.data?.message || 'Login failed. Please try again.'
-    Notify.create({ type: 'negative', message: error.value })
+    console.error('Login error:', e?.response?.data || e?.message || e)
+    error.value = e?.response?.data?.message || e?.message || 'Login failed. Please try again.'
+    $q.notify({ type: 'negative', message: error.value })
   } finally {
     loading.value = false
   }

@@ -42,19 +42,45 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async register(payload) {
-      // Depending on backend, adjust endpoint if needed
-      const { data } = await api.post('/api/users/register', payload)
-      // Optionally auto-login after register
+      const { data } = await api.post('/api/auth/register', payload)
       if (data?.token) this.setToken(data.token)
       if (data?.user) this.setUser(data.user)
       return data
     },
 
     async login(payload) {
-      const { data } = await api.post('/api/users/login', payload)
-      this.setUser(data.user || null)
-      this.setToken(data.token || null)
+      const { data } = await api.post('/api/auth/login', payload)
+      if (data?.token) this.setToken(data.token)
+      if (data?.user) this.setUser(data.user)
+      // Fallback: fetch profile if user not returned in login response
+      if (!data?.user) {
+        try {
+          const profile = await this.getProfile()
+          return { ...data, user: profile }
+        } catch {
+          // ignore and return original data; caller can handle missing user
+        }
+      }
       return data
+    },
+
+    async getProfile() {
+      // Try multiple common profile endpoints
+      const candidates = ['/api/auth/profile', '/api/users/me', '/api/me', '/api/profile']
+      let lastError
+      for (const url of candidates) {
+        try {
+          const { data } = await api.get(url)
+          const user = data?.user || data
+          if (user) {
+            this.setUser(user)
+            return user
+          }
+        } catch (e) {
+          lastError = e
+        }
+      }
+      throw lastError || new Error('Unable to fetch profile')
     },
 
     logout() {
