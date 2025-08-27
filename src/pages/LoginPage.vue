@@ -90,8 +90,18 @@ const onSubmit = async () => {
     // Call the login method from auth store
     const response = await auth.login({ email: email.value, password: password.value })
     
-    // Get the user data from the response
-    const user = response.user || response.data?.user || auth.user
+    // Get the user data from the response - handle different response structures
+    let user = null
+    if (response?.user) {
+      user = response.user
+    } else if (response?.data?.user) {
+      user = response.data.user
+    } else if (auth.user) {
+      user = auth.user
+    } else if (response?.data) {
+      // If the response data itself is the user object
+      user = response.data
+    }
     
     if (!user) {
       throw new Error('No user data received from login')
