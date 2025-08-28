@@ -120,10 +120,8 @@ const onSubmit = async () => {
         timeout: 2000 
       })
       
-      // Wait a bit for the notification to show, then redirect
-      setTimeout(() => {
-        router.push(redirect || '/admin-dashboard')
-      }, 500)
+      // Redirect immediately
+      await router.replace(redirect || '/admin-dashboard')
       
     } else if (role === 'merchant') {
       // Merchant user - redirect to merchant dashboard
@@ -134,10 +132,8 @@ const onSubmit = async () => {
         timeout: 2000 
       })
       
-      // Wait a bit for the notification to show, then redirect
-      setTimeout(() => {
-        router.push(redirect || '/dashboard')
-      }, 500)
+      // Redirect immediately
+      await router.replace(redirect || '/dashboard')
       
     } else {
       // Unknown role - redirect to default dashboard
@@ -148,9 +144,7 @@ const onSubmit = async () => {
         timeout: 2000 
       })
       
-      setTimeout(() => {
-        router.push(redirect || '/dashboard')
-      }, 500)
+      await router.replace(redirect || '/dashboard')
     }
 
   } catch (e) {
