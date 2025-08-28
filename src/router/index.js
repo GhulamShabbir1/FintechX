@@ -50,24 +50,39 @@ const router = createRouter({
   routes,
 })
 
-// router.beforeEach((to, from, next) => {
-//   if (to.meta.title) document.title = to.meta.title
+router.beforeEach((to, from, next) => {
+  if (to.meta.title) document.title = to.meta.title
 
-//   if (to.meta.requiresAuth) {
-//     const token = localStorage.getItem('token')
-//     if (!token) return next({ name: 'login', query: { redirect: to.fullPath } })
+  // Public routes don't need auth
+  if (!to.meta.requiresAuth) {
+    return next()
+  }
 
-//     if (to.meta.role) {
-//       const userRole = (localStorage.getItem('role') || '').toLowerCase()
-//       if (userRole !== to.meta.role) {
-//         if (userRole === 'admin') return next({ name: 'admin-dashboard' })
-//         if (userRole === 'merchant') return next({ name: 'dashboard' })
-//         return next({ name: 'login' })
-//       }
-//     }
-//   }
+  // Require auth
+  const token = localStorage.getItem('token')
+  if (!token) {
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
 
-//   next()
-// })
+  // Role-based protection when specified
+  if (to.meta.role) {
+    // Prefer role from stored user object set by Pinia auth store
+    let storedRole = ''
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+      storedRole = String(storedUser?.role || '').toLowerCase()
+    } catch (e) {
+      storedRole = String(localStorage.getItem('role') || '').toLowerCase()
+    }
+
+    if (storedRole !== to.meta.role) {
+      if (storedRole === 'admin') return next({ name: 'admin-dashboard' })
+      if (storedRole === 'merchant') return next({ name: 'dashboard' })
+      return next({ name: 'login' })
+    }
+  }
+
+  next()
+})
 
 export default router
