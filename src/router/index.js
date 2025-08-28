@@ -1,5 +1,6 @@
 // PATH: src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
+import api from '../boot/axios'
 
 // Pages
 import LandingPage from '../pages/LandingPage.vue'
@@ -50,7 +51,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   if (to.meta.title) document.title = to.meta.title
 
   // Public routes don't need auth
@@ -71,8 +72,20 @@ router.beforeEach((to, from, next) => {
     try {
       const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
       storedRole = String(storedUser?.role || '').toLowerCase()
-    } catch (e) {
+    } catch {
       storedRole = String(localStorage.getItem('role') || '').toLowerCase()
+    }
+
+    // If no stored role yet, attempt to fetch profile once
+    if (!storedRole) {
+      try {
+        const resp = await api.get('/api/profile')
+        const profileUser = resp?.data?.user || resp?.data
+        if (profileUser) {
+          localStorage.setItem('user', JSON.stringify(profileUser))
+          storedRole = String(profileUser.role || '').toLowerCase()
+        }
+      } catch {}
     }
 
     if (storedRole !== to.meta.role) {

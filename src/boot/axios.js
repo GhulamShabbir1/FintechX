@@ -1,15 +1,18 @@
 // src/boot/axios.js
 import axios from 'axios'
 
-// Create axios instance with ONLY the base domain
+// Prefer environment-configured API base; fallback to previous local IP for dev
+const baseURL = import.meta?.env?.VITE_API_BASE || process.env?.VITE_API_BASE || 'http://192.168.12.204:8000'
+
 const api = axios.create({
-  baseURL: 'http://192.168.12.204:8000',
+  baseURL,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Optional: automatically attach token if available
+// Attach token if available
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
