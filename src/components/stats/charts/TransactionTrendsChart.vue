@@ -1,237 +1,222 @@
 <template>
-  <q-card class="lime-glow q-pa-md trends-chart-card">
-    <div class="chart-header">
-      <div class="text-subtitle1 q-mb-sm chart-title">Transactions: Success vs Failed</div>
-      <q-icon name="stacked_bar_chart" color="lime" size="sm" class="chart-icon" />
+  <div class="transaction-trends-chart">
+    <div v-if="loading" class="chart-loading">
+      <q-spinner-dots color="lime" size="30px" />
+      <p>Loading transaction trends...</p>
     </div>
     
-    <div class="chart-container">
-      <canvas ref="el" height="130"></canvas>
+    <div v-else-if="!data || data.length === 0" class="chart-empty">
+      <q-icon name="trending_up" size="48px" color="grey-5" />
+      <p>No transaction trend data available</p>
     </div>
-
-    <div class="chart-footer" v-if="showStats">
-      <div class="stat-item" v-for="stat in transactionStats" :key="stat.label">
-        <div class="stat-color" :style="{ backgroundColor: stat.color }"></div>
-        <div class="stat-content">
-          <div class="stat-label">{{ stat.label }}</div>
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-percentage" :style="{ color: stat.color }">{{ stat.percentage }}%</div>
+    
+    <div v-else class="chart-content">
+      <!-- Chart Controls -->
+      <div class="chart-controls">
+        <q-btn-toggle
+          v-model="selectedMetric"
+          :options="metricOptions"
+          color="lime"
+          text-color="white"
+          class="metric-toggle"
+        />
+      </div>
+      
+      <div class="chart-container">
+        <canvas ref="chartCanvas" width="400" height="200"></canvas>
+      </div>
+      
+      <!-- Trend Indicators -->
+      <div class="trend-indicators">
+        <div class="trend-item">
+          <q-icon name="trending_up" color="green" size="20px" />
+          <span class="trend-text">Volume: {{ volumeTrend }}</span>
+        </div>
+        <div class="trend-item">
+          <q-icon name="speed" color="blue" size="20px" />
+          <span class="trend-text">Frequency: {{ frequencyTrend }}</span>
         </div>
       </div>
     </div>
-
-    <!-- Legend -->
-    <div class="chart-legend" v-if="showLegend">
-      <div class="legend-item" v-for="(dataset, index) in enhancedDatasets" :key="index">
-        <div class="legend-color" :style="{ backgroundColor: dataset.backgroundColor }"></div>
-        <div class="legend-label">{{ dataset.label }}</div>
-      </div>
-    </div>
-
-    <!-- Loading overlay -->
-    <div class="chart-loading" v-if="loading">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Loading transaction data...</div>
-    </div>
-  </q-card>
+  </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
-import { Chart, registerables } from 'chart.js'
-Chart.register(...registerables)
+import { ref, onMounted, watch, computed } from 'vue'
+import Chart from 'chart.js/auto'
 
 const props = defineProps({
-  labels: { type: Array, default: () => [] },
-  datasets: { type: Array, default: () => [] },
-  showStats: { type: Boolean, default: true },
-  showLegend: { type: Boolean, default: true },
-  loading: { type: Boolean, default: false }
+  data: {
+    type: Array,
+    default: () => []
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  }
 })
 
-const el = ref(null)
-let chart = null
+const chartCanvas = ref(null)
+const chartInstance = ref(null)
+const selectedMetric = ref('volume')
 
-// Default datasets if none provided
-const defaultDatasets = [
-  {
-    label: 'Successful',
-    data: [120, 150, 180, 200, 170, 190, 210],
-    backgroundColor: 'rgba(76, 175, 80, 0.8)',
-    borderColor: 'rgba(76, 175, 80, 1)',
-    borderWidth: 1,
-    borderRadius: 4,
-    hoverBackgroundColor: 'rgba(76, 175, 80, 1)',
-    hoverBorderColor: '#ffffff'
-  },
-  {
-    label: 'Failed',
-    data: [15, 12, 18, 10, 14, 8, 11],
-    backgroundColor: 'rgba(244, 67, 54, 0.8)',
-    borderColor: 'rgba(244, 67, 54, 1)',
-    borderWidth: 1,
-    borderRadius: 4,
-    hoverBackgroundColor: 'rgba(244, 67, 54, 1)',
-    hoverBorderColor: '#ffffff'
-  }
+// Metric options for toggle
+const metricOptions = [
+  { label: 'Volume', value: 'volume' },
+  { label: 'Count', value: 'count' },
+  { label: 'Average', value: 'average' }
 ]
 
-// Default labels if none provided
-const defaultLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-// Computed properties
-const enhancedDatasets = computed(() => {
-  return props.datasets.length > 0 ? props.datasets : defaultDatasets
-})
-
-const transactionStats = computed(() => {
-  const successData = enhancedDatasets.value[0]?.data || []
-  const failedData = enhancedDatasets.value[1]?.data || []
+// Process data for chart
+const chartData = computed(() => {
+  if (!props.data || props.data.length === 0) return []
   
-  const totalSuccess = successData.reduce((sum, val) => sum + val, 0)
-  const totalFailed = failedData.reduce((sum, val) => sum + val, 0)
-  const totalTransactions = totalSuccess + totalFailed
-  
-  const successPercentage = totalTransactions > 0 ? ((totalSuccess / totalTransactions) * 100).toFixed(1) : 0
-  const failedPercentage = totalTransactions > 0 ? ((totalFailed / totalTransactions) * 100).toFixed(1) : 0
-
-  return [
-    {
-      label: 'Successful',
-      value: totalSuccess,
-      percentage: successPercentage,
-      color: '#4CAF50'
-    },
-    {
-      label: 'Failed',
-      value: totalFailed,
-      percentage: failedPercentage,
-      color: '#F44336'
-    },
-    {
-      label: 'Total',
-      value: totalTransactions,
-      percentage: '100%',
-      color: '#bdf000'
-    }
-  ]
-})
-
-// Methods
-const createHoverGradient = (baseColor, ctx, chartArea) => {
-  const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
-  gradient.addColorStop(0, baseColor.replace('0.8', '0.6'))
-  gradient.addColorStop(0.5, baseColor)
-  gradient.addColorStop(1, baseColor.replace('0.8', '1)'))
-  return gradient
-}
-
-const build = () => {
-  if (!el.value) return
-  if (chart) chart.destroy()
-  
-  const ctx = el.value.getContext('2d')
-  
-  const chartDatasets = enhancedDatasets.value
-  const chartLabels = props.labels.length > 0 ? props.labels : defaultLabels
-
-  // Enhance datasets with gradients
-  const enhancedChartDatasets = chartDatasets.map(dataset => ({
-    ...dataset,
-    backgroundColor: function(context) {
-      const chart = context.chart
-      const { ctx, chartArea } = chart
-      if (!chartArea) return dataset.backgroundColor
-      return createHoverGradient(dataset.backgroundColor, ctx, chartArea)
-    },
-    barPercentage: 0.7,
-    categoryPercentage: 0.8
+  return props.data.map(item => ({
+    date: item.date || item.month || 'Unknown',
+    volume: item.volume || item.amount || 0,
+    count: item.count || item.transactions || 0,
+    average: item.average || item.avg_amount || 0
   }))
+})
 
-  chart = new Chart(ctx, {
+// Calculate trend indicators
+const volumeTrend = computed(() => {
+  if (chartData.value.length < 2) return 'Stable'
+  
+  const current = chartData.value[chartData.value.length - 1].volume
+  const previous = chartData.value[chartData.value.length - 2].volume
+  
+  if (previous === 0) return current > 0 ? 'Growing' : 'Stable'
+  
+  const change = ((current - previous) / previous) * 100
+  
+  if (change > 10) return 'Strong Growth'
+  if (change > 5) return 'Growing'
+  if (change > -5) return 'Stable'
+  if (change > -10) return 'Declining'
+  return 'Strong Decline'
+})
+
+const frequencyTrend = computed(() => {
+  if (chartData.value.length < 2) return 'Stable'
+  
+  const current = chartData.value[chartData.value.length - 1].count
+  const previous = chartData.value[chartData.value.length - 2].count
+  
+  if (previous === 0) return current > 0 ? 'Increasing' : 'Stable'
+  
+  const change = ((current - previous) / previous) * 100
+  
+  if (change > 15) return 'Rapid Increase'
+  if (change > 5) return 'Increasing'
+  if (change > -5) return 'Stable'
+  if (change > -15) return 'Decreasing'
+  return 'Rapid Decrease'
+})
+
+// Get current metric data
+const currentMetricData = computed(() => {
+  return chartData.value.map(item => item[selectedMetric.value])
+})
+
+// Get current metric label
+const currentMetricLabel = computed(() => {
+  const labels = {
+    volume: 'Transaction Volume',
+    count: 'Transaction Count',
+    average: 'Average Transaction'
+  }
+  return labels[selectedMetric.value]
+})
+
+// Get current metric color
+const currentMetricColor = computed(() => {
+  const colors = {
+    volume: '#bdf000',
+    count: '#2196f3',
+    average: '#9c27b0'
+  }
+  return colors[selectedMetric.value]
+})
+
+// Create chart
+const createChart = () => {
+  if (!chartCanvas.value) return
+  
+  const ctx = chartCanvas.value.getContext('2d')
+  
+  // Destroy existing chart
+  if (chartInstance.value) {
+    chartInstance.value.destroy()
+  }
+  
+  // Create new chart
+  chartInstance.value = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: chartLabels,
-      datasets: enhancedChartDatasets
+      labels: chartData.value.map(item => item.date),
+      datasets: [{
+        label: currentMetricLabel.value,
+        data: currentMetricData.value,
+        backgroundColor: currentMetricColor.value + '40',
+        borderColor: currentMetricColor.value,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: {
-        duration: 1000,
-        easing: 'easeOutQuart',
-        onProgress: function() {
-          // Smooth animation progress
+      plugins: {
+        legend: {
+          display: false
         },
-        onComplete: function() {
-          // Animation complete callback
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderColor: currentMetricColor.value,
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const value = context.parsed.y || 0
+              if (selectedMetric.value === 'volume') {
+                return `${currentMetricLabel.value}: $${(value / 100).toFixed(2)}`
+              }
+              return `${currentMetricLabel.value}: ${value}`
+            }
+          }
         }
       },
       scales: {
         x: {
-          stacked: true,
           grid: {
-            color: 'rgba(255, 255, 255, 0.06)',
+            color: 'rgba(255, 255, 255, 0.1)',
             drawBorder: false
           },
           ticks: {
-            color: '#a0a0a0',
+            color: '#999',
             font: {
               size: 11
             }
           }
         },
         y: {
-          stacked: true,
           grid: {
-            color: 'rgba(255, 255, 255, 0.06)',
+            color: 'rgba(255, 255, 255, 0.1)',
             drawBorder: false
           },
           ticks: {
-            color: '#a0a0a0',
+            color: '#999',
             font: {
               size: 11
             },
-            precision: 0
-          },
-          beginAtZero: true
-        }
-      },
-      plugins: {
-        legend: {
-          display: false,
-          position: 'top',
-          labels: {
-            color: '#a0a0a0',
-            font: {
-              size: 11
-            },
-            usePointStyle: true,
-            padding: 15
-          }
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(18, 18, 18, 0.95)',
-          titleColor: '#bdf000',
-          bodyColor: '#ffffff',
-          borderColor: 'rgba(189, 240, 0, 0.3)',
-          borderWidth: 1,
-          cornerRadius: 8,
-          padding: 12,
-          displayColors: true,
-          callbacks: {
-            label: function(context) {
-              return `${context.dataset.label}: ${context.parsed.y} transactions`
-            },
-            labelColor: function(context) {
-              return {
-                borderColor: context.dataset.borderColor,
-                backgroundColor: context.dataset.backgroundColor,
-                borderWidth: 2,
-                borderRadius: 2
+            callback: function(value) {
+              if (selectedMetric.value === 'volume') {
+                return '$' + (value / 100).toFixed(0)
               }
+              return value.toLocaleString()
             }
           }
         }
@@ -240,336 +225,121 @@ const build = () => {
         intersect: false,
         mode: 'index'
       },
-      onHover: (event, chartElements) => {
-        if (chartElements.length) {
-          event.native.target.style.cursor = 'pointer'
-        } else {
-          event.native.target.style.cursor = 'default'
-        }
-      },
-      onClick: (event, chartElements) => {
-        if (chartElements.length) {
-          const element = chartElements[0]
-          console.log('Chart element clicked:', element)
-        }
+      animation: {
+        duration: 800,
+        easing: 'easeOutQuart'
       }
     }
   })
 }
 
-// Watch for data changes with smooth updates
-watch(() => [props.labels, props.datasets], () => {
-  if (chart) {
-    const chartDatasets = props.datasets.length > 0 ? props.datasets : defaultDatasets
-    const chartLabels = props.labels.length > 0 ? props.labels : defaultLabels
-    
-    chart.data.labels = chartLabels
-    chart.data.datasets = chartDatasets
-    chart.update('active')
+// Watch for data changes
+watch(() => props.data, () => {
+  if (props.data && props.data.length > 0) {
+    createChart()
   }
 }, { deep: true })
 
-watch(() => props.loading, (newVal) => {
-  if (!newVal && chart) {
-    // Refresh chart when loading completes
-    setTimeout(() => {
-      chart.update()
-    }, 100)
+// Watch for metric changes
+watch(selectedMetric, () => {
+  if (props.data && props.data.length > 0) {
+    createChart()
   }
 })
 
+// Lifecycle
 onMounted(() => {
-  build()
-  
-  // Add resize observer for responsive chart
-  const resizeObserver = new ResizeObserver(() => {
-    if (chart) {
-      setTimeout(() => {
-        chart.resize()
-      }, 100)
-    }
-  })
-  
-  if (el.value) {
-    resizeObserver.observe(el.value.parentElement)
+  if (props.data && props.data.length > 0) {
+    createChart()
   }
-})
-
-onBeforeUnmount(() => {
-  if (chart) chart.destroy()
 })
 </script>
 
 <style scoped>
-.trends-chart-card {
-  border-radius: 16px;
-  background: linear-gradient(135deg, #0a0a0a 0%, #121018 100%);
-  color: #fff;
-  border: 1px solid rgba(189, 240, 0, 0.28);
-  box-shadow: 
-    0 10px 28px rgba(0,0,0,0.35),
-    0 0 0 1px rgba(189,240,0,0.28),
-    0 0 24px rgba(189,240,0,0.18);
-  transition: all 0.3s ease;
-  height: 400px;
+.transaction-trends-chart {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 
-.trends-chart-card:hover {
-  box-shadow: 
-    0 15px 35px rgba(0,0,0,0.4),
-    0 0 0 1px rgba(189,240,0,0.35),
-    0 0 30px rgba(189,240,0,0.25);
-  transform: translateY(-2px);
-}
-
-.chart-header {
+.chart-loading,
+.chart-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  animation: fadeInDown 0.6s ease;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  text-align: center;
 }
 
-.chart-title {
-  color: #bdf000;
-  font-weight: 600;
-  margin: 0;
+.chart-loading p,
+.chart-empty p {
+  margin: 12px 0 0 0;
+  font-size: 0.9rem;
 }
 
-.chart-icon {
-  animation: pulse 2s ease-in-out infinite;
+.chart-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.metric-toggle {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .chart-container {
   position: relative;
-  flex: 1;
-  margin: 10px 0;
-  transition: all 0.3s ease;
+  width: 100%;
+  height: 200px;
+  margin-bottom: 20px;
 }
 
-.chart-footer {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: fadeInUp 0.6s ease;
+.trend-indicators {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px;
+  background: rgba(189, 240, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(189, 240, 0.1);
 }
 
-.stat-item {
+.trend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  gap: 8px;
 }
 
-.stat-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.stat-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.stat-item:hover .stat-color {
-  transform: scale(1.2);
-}
-
-.stat-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stat-value {
+.trend-text {
   font-size: 0.9rem;
-  font-weight: 600;
   color: #ffffff;
-  margin-bottom: 2px;
+  font-weight: 500;
 }
 
-.stat-percentage {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.chart-legend {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: fadeInUp 0.6s ease;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  transition: all 0.3s ease;
-}
-
-.legend-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.legend-label {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  white-space: nowrap;
-}
-
-.chart-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  z-index: 10;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.3s ease;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(189, 240, 0, 0.3);
-  border-top: 3px solid #bdf000;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 10px;
-}
-
-.loading-text {
-  color: #bdf000;
-  font-size: 0.875rem;
-}
-
-/* Animations */
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive design */
+/* Responsive */
 @media (max-width: 768px) {
-  .trends-chart-card {
-    height: 380px;
+  .chart-container {
+    height: 180px;
+  }
+  
+  .trend-indicators {
     padding: 12px;
-    border-radius: 12px;
-  }
-  
-  .chart-title {
-    font-size: 1rem;
-  }
-  
-  .chart-footer {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  
-  .chart-legend {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    align-items: center;
   }
   
-  .stat-item {
-    padding: 10px;
-  }
-  
-  .legend-item {
-    padding: 4px 8px;
-  }
-  
-  .stat-label {
-    font-size: 0.65rem;
-  }
-  
-  .stat-value {
+  .trend-item {
     font-size: 0.8rem;
   }
 }

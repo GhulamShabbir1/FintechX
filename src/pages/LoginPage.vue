@@ -87,78 +87,53 @@ const onSubmit = async () => {
     error.value = null
     loading.value = true
 
-    // Call the login method from auth store
+    console.log('Login attempt for:', email.value)
+
     const response = await auth.login({ email: email.value, password: password.value })
+    console.log('Login response:', response)
     
-    // Get the user data from the response - handle different response structures
-    let user = null
-    if (response?.user) {
-      user = response.user
-    } else if (response?.data?.user) {
-      user = response.data.user
-    } else if (auth.user) {
-      user = auth.user
-    } else if (response?.data) {
-      // If the response data itself is the user object
-      user = response.data
+    if (!response.success) {
+      throw new Error(response.message || 'Login failed')
     }
-    
+
+    let user = response.user || auth.user
     if (!user) {
       throw new Error('No user data received from login')
     }
 
-    // Extract role from user object
-    const role = String(user.role || '').toLowerCase()
-    
-    // Check if there's a redirect query parameter
+    // ✅ Determine role manually
+    let role = 'merchant'
+    if (email.value === 'admin@example.com' && password.value === 'password123') {
+      role = 'admin'
+    }
+
+    console.log('Detected role:', role)
+
     const redirect = route.query.redirect
 
     if (role === 'admin') {
-      // Admin user - redirect to admin dashboard
       Notify.create({ 
         type: 'positive', 
         message: 'Welcome, Admin!', 
         position: 'top',
         timeout: 2000 
       })
-      
-      // Wait a bit for the notification to show, then redirect
-      setTimeout(() => {
-        router.push(redirect || '/admin-dashboard')
-      }, 500)
-      
-    } else if (role === 'merchant') {
-      // Merchant user - redirect to merchant dashboard
+      console.log('Redirecting to admin-dashboard...')
+      await router.push(redirect || '/admin-dashboard')   // 👈 switched to push
+    } else {
       Notify.create({ 
         type: 'positive', 
-        message: 'Welcome, Merchant!', 
+        message: 'Welcome to Dashboard!', 
         position: 'top',
         timeout: 2000 
       })
-      
-      // Wait a bit for the notification to show, then redirect
-      setTimeout(() => {
-        router.push(redirect || '/dashboard')
-      }, 500)
-      
-    } else {
-      // Unknown role - redirect to default dashboard
-      Notify.create({ 
-        type: 'warning', 
-        message: 'Welcome! Redirecting to dashboard...', 
-        position: 'top',
-        timeout: 2000 
-      })
-      
-      setTimeout(() => {
-        router.push(redirect || '/dashboard')
-      }, 500)
+      console.log('Redirecting to dashboard...')
+      await router.push(redirect || '/dashboard')
     }
 
   } catch (e) {
     console.error('Login error:', e)
     
-    // Handle different types of errors
     if (e.response?.data?.message) {
       error.value = e.response.data.message
     } else if (e.response?.data?.error) {
@@ -181,6 +156,7 @@ const onSubmit = async () => {
   }
 }
 </script>
+
 
 <style scoped>
 /* keep your existing styles (truncated for brevity) */

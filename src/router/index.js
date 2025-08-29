@@ -1,5 +1,6 @@
 // PATH: src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
+import api from '../boot/axios'
 
 // Pages
 import LandingPage from '../pages/LandingPage.vue'
@@ -50,24 +51,85 @@ const router = createRouter({
   routes,
 })
 
-// router.beforeEach((to, from, next) => {
-//   if (to.meta.title) document.title = to.meta.title
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.title) document.title = to.meta.title
 
-//   if (to.meta.requiresAuth) {
-//     const token = localStorage.getItem('token')
-//     if (!token) return next({ name: 'login', query: { redirect: to.fullPath } })
+  // If already authenticated, prevent going back to login/register
+  const token = localStorage.getItem('token')
+  if (token && (to.name === 'login' || to.name === 'register')) {
+    // Determine best dashboard based on role
+    let role = ''
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+      role = String(storedUser?.role || '').toLowerCase()
+    } catch { 
+      console.log("error")
+    }
 
-//     if (to.meta.role) {
-//       const userRole = (localStorage.getItem('role') || '').toLowerCase()
-//       if (userRole !== to.meta.role) {
-//         if (userRole === 'admin') return next({ name: 'admin-dashboard' })
-//         if (userRole === 'merchant') return next({ name: 'dashboard' })
-//         return next({ name: 'login' })
-//       }
-//     }
-//   }
+    if (!role) {
+      role = String(localStorage.getItem('role') || '').toLowerCase()
+    }
 
-//   next()
-// })
+    if (role === 'admin') return next({ name: 'admin-dashboard' })
+    if (role === 'merchant') return next({ name: 'dashboard' })
+    return next({ name: 'dashboard' })
+  }
+
+  // Public routes
+  if (!to.meta.requiresAuth) {
+    return next()
+  }
+
+  // Require auth
+  if (!token) {
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+
+  // Role-based protection
+  if (to.meta.role) {
+    let storedRole = ''
+
+    // Try multiple sources for role
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+      storedRole = String(storedUser?.role || '').toLowerCase()
+    } catch {
+      console.log("error")
+     }
+
+    if (!storedRole) {
+      storedRole = String(localStorage.getItem('role') || '').toLowerCase()
+    }
+
+    // If we still don't have a role, fetch profile once
+    if (!storedRole) {
+      try {
+        console.log('No stored role found, fetching profile...')
+        const resp = await api.get('/api/profile')
+        const profileUser = resp?.data?.user || resp?.data
+        if (profileUser) {
+          localStorage.setItem('user', JSON.stringify(profileUser))
+          localStorage.setItem('role', String(profileUser.role || '').toLowerCase())
+          storedRole = String(profileUser.role || '').toLowerCase()
+          console.log('Role fetched from profile:', storedRole)
+        }
+      } catch (profileError) {
+        console.error('Profile fetch error:', profileError)
+      }
+    }
+
+    console.log('Current role:', storedRole, 'Required role:', to.meta.role)
+
+    // If role mismatches, redirect to the appropriate dashboard
+    if (storedRole !== to.meta.role) {
+      if (storedRole === 'admin') return next({ name: 'admin-dashboard' })
+      if (storedRole === 'merchant') return next({ name: 'dashboard' })
+      // Unknown role: force login to refresh context
+      return next({ name: 'login', query: { redirect: to.fullPath } })
+    }
+  }
+
+  next()
+})
 
 export default router

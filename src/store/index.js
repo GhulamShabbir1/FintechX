@@ -1,7 +1,7 @@
-// /workspace/src/store/index.js
+// src/store/index.js
 export { useAuthStore } from './auth'
-export { useMerchantStore } from './merchant'
-export { useAdminStore } from './admin'
+export { useMerchantsStore } from './merchants'
 export { usePaymentsStore } from './payments'
 export { useTransactionsStore } from './transactions'
-export { pinia } from './pinia'
+export { useStatsStore } from './stats'
+export { useAdminStore } from './admin'

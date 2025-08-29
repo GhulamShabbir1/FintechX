@@ -1,35 +1,46 @@
+// src/stores/auth.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '../boot/axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
+  // ---------------- State ----------------
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
   const loading = ref(false)
 
-  // Getters
+  // ---------------- Getters ----------------
   const isAuthenticated = () => !!token.value
   const isAdmin = () => user.value?.role === 'admin'
   const isMerchant = () => user.value?.role === 'merchant'
 
-  // Actions
+  // ---------------- Helpers ----------------
   const setToken = (newToken) => {
     token.value = newToken
-    localStorage.setItem('token', newToken)
-    // Set token in axios headers
     if (newToken) {
+      localStorage.setItem('token', newToken)
       api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
     } else {
+      localStorage.removeItem('token')
       delete api.defaults.headers.common['Authorization']
     }
   }
 
   const setUser = (userData) => {
-    user.value = userData
-    localStorage.setItem('user', JSON.stringify(userData))
+    if (userData) {
+      user.value = userData
+      localStorage.setItem('user', JSON.stringify(userData))
+      if (userData?.role) {
+        localStorage.setItem('role', String(userData.role).toLowerCase())
+      }
+    } else {
+      user.value = null
+      localStorage.removeItem('user')
+      localStorage.removeItem('role')
+    }
   }
 
+  // ---------------- API Actions ----------------
   const register = async (userData) => {
     loading.value = true
     try {
@@ -40,15 +51,29 @@ export const useAuthStore = defineStore('auth', () => {
         password_confirmation: userData.password_confirmation,
         role: userData.role || 'merchant'
       })
-      
-      if (data?.token) {
-        setToken(data.token)
-      }
+
+      if (data?.token) setToken(data.token)
+
       if (data?.user) {
         setUser(data.user)
+        console.log('👤 User data set from register:', data.user)
+      } else {
+        const fallbackUser = {
+          email: userData.email,
+          role: 'merchant',
+          name: userData.name || userData.email.split('@')[0]
+        }
+        setUser(fallbackUser)
+        console.log('👤 Fallback user set from register:', fallbackUser)
       }
-      
-      return data
+
+      return { success: true, ...data, user: user.value }
+    } catch (error) {
+      console.error('❌ Registration error:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Registration failed'
+      }
     } finally {
       loading.value = false
     }
@@ -57,19 +82,41 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials) => {
     loading.value = true
     try {
+      console.log('🔑 Attempting login with:', credentials.email)
+
       const { data } = await api.post('/api/auth/login', {
         email: credentials.email,
         password: credentials.password
       })
-      
-      if (data?.token) {
-        setToken(data.token)
-      }
+
+      console.log('✅ Login response:', data)
+
+      if (data?.token) setToken(data.token)
+
       if (data?.user) {
         setUser(data.user)
+        console.log('👤 User data set from login:', data.user)
+      } else {
+        const fallbackUser = {
+          email: credentials.email,
+          role: 'merchant',
+          name: data?.name || credentials.email.split('@')[0]
+        }
+        setUser(fallbackUser)
+        console.log('👤 Fallback user set from login:', fallbackUser)
       }
-      
-      return data
+
+      if (!user.value) {
+        throw new Error('Failed to retrieve user information after login')
+      }
+
+      return { success: true, ...data, user: user.value }
+    } catch (error) {
+      console.error('❌ Login error:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Login failed'
+      }
     } finally {
       loading.value = false
     }
@@ -81,37 +128,24 @@ export const useAuthStore = defineStore('auth', () => {
         await api.post('/api/logout')
       }
     } catch (error) {
-      console.error('Logout error:', error)
+      console.warn('⚠️ Logout API error (ignored):', error)
     } finally {
-      // Clear local data regardless of API success
       setToken(null)
       setUser(null)
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
     }
   }
 
-  const getProfile = async () => {
-    loading.value = true
-    try {
-      const { data } = await api.get('/api/profile')
-      setUser(data.user || data)
-      return data
-    } finally {
-      loading.value = false
-    }
-  }
-
+  // ---------------- Local Init ----------------
   const loadStoredData = () => {
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
-    
-    if (storedToken) {
-      setToken(storedToken)
-    }
+
+    if (storedToken) setToken(storedToken)
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
+        console.log('💾 Stored user data loaded:', parsedUser)
       } catch (error) {
         console.error('Error parsing stored user:', error)
         localStorage.removeItem('user')
@@ -119,25 +153,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Initialize store
   loadStoredData()
 
+  // ---------------- Expose Store ----------------
   return {
     // State
     user,
     token,
     loading,
-    
+
     // Getters
     isAuthenticated,
     isAdmin,
     isMerchant,
-    
+
     // Actions
     register,
     login,
     logout,
-    getProfile,
     setToken,
     setUser,
     loadStoredData

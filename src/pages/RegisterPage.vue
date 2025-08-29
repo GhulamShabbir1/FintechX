@@ -178,12 +178,12 @@ import { ref, reactive } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { useMerchantStore } from '../store/merchant'
+import { useMerchantsStore } from '../store/merchants'
 import { pinia } from '../store/pinia'
 
 const router = useRouter()
 const auth = useAuthStore(pinia)
-const merchant = useMerchantStore(pinia)
+const merchants = useMerchantsStore(pinia)
 
 // User registration data
 const userData = reactive({
@@ -234,6 +234,11 @@ const onSubmit = async () => {
     error.value = null
     loading.value = true
 
+    // Validate form data
+    if (!validateForm()) {
+      return
+    }
+
     // Step 1: Register user account
     Notify.create({ 
       type: 'info', 
@@ -242,13 +247,17 @@ const onSubmit = async () => {
       timeout: 2000 
     })
 
-    await auth.register({
+    const registerResponse = await auth.register({
       name: userData.name,
       email: userData.email,
       password: userData.password,
       password_confirmation: userData.password,
       role: userData.role
     })
+
+    if (!registerResponse.success && !registerResponse.token) {
+      throw new Error(registerResponse.message || 'User registration failed')
+    }
 
     // Step 2: Login to get authentication token
     Notify.create({ 
@@ -258,10 +267,14 @@ const onSubmit = async () => {
       timeout: 2000 
     })
 
-    await auth.login({
+    const loginResponse = await auth.login({
       email: userData.email,
       password: userData.password
     })
+
+    if (!loginResponse.success && !loginResponse.token) {
+      throw new Error(loginResponse.message || 'Login failed after registration')
+    }
 
     // Step 3: Register business with the authenticated user
     Notify.create({ 
@@ -271,7 +284,7 @@ const onSubmit = async () => {
       timeout: 2000 
     })
 
-    await merchant.registerBusiness({
+    const businessResponse = await merchants.registerBusiness({
       business_name: businessData.business_name,
       logo: businessData.logo,
       bank_account_name: businessData.bank_account_name,
@@ -279,6 +292,10 @@ const onSubmit = async () => {
       bank_ifsc_swift: businessData.bank_ifsc_swift,
       payout_preferences: businessData.payout_preferences
     })
+
+    if (!businessResponse.success) {
+      throw new Error(businessResponse.message || 'Business registration failed')
+    }
 
     // Step 4: Success and redirect
     Notify.create({ 
@@ -320,6 +337,45 @@ const onSubmit = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const validateForm = () => {
+  // Check if all required fields are filled
+  if (!userData.name || !userData.email || !userData.password || !confirmPassword.value) {
+    error.value = 'Please fill in all required fields'
+    return false
+  }
+
+  if (userData.password !== confirmPassword.value) {
+    error.value = 'Passwords do not match'
+    return false
+  }
+
+  if (userData.password.length < 6) {
+    error.value = 'Password must be at least 6 characters long'
+    return false
+  }
+
+  if (!businessData.business_name || !businessData.bank_account_name || 
+      !businessData.bank_account_number || !businessData.bank_ifsc_swift) {
+    error.value = 'Please fill in all business information'
+    return false
+  }
+
+  if (businessData.payout_preferences.length === 0) {
+    error.value = 'Please select at least one payout preference'
+    return false
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(userData.email)) {
+    error.value = 'Please enter a valid email address'
+    return false
+  }
+
+  error.value = null
+  return true
 }
 </script>
 
@@ -420,15 +476,6 @@ const onSubmit = async () => {
 
 .custom-input :deep(.q-field__label) {
   font-weight: 500;
-  color: #cfcfcf !important;
-}
-
-.custom-input :deep(.q-field__native) {
-  color: #ffffff !important;
-}
-
-.custom-input :deep(.q-field__control-container) {
-  color: #ffffff !important;
 }
 
 .text-lime {
@@ -515,6 +562,7 @@ const onSubmit = async () => {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0) rotate(0deg);
@@ -538,11 +586,8 @@ const onSubmit = async () => {
 .hero-illustration {
   border-radius: 16px;
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4));
-  max-width: 100%;
-  height: auto;
 }
 
-/* Background elements animation */
 .bg-elements {
   position: absolute;
   top: 0;
@@ -559,7 +604,6 @@ const onSubmit = async () => {
   border: 1px solid rgba(189, 240, 0, 0.1);
   border-radius: 50%;
   animation: floatElement 20s infinite linear;
-  will-change: transform;
 }
 
 .square {
@@ -629,26 +673,6 @@ const onSubmit = async () => {
 
   100% {
     transform: translateY(0) rotate(360deg);
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .onboarding-card {
-    width: 95%;
-    margin: 20px;
-  }
-  
-  .full-height {
-    min-height: auto;
-  }
-  
-  .left-pane {
-    display: none;
-  }
-  
-  .right-pane {
-    border-left: none;
   }
 }
 </style>

@@ -398,7 +398,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useMerchantStore } from '../../store/merchant'
+import { useMerchantsStore } from '../../store/merchants'
 import { pinia } from '../../store/pinia'
 
 const $q = useQuasar()
@@ -429,7 +429,7 @@ const payoutOptions = [
   { label: 'Monthly', value: 'monthly' }
 ]
 
-const store = useMerchantStore(pinia)
+const store = useMerchantsStore(pinia)
 
 // Computed properties
 const passwordStrength = computed(() => {

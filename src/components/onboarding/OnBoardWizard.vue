@@ -1,13 +1,6 @@
 <template>
   <div class="onboarding-wizard">
-    <q-stepper 
-      v-model="currentStep" 
-      header-nav 
-      color="lime" 
-      animated 
-      flat 
-      class="custom-stepper"
-    >
+    <q-stepper v-model="currentStep" header-nav color="lime" animated flat class="custom-stepper">
       <!-- Step 1: Account Setup -->
       <q-step :name="1" title="Account" icon="person" :done="currentStep > 1">
         <div class="step-content">
@@ -15,635 +8,228 @@
             <h3 class="step-title">Create Your Account</h3>
             <p class="step-description">Let's start with your basic information</p>
           </div>
-          
+
           <div class="form-grid">
             <div class="form-group">
               <label class="field-label">Full Name *</label>
-              <q-input 
-                v-model="account.name" 
-                placeholder="Enter your full name"
-                outlined 
-                dense 
-                :error="!!errors.name"
-                :error-message="errors.name"
-                @blur="validateField('name', account.name)"
-                class="custom-input"
-              />
+              <q-input v-model="account.name" placeholder="Enter your full name" outlined dense :error="!!errors.name"
+                :error-message="errors.name" @blur="validateField('name', account.name)" class="custom-input" />
             </div>
-            
+
             <div class="form-group">
               <label class="field-label">Email Address *</label>
-              <q-input 
-                v-model="account.email" 
-                type="email"
-                placeholder="Enter your email address"
-                outlined 
-                dense 
-                :error="!!errors.email"
-                :error-message="errors.email"
-                @blur="validateField('email', account.email)"
-                class="custom-input"
-              />
+              <q-input v-model="account.email" type="email" placeholder="Enter your email address" outlined dense
+                :error="!!errors.email" :error-message="errors.email" @blur="validateField('email', account.email)"
+                class="custom-input" />
             </div>
-            
+
             <div class="form-group">
               <label class="field-label">Password *</label>
-              <q-input 
-                v-model="account.password" 
-                type="password"
-                placeholder="Create a strong password"
-                outlined 
-                dense 
-                :error="!!errors.password"
-                :error-message="errors.password"
-                @blur="validateField('password', account.password)"
-                class="custom-input"
-              >
+              <q-input v-model="account.password" type="password" placeholder="Create a strong password" outlined dense
+                :error="!!errors.password" :error-message="errors.password"
+                @blur="validateField('password', account.password)" class="custom-input">
                 <template v-slot:append>
-                  <q-icon 
-                    :name="showPassword ? 'visibility' : 'visibility_off'" 
-                    @click="showPassword = !showPassword"
-                    class="cursor-pointer"
-                  />
+                  <q-icon :name="showPassword ? 'visibility' : 'visibility_off'" @click="showPassword = !showPassword"
+                    class="cursor-pointer" />
                 </template>
               </q-input>
             </div>
-            
+
             <div class="form-group">
               <label class="field-label">Confirm Password *</label>
-              <q-input 
-                v-model="account.confirmPassword" 
-                type="password"
-                placeholder="Confirm your password"
-                outlined 
-                dense 
-                :error="!!errors.confirmPassword"
-                :error-message="errors.confirmPassword"
-                @blur="validateField('confirmPassword', account.confirmPassword)"
-                class="custom-input"
-              />
+              <q-input v-model="account.confirmPassword" type="password" placeholder="Confirm your password" outlined
+                dense :error="!!errors.confirmPassword" :error-message="errors.confirmPassword"
+                @blur="validateField('confirmPassword', account.confirmPassword)" class="custom-input" />
             </div>
-            
+
             <div class="form-group">
               <label class="field-label">Role *</label>
-              <q-select 
-                v-model="account.role" 
-                :options="roleOptions" 
-                placeholder="Select your role"
-                outlined 
-                dense 
-                emit-value 
-                map-options
-                :error="!!errors.role"
-                :error-message="errors.role"
-                @blur="validateField('role', account.role)"
-                class="custom-input"
-              />
+              <q-select v-model="account.role" :options="roleOptions" placeholder="Select your role" outlined dense
+                emit-value map-options :error="!!errors.role" :error-message="errors.role"
+                @blur="validateField('role', account.role)" class="custom-input" />
             </div>
+          </div>
+
+          <div class="step-actions">
+            <q-btn label="Next" color="lime" @click="nextStep" :disabled="!isStep1Valid" :loading="loading" />
           </div>
         </div>
       </q-step>
 
-      <!-- Step 2: Business Details (only if merchant) -->
-      <q-step v-if="isMerchant" :name="2" title="Business" icon="store" :done="currentStep > 2">
+      <!-- Step 2: Business Information -->
+      <q-step :name="2" title="Business" icon="store" :done="currentStep > 2">
         <div class="step-content">
           <div class="step-header">
-            <h3 class="step-title">Business Information</h3>
+            <h3 class="step-title">Business Details</h3>
             <p class="step-description">Tell us about your business</p>
           </div>
-          
+
           <div class="form-grid">
             <div class="form-group">
               <label class="field-label">Business Name *</label>
-              <q-input 
-                v-model="business.business_name" 
-                placeholder="Enter your business name"
-                outlined 
-                dense 
-                :error="!!errors.business_name"
-                :error-message="errors.business_name"
-                @blur="validateField('business_name', business.business_name)"
-                class="custom-input"
-              />
+              <q-input v-model="business.business_name" placeholder="Enter your business name" outlined dense
+                :error="!!errors.business_name" :error-message="errors.business_name"
+                @blur="validateField('business_name', business.business_name)" class="custom-input" />
             </div>
-            
-            <div class="form-group">
-              <label class="field-label">Business Type</label>
-              <q-select 
-                v-model="business.business_type" 
-                :options="businessTypeOptions" 
-                placeholder="Select business type"
-                outlined 
-                dense 
-                emit-value 
-                map-options
-                class="custom-input"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">Website</label>
-              <q-input 
-                v-model="business.website" 
-                placeholder="https://yourwebsite.com"
-                outlined 
-                dense 
-                :error="!!errors.website"
-                :error-message="errors.website"
-                @blur="validateField('website', business.website)"
-                class="custom-input"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">Phone Number</label>
-              <q-input 
-                v-model="business.phone" 
-                placeholder="+1 (555) 123-4567"
-                outlined 
-                dense 
-                :error="!!errors.phone"
-                :error-message="errors.phone"
-                @blur="validateField('phone', business.phone)"
-                class="custom-input"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">Business Address</label>
-              <q-input 
-                v-model="business.address" 
-                placeholder="Enter your business address"
-                outlined 
-                dense 
-                type="textarea"
-                rows="3"
-                class="custom-input"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">Industry</label>
-              <q-select 
-                v-model="business.industry" 
-                :options="industryOptions" 
-                placeholder="Select your industry"
-                outlined 
-                dense 
-                emit-value 
-                map-options
-                class="custom-input"
-              />
-            </div>
-          </div>
-        </div>
-      </q-step>
 
-      <!-- Step 3: Branding & Logo -->
-      <q-step v-if="isMerchant" :name="3" title="Branding" icon="palette" :done="currentStep > 3">
-        <div class="step-content">
-          <div class="step-header">
-            <h3 class="step-title">Branding & Logo</h3>
-            <p class="step-description">Customize your business appearance</p>
-          </div>
-          
-          <div class="branding-section">
-            <div class="logo-upload">
-              <div class="upload-area" @click="triggerFileUpload">
-                <div v-if="!logoPreview" class="upload-placeholder">
-                  <q-icon name="add_a_photo" size="48px" color="lime" />
-                  <p>Click to upload your logo</p>
-                  <span class="upload-hint">PNG, JPG up to 5MB</span>
-                </div>
-                <div v-else class="logo-preview">
-                  <img :src="logoPreview" alt="Logo Preview" />
-                  <div class="logo-overlay">
-                    <q-icon name="edit" size="24px" />
-                  </div>
-                </div>
-              </div>
-              
-              <input 
-                ref="fileInput"
-                type="file" 
-                accept="image/*" 
-                @change="handleLogoUpload"
-                style="display: none"
-              />
-              
-              <div class="upload-actions">
-                <q-btn 
-                  v-if="logoPreview" 
-                  flat 
-                  color="negative" 
-                  icon="delete" 
-                  label="Remove" 
-                  @click="removeLogo"
-                  size="sm"
-                />
-                <q-btn 
-                  flat 
-                  color="lime" 
-                  icon="upload" 
-                  label="Change Logo" 
-                  @click="triggerFileUpload"
-                  size="sm"
-                />
-              </div>
+            <div class="form-group">
+              <label class="field-label">Business Logo</label>
+              <q-file v-model="business.logo" label="Upload Logo" outlined dense accept=".jpg,.jpeg,.png,.gif"
+                max-files="1" class="custom-input">
+                <template v-slot:prepend>
+                  <q-icon name="image" />
+                </template>
+              </q-file>
             </div>
-            
-            <div class="branding-options">
-              <div class="form-group">
-                <label class="field-label">Brand Colors</label>
-                <div class="color-picker">
-                  <div class="color-option">
-                    <label>Primary Color</label>
-                    <q-input 
-                      v-model="branding.primary_color" 
-                      type="color"
-                      outlined 
-                      dense 
-                      class="color-input"
-                    />
-                  </div>
-                  <div class="color-option">
-                    <label>Secondary Color</label>
-                    <q-input 
-                      v-model="branding.secondary_color" 
-                      type="color"
-                      outlined 
-                      dense 
-                      class="color-input"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label class="field-label">Tagline</label>
-                <q-input 
-                  v-model="branding.tagline" 
-                  placeholder="Your business tagline"
-                  outlined 
-                  dense 
-                  class="custom-input"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </q-step>
 
-      <!-- Step 4: Banking & Payouts -->
-      <q-step v-if="isMerchant" :name="4" title="Banking" icon="account_balance" :done="currentStep > 4">
-        <div class="step-content">
-          <div class="step-header">
-            <h3 class="step-title">Banking & Payout Preferences</h3>
-            <p class="step-description">Set up your payment receiving details</p>
-          </div>
-          
-          <div class="form-grid">
             <div class="form-group">
-              <label class="field-label">Account Holder Name *</label>
-              <q-input 
-                v-model="banking.account_holder_name" 
-                placeholder="Enter account holder name"
-                outlined 
-                dense 
-                :error="!!errors.account_holder_name"
-                :error-message="errors.account_holder_name"
-                @blur="validateField('account_holder_name', banking.account_holder_name)"
-                class="custom-input"
-              />
+              <label class="field-label">Bank Account Name *</label>
+              <q-input v-model="business.bank_account_name" placeholder="Account holder name" outlined dense
+                :error="!!errors.bank_account_name" :error-message="errors.bank_account_name"
+                @blur="validateField('bank_account_name', business.bank_account_name)" class="custom-input" />
             </div>
-            
+
             <div class="form-group">
-              <label class="field-label">Bank Name *</label>
-              <q-input 
-                v-model="banking.bank_name" 
-                placeholder="Enter your bank name"
-                outlined 
-                dense 
-                :error="!!errors.bank_name"
-                :error-message="errors.bank_name"
-                @blur="validateField('bank_name', banking.bank_name)"
-                class="custom-input"
-              />
+              <label class="field-label">Bank Account Number *</label>
+              <q-input v-model="business.bank_account_number" placeholder="Account number" outlined dense
+                :error="!!errors.bank_account_number" :error-message="errors.bank_account_number"
+                @blur="validateField('bank_account_number', business.bank_account_number)" class="custom-input" />
             </div>
-            
+
             <div class="form-group">
-              <label class="field-label">Account Number *</label>
-              <q-input 
-                v-model="banking.account_number" 
-                placeholder="Enter account number"
-                outlined 
-                dense 
-                :error="!!errors.account_number"
-                :error-message="errors.account_number"
-                @blur="validateField('account_number', banking.account_number)"
-                class="custom-input"
-              />
+              <label class="field-label">IFSC/SWIFT Code *</label>
+          <q-input v-model="business.bank_ifsc_swift" placeholder="IFSC or SWIFT code" outlined dense
+                :error="!!errors.bank_ifsc_swift" :error-message="errors.bank_ifsc_swift"
+                @blur="validateField('bank_ifsc_swift', business.bank_ifsc_swift)" class="custom-input" />
             </div>
-            
-            <div class="form-group">
-              <label class="field-label">Routing Number *</label>
-              <q-input 
-                v-model="banking.routing_number" 
-                placeholder="Enter routing number"
-                outlined 
-                dense 
-                :error="!!errors.routing_number"
-                :error-message="errors.routing_number"
-                @blur="validateField('routing_number', banking.routing_number)"
-                class="custom-input"
-              />
-            </div>
-            
+
             <div class="form-group">
               <label class="field-label">Payout Preferences *</label>
-              <q-select 
-                v-model="banking.payout_preferences" 
-                :options="payoutOptions" 
-                placeholder="Select payout methods"
-                outlined 
-                dense 
-                multiple
-                emit-value 
-                map-options
-                :error="!!errors.payout_preferences"
-                :error-message="errors.payout_preferences"
-                @blur="validateField('payout_preferences', banking.payout_preferences)"
-                class="custom-input"
-              />
-            </div>
-            
-            <div class="form-group">
-              <label class="field-label">Payout Schedule</label>
-              <q-select 
-                v-model="banking.payout_schedule" 
-                :options="scheduleOptions" 
-                placeholder="Select payout schedule"
-                outlined 
-                dense 
-                emit-value 
-                map-options
-                class="custom-input"
-              />
+              <q-select v-model="business.payout_preferences" :options="payoutOptions" multiple outlined dense use-chips
+                placeholder="Select payout methods" :error-message="errors.payout_preferences"
+                @blur="validateField('payout_preferences', business.payout_preferences)" class="custom-input" />
             </div>
           </div>
-        </div>
-      </q-step>
 
-      <!-- Step 5: Review & Submit -->
-      <q-step v-if="isMerchant" :name="5" title="Review" icon="check_circle">
+          <div class="step-actions">
+            <q-btn label="Previous" flat @click="previousStep" class="q-mr-md" />
+            <q-btn label="Next" color="lime" @click="nextStep" :disabled="!isStep2Valid" :loading="loading" />
+          </div>
+        </div>
+     </q-step>
+      <!-- Step 3: Verification -->
+      <q-step :name="3" title="Verify" icon="verified" :done="currentStep > 3">
         <div class="step-content">
           <div class="step-header">
-            <h3 class="step-title">Review Your Information</h3>
-            <p class="step-description">Please review all details before submitting</p>
+            <h3 class="step-title">Review & Submit</h3>
+            <p class="step-description">Review your information before submitting</p>
           </div>
-          
-          <div class="review-sections">
-            <!-- Account Review -->
-            <div class="review-section">
-              <h4 class="review-title">
-                <q-icon name="person" color="lime" />
-                Account Information
-              </h4>
-              <div class="review-content">
-                <div class="review-row">
-                  <span class="label">Name:</span>
-                  <span class="value">{{ account.name }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Email:</span>
-                  <span class="value">{{ account.email }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Role:</span>
-                  <span class="value">{{ getRoleLabel(account.role) }}</span>
-                </div>
+
+          <div class="review-section">
+            <div class="review-card">
+              <h4>Account Information</h4>
+              <div class="review-item">
+                <span class="label">Name:</span>
+                <span class="value">{{ account.name }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Email:</span>
+                <span class="value">{{ account.email }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Role:</span>
+                <span class="value">{{ account.role }}</span>
               </div>
             </div>
-            
-            <!-- Business Review -->
-            <div class="review-section">
-              <h4 class="review-title">
-                <q-icon name="store" color="lime" />
-                Business Information
-              </h4>
-              <div class="review-content">
-                <div class="review-row">
-                  <span class="label">Business Name:</span>
-                  <span class="value">{{ business.business_name }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Business Type:</span>
-                  <span class="value">{{ getBusinessTypeLabel(business.business_type) }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Website:</span>
-                  <span class="value">{{ business.website || 'Not provided' }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Phone:</span>
-                  <span class="value">{{ business.phone || 'Not provided' }}</span>
-                </div>
+
+            <div class="review-card">
+              <h4>Business Information</h4>
+              <div class="review-item">
+                <span class="label">Business Name:</span>
+                <span class="value">{{ business.business_name }}</span>
               </div>
-            </div>
-            
-            <!-- Banking Review -->
-            <div class="review-section">
-              <h4 class="review-title">
-                <q-icon name="account_balance" color="lime" />
-                Banking Information
-              </h4>
-              <div class="review-content">
-                <div class="review-row">
-                  <span class="label">Account Holder:</span>
-                  <span class="value">{{ banking.account_holder_name }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Bank:</span>
-                  <span class="value">{{ banking.bank_name }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Account Number:</span>
-                  <span class="value">••••••••{{ banking.account_number.slice(-4) }}</span>
-                </div>
-                <div class="review-row">
-                  <span class="label">Payout Methods:</span>
-                  <span class="value">{{ getPayoutLabels(banking.payout_preferences) }}</span>
-                </div>
+              <div class="review-item">
+                <span class="label">Bank Account:</span>
+                <span class="value">{{ business.bank_account_name }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Account Number:</span>
+                <span class="value">{{ business.bank_account_number }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">IFSC/SWIFT:</span>
+                <span class="value">{{ business.bank_ifsc_swift }}</span>
+              </div>
+              <div class="review-item">
+                <span class="label">Payout Methods:</span>
+                <span class="value">{{ business.payout_preferences.join(', ') }}</span>
               </div>
             </div>
           </div>
-          
-          <!-- Terms & Conditions -->
-          <div class="terms-section">
-            <q-checkbox 
-              v-model="termsAccepted" 
-              label="I agree to the Terms & Conditions and Privacy Policy"
-              color="lime"
-            />
-            <div class="terms-links">
-              <a href="#" @click.prevent="showTerms">Terms & Conditions</a>
-              <span class="separator">|</span>
-              <a href="#" @click.prevent="showPrivacy">Privacy Policy</a>
-            </div>
+
+          <div class="step-actions">
+            <q-btn label="Previous" flat @click="previousStep" class="q-mr-md" />
+            <q-btn label="Submit Application" color="lime" @click="submitApplication" :loading="submitting" />
           </div>
         </div>
       </q-step>
 
-      <!-- Step 6: Success -->
-      <q-step v-if="isMerchant" :name="6" title="Success" icon="celebration">
-        <div class="step-content">
-          <div class="success-content">
-            <div class="success-icon">
-              <q-icon name="check_circle" size="80px" color="green" />
-            </div>
-            <h2 class="success-title">Welcome to FinteckX!</h2>
-            <p class="success-message">Your account has been created successfully. We're reviewing your business information and will notify you once approved.</p>
-            
-            <div class="next-steps">
-              <h4>What happens next?</h4>
-              <ul>
-                <li>We'll review your business information (1-2 business days)</li>
-                <li>You'll receive an approval email</li>
-                <li>Start accepting payments immediately after approval</li>
-                <li>Access your dashboard to manage transactions</li>
-              </ul>
-            </div>
-            
-            <div class="success-actions">
-              <q-btn
-                color="lime"
-                icon="dashboard"
-                label="Go to Dashboard"
-                @click="goToDashboard"
-                size="lg"
-              />
-              <q-btn
-                outline
-                color="lime"
-                icon="email"
-                label="Check Email"
-                @click="checkEmail"
-                class="q-ml-md"
-              />
-            </div>
+      <!-- Step 4: Success -->
+      <q-step :name="4" title="Success" icon="check_circle">
+        <div class="step-content text-center">
+          <div class="success-icon">
+            <q-icon name="check_circle" size="80px" color="lime" />
+          </div>
+
+          <h3 class="success-title">Application Submitted!</h3>
+          <p class="success-description">
+            Your application has been submitted successfully. Our team will review it and get back to you within 24-48
+            hours.
+          </p>
+
+          <div class="success-actions">
+            <q-btn label="Go to Dashboard" color="lime" @click="goToDashboard" class="q-mr-md" />
+            <q-btn label="View Status" outline color="lime" @click="viewStatus" />
           </div>
         </div>
       </q-step>
     </q-stepper>
-
-    <!-- Navigation Buttons -->
-    <div class="stepper-navigation">
-      <q-btn
-        v-if="currentStep > 1 && currentStep < 6"
-        flat
-        color="lime"
-        icon="arrow_back"
-        label="Previous"
-        @click="previousStep"
-        class="nav-btn"
-      />
-      
-      <q-space />
-      
-      <q-btn
-        v-if="currentStep < 5"
-        color="lime"
-        icon="arrow_forward"
-        :label="currentStep === 4 ? 'Review' : 'Next'"
-        @click="nextStep"
-        :disable="!canProceed"
-        class="nav-btn"
-      />
-      
-      <q-btn
-        v-if="currentStep === 5"
-        color="lime"
-        icon="check"
-        label="Submit Application"
-        @click="submitApplication"
-        :loading="submitting"
-        :disable="!canSubmit"
-        class="nav-btn"
-      />
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress-section">
-      <div class="progress-info">
-        <span>Step {{ currentStep }} of {{ totalSteps }}</span>
-        <span>{{ Math.round((currentStep / totalSteps) * 100) }}% Complete</span>
-      </div>
-      <q-linear-progress 
-        :value="currentStep / totalSteps" 
-        color="lime" 
-        size="md"
-        class="progress-bar"
-      />
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../store/auth'
-import { useMerchantStore } from '../../store/merchant'
-import { Notify } from 'quasar'
-import { pinia } from '../../store/pinia'
+import { useQuasar } from 'quasar'
+import api from '../../boot/axios'
 
 const router = useRouter()
-const authStore = useAuthStore(pinia)
-const merchantStore = useMerchantStore(pinia)
+const $q = useQuasar()
 
 // Reactive data
 const currentStep = ref(1)
+const loading = ref(false)
 const submitting = ref(false)
-const termsAccepted = ref(false)
-const showPassword = ref(false)
-const fileInput = ref(null)
-const logoPreview = ref(null)
-const logoFile = ref(null)
+const errors = ref({})
 
-// Form data
+// Account data
 const account = ref({
   name: '',
   email: '',
   password: '',
   confirmPassword: '',
-  role: 'merchant'
+  role: ''
 })
 
+// Business data
 const business = ref({
   business_name: '',
-  business_type: '',
-  website: '',
-  phone: '',
-  address: '',
-  industry: ''
+  logo: null,
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_ifsc_swift: '',
+  payout_preferences: []
 })
-
-const branding = ref({
-  primary_color: '#bdf000',
-  secondary_color: '#121018',
-  tagline: ''
-})
-
-const banking = ref({
-  account_holder_name: '',
-  bank_name: '',
-  account_number: '',
-  routing_number: '',
-  payout_preferences: [],
-  payout_schedule: 'weekly'
-})
-
-// Validation errors
-const errors = ref({})
 
 // Options
 const roleOptions = [
@@ -651,142 +237,85 @@ const roleOptions = [
   { label: 'Admin', value: 'admin' }
 ]
 
-const businessTypeOptions = [
-  { label: 'Sole Proprietorship', value: 'sole_proprietorship' },
-  { label: 'Partnership', value: 'partnership' },
-  { label: 'Corporation', value: 'corporation' },
-  { label: 'LLC', value: 'llc' },
-  { label: 'Non-profit', value: 'non_profit' }
-]
-
-const industryOptions = [
-  { label: 'E-commerce', value: 'ecommerce' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'Food & Beverage', value: 'food_beverage' },
-  { label: 'Retail', value: 'retail' },
-  { label: 'Other', value: 'other' }
-]
-
 const payoutOptions = [
   { label: 'Bank Transfer', value: 'bank_transfer' },
+  { label: 'UPI', value: 'upi' },
   { label: 'PayPal', value: 'paypal' },
-  { label: 'Stripe', value: 'stripe' },
-  { label: 'Check', value: 'check' }
+  { label: 'Stripe', value: 'stripe' }
 ]
 
-const scheduleOptions = [
-  { label: 'Daily', value: 'daily' },
-  { label: 'Weekly', value: 'weekly' },
-  { label: 'Monthly', value: 'monthly' }
-]
-
-// Computed properties
-const isMerchant = computed(() => account.value.role === 'merchant')
-const totalSteps = computed(() => isMerchant.value ? 6 : 1)
-
-const canProceed = computed(() => {
-  switch (currentStep.value) {
-    case 1:
-      return account.value.name && account.value.email && account.value.password && 
-             account.value.confirmPassword && account.value.role && 
-             account.value.password === account.value.confirmPassword
-    case 2:
-      return business.value.business_name
-    case 3:
-      return true // Logo is optional
-    case 4:
-      return banking.value.account_holder_name && banking.value.bank_name && 
-             banking.value.account_number && banking.value.routing_number && 
-             banking.value.payout_preferences.length > 0
-    default:
-      return true
-  }
+// Computed
+const isStep1Valid = computed(() => {
+  return account.value.name &&
+    account.value.email &&
+    account.value.password &&
+    account.value.confirmPassword &&
+    account.value.role &&
+    account.value.password === account.value.confirmPassword
 })
 
-const canSubmit = computed(() => {
-  return termsAccepted.value && canProceed.value
+const isStep2Valid = computed(() => {
+  return business.value.business_name &&
+    business.value.bank_account_name &&
+    business.value.bank_account_number &&
+    business.value.bank_ifsc_swift &&
+    business.value.payout_preferences.length > 0
 })
 
 // Methods
 const validateField = (field, value) => {
-  const validations = {
-    name: () => {
-      if (!value) return 'Name is required'
-      if (value.length < 2) return 'Name must be at least 2 characters'
-      return null
-    },
-    email: () => {
-      if (!value) return 'Email is required'
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email'
-      return null
-    },
-    password: () => {
-      if (!value) return 'Password is required'
-      if (value.length < 6) return 'Password must be at least 6 characters'
-      return null
-    },
-    confirmPassword: () => {
-      if (!value) return 'Please confirm password'
-      if (value !== account.value.password) return 'Passwords do not match'
-      return null
-    },
-    role: () => {
-      if (!value) return 'Please select a role'
-      return null
-    },
-    business_name: () => {
-      if (!value) return 'Business name is required'
-      return null
-    },
-    website: () => {
-      if (value && !/^https?:\/\/.+\..+/.test(value)) return 'Enter a valid website URL'
-      return null
-    },
-    phone: () => {
-  if (value && !/^[+]? [1-9]\d{0,15}$/.test(value.replace(/\D/g, ''))) 
-    return 'Enter a valid phone number'
-  return null
-},
-    account_holder_name: () => {
-      if (!value) return 'Account holder name is required'
-      return null
-    },
-    bank_name: () => {
-      if (!value) return 'Bank name is required'
-      return null
-    },
-    account_number: () => {
-      if (!value) return 'Account number is required'
-      if (!/^\d{8,17}$/.test(value)) return 'Enter a valid account number'
-      return null
-    },
-    routing_number: () => {
-      if (!value) return 'Routing number is required'
-      if (!/^\d{9}$/.test(value)) return 'Enter a valid routing number'
-      return null
-    },
-    payout_preferences: () => {
-      if (!value || value.length === 0) return 'Please select at least one payout method'
-      return null
-    }
-  }
+  errors.value[field] = ''
 
-  const validation = validations[field]
-  if (validation) {
-    const error = validation()
-    if (error) {
-      errors.value[field] = error
-    } else {
-      delete errors.value[field]
-    }
+  switch (field) {
+    case 'name':
+      if (!value) errors.value[field] = 'Name is required'
+      break
+    case 'email':
+      if (!value) {
+        errors.value[field] = 'Email is required'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        errors.value[field] = 'Invalid email format'
+      }
+      break
+    case 'password':
+      if (!value) {
+        errors.value[field] = 'Password is required'
+      } else if (value.length < 8) {
+        errors.value[field] = 'Password must be at least 8 characters'
+      }
+      break
+    case 'confirmPassword':
+      if (!value) {
+        errors.value[field] = 'Please confirm your password'
+      } else if (value !== account.value.password) {
+        errors.value[field] = 'Passwords do not match'
+      }
+      break
+    case 'role':
+      if (!value) errors.value[field] = 'Please select a role'
+      break
+    case 'business_name':
+      if (!value) errors.value[field] = 'Business name is required'
+      break
+    case 'bank_account_name':
+      if (!value) errors.value[field] = 'Bank account name is required'
+      break
+    case 'bank_account_number':
+      if (!value) errors.value[field] = 'Bank account number is required'
+      break
+    case 'bank_ifsc_swift':
+      if (!value) errors.value[field] = 'IFSC/SWIFT code is required'
+      break
+    case 'payout_preferences':
+      if (!value || value.length === 0) {
+        errors.value[field] = 'Please select at least one payout method'
+      }
+      break
   }
 }
 
 const nextStep = () => {
-  if (canProceed.value) {
+  if (currentStep.value < 4) {
     currentStep.value++
   }
 }
@@ -797,86 +326,66 @@ const previousStep = () => {
   }
 }
 
-const triggerFileUpload = () => {
-  fileInput.value.click()
-}
-
-const handleLogoUpload = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-      Notify.create({
-        type: 'negative',
-        message: 'File size must be less than 5MB',
-        position: 'top'
-      })
-      return
-    }
-    
-    logoFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      logoPreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-const removeLogo = () => {
-  logoFile.value = null
-  logoPreview.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
-
 const submitApplication = async () => {
-  if (!canSubmit.value) return
-  
   try {
     submitting.value = true
-    
-    // Create user account
-    await authStore.register({
+
+    // First register the user account
+    const registerResponse = await api.post('/api/auth/register', {
       name: account.value.name,
       email: account.value.email,
       password: account.value.password,
       password_confirmation: account.value.confirmPassword,
       role: account.value.role
     })
-    
-    // Login user
-    await authStore.login({
-      email: account.value.email,
-      password: account.value.password
-    })
-    
-    // Register business if merchant
-    if (isMerchant.value) {
-      const businessData = {
-        ...business.value,
-        ...banking.value,
-        logo: logoFile.value,
-        branding: branding.value
-      }
-      
-      await merchantStore.registerBusiness(businessData)
+
+    if (!registerResponse.data.success) {
+      throw new Error(registerResponse.data.message || 'Registration failed')
     }
-    
+
+    // Store the token
+    const token = registerResponse.data.token
+    localStorage.setItem('token', token)
+
+    // Then register the business
+    const businessData = new FormData()
+    businessData.append('business_name', business.value.business_name)
+    if (business.value.logo) {
+      businessData.append('logo', business.value.logo)
+    }
+    businessData.append('bank_account_name', business.value.bank_account_name)
+    businessData.append('bank_account_number', business.value.bank_account_number)
+    businessData.append('bank_ifsc_swift', business.value.bank_ifsc_swift)
+
+    business.value.payout_preferences.forEach((pref, index) => {
+      businessData.append(`payout_preferences[${index}]`, pref)
+    })
+
+    const businessResponse = await api.post('/api/merchant/register', businessData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!businessResponse.data.success) {
+      throw new Error(businessResponse.data.message || 'Business registration failed')
+    }
+
     // Move to success step
-    currentStep.value = 6
-    
-    Notify.create({
+    currentStep.value = 4
+
+    $q.notify({
       type: 'positive',
-      message: 'Account created successfully!',
+      message: 'Application submitted successfully!',
       position: 'top'
     })
-    
+
   } catch (error) {
-    console.error('Registration error:', error)
-    Notify.create({
+    console.error('Submission error:', error)
+    $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Failed to create account',
+      message: error.response?.data?.message || error.message || 'Failed to submit application',
       position: 'top'
     })
   } finally {
@@ -888,50 +397,34 @@ const goToDashboard = () => {
   router.push('/dashboard')
 }
 
-const checkEmail = () => {
-  // Implement email checking logic
-  console.log('Checking email...')
-}
-
-const showTerms = () => {
-  // Show terms and conditions
-  console.log('Showing terms...')
-}
-
-const showPrivacy = () => {
-  // Show privacy policy
-  console.log('Showing privacy...')
-}
-
-const getRoleLabel = (role) => {
-  const roleMap = { merchant: 'Merchant', admin: 'Admin' }
-  return roleMap[role] || role
-}
-
-const getBusinessTypeLabel = (type) => {
-  const typeMap = {
-    sole_proprietorship: 'Sole Proprietorship',
-    partnership: 'Partnership',
-    corporation: 'Corporation',
-    llc: 'LLC',
-    non_profit: 'Non-profit'
-  }
-  return typeMap[type] || type
-}
-
-const getPayoutLabels = (preferences) => {
-  if (!preferences || preferences.length === 0) return 'None selected'
-  return preferences.map(p => {
-    const option = payoutOptions.find(opt => opt.value === p)
-    return option ? option.label : p
-  }).join(', ')
+const viewStatus = () => {
+  router.push('/dashboard?tab=status')
 }
 
 // Lifecycle
 onMounted(() => {
-  // Initialize with any existing data
+  // Initialize with any stored data
+  const storedAccount = localStorage.getItem('onboarding_account')
+  const storedBusiness = localStorage.getItem('onboarding_business')
+
+  if (storedAccount) {
+    try {
+      account.value = { ...account.value, ...JSON.parse(storedAccount) }
+    } catch (e) {
+      console.error('Error parsing stored account data:', e)
+    }
+  }
+
+  if (storedBusiness) {
+    try {
+      business.value = { ...business.value, ...JSON.parse(storedBusiness) }
+    } catch (e) {
+      console.error('Error parsing stored business data:', e)
+    }
+  }
 })
 </script>
+
 
 <style scoped>
 .onboarding-wizard {
@@ -1311,31 +804,31 @@ onMounted(() => {
   .onboarding-wizard {
     padding: 16px;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .branding-section {
     grid-template-columns: 1fr;
     gap: 24px;
   }
-  
+
   .upload-area {
     width: 150px;
     height: 150px;
   }
-  
+
   .stepper-navigation {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .nav-btn {
     min-width: 200px;
   }
-  
+
   .success-actions {
     flex-direction: column;
     align-items: center;

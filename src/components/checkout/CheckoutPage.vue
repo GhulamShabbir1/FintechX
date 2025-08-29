@@ -103,57 +103,35 @@
             </div>
           </div>
           
-          <div v-else-if="selectedPaymentMethod === 'bank'" class="payment-section bank-payment animate-fade-in" style="animation-delay: 0.5s">
-            <div class="bank-payment">
-              <q-card class="bank-card modern-card">
+          <div v-else-if="selectedPaymentMethod === 'upi'" class="payment-section upi-payment animate-fade-in" style="animation-delay: 0.5s">
+            <div class="upi-payment">
+              <q-card class="upi-card modern-card">
                 <q-card-section class="card-header">
                   <div class="card-icon">
-                    <q-icon name="account_balance" size="28px" />
+                    <q-icon name="qr_code" size="28px" />
                   </div>
                   <div class="card-title">
-                    <div class="text-h6">Bank Transfer</div>
-                    <div class="text-caption">Secure bank-to-bank transfer</div>
+                    <div class="text-h6">UPI Payment</div>
+                    <div class="text-caption">Scan QR or enter UPI ID</div>
                   </div>
                 </q-card-section>
                 
                 <q-card-section>
-                  <q-form @submit.prevent="processBankPayment" class="q-gutter-md">
-                    <q-select
-                      v-model="bankForm.bank"
-                      :options="bankOptions"
-                      label="Select Bank"
-                      filled
-                      dense
-                      class="modern-input"
-                      :rules="[val => !!val || 'Please select a bank']"
-                    />
-                    
-                    <q-input
-                      v-model="bankForm.accountNumber"
-                      label="Account Number"
-                      filled
-                      dense
-                      class="modern-input"
-                      :rules="[val => !!val || 'Account number required']"
-                    />
-                    
-                    <q-input
-                      v-model="bankForm.accountName"
-                      label="Account Holder Name"
-                      filled
-                      dense
-                      class="modern-input"
-                      :rules="[val => !!val || 'Account name required']"
-                    />
-                    
-                    <q-btn
-                      type="submit"
-                      label="Initiate Transfer"
-                      class="btn-primary full-width q-mt-md"
-                      :loading="processing"
-                      :disable="!isBankFormValid"
-                    />
-                  </q-form>
+                  <q-input
+                    v-model="upiForm.upiId"
+                    label="UPI ID"
+                    placeholder="example@upi"
+                    outlined
+                    dense
+                    class="q-mb-md"
+                  />
+                  
+                  <q-btn
+                    label="Pay with UPI"
+                    class="btn-primary full-width"
+                    :loading="processing"
+                    @click="processUpiPayment"
+                  />
                 </q-card-section>
               </q-card>
             </div>
@@ -161,53 +139,24 @@
         </div>
       </div>
       
-      <!-- Security and trust indicators -->
-      <div class="trust-indicators animate-fade-in" style="animation-delay: 0.6s">
-        <div class="trust-item">
-          <div class="trust-icon">
-            <q-icon name="security" color="lime" />
-          </div>
-          <span>SSL Encrypted</span>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon">
-            <q-icon name="verified_user" color="lime" />
-          </div>
-          <span>PCI Compliant</span>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon">
-            <q-icon name="lock" color="lime" />
-          </div>
-          <span>Secure Payment</span>
-        </div>
-        <div class="trust-item">
-          <div class="trust-icon">
-            <q-icon name="support_agent" color="lime" />
-          </div>
-          <span>24/7 Support</span>
-        </div>
+      <!-- Error display -->
+      <div v-if="error" class="error-message q-mt-md">
+        <q-banner class="text-white bg-negative">
+          {{ error }}
+        </q-banner>
       </div>
     </div>
-    
-    <!-- Payment processing overlay -->
-    <PaymentLoader
-      v-if="processing"
-      :message="processingMessage"
-      :steps="processingSteps"
-    />
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Notify, Dialog } from 'quasar'
+import { Notify } from 'quasar'
 import api from '../../boot/axios'
 import MerchantBranding from './MerchantBranding.vue'
 import PaymentMethodSelector from './PaymentMethodSelector.vue'
 import PaymentMethodCard from './PaymentMethodCard.vue'
-import PaymentLoader from '../payments/PaymentLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -215,224 +164,158 @@ const router = useRouter()
 // Reactive data
 const loading = ref(true)
 const processing = ref(false)
-const processingMessage = ref('')
-const processingSteps = ref([])
-
-const merchantInfo = ref(null)
+const error = ref('')
+const merchantInfo = ref({})
 const paymentDetails = ref({
   amount: 0,
-  currency: 'USD',
-  description: ''
+  currency: 'usd'
 })
-
-const orderDetails = ref(null)
+const orderDetails = ref([])
 const selectedPaymentMethod = ref('card')
-const availablePaymentMethods = ref([])
-
-// Form data
-const cardForm = ref({
-  number: '',
-  name: '',
-  expiry: '',
-  cvc: ''
-})
-
 const selectedWallet = ref(null)
-const walletOptions = ref([
-  { id: 'paypal', name: 'PayPal', icon: 'payments' },
-  { id: 'apple', name: 'Apple Pay', icon: 'smartphone' },
-  { id: 'google', name: 'Google Pay', icon: 'smartphone' },
-  { id: 'amazon', name: 'Amazon Pay', icon: 'shopping_cart' }
-])
-
-const bankForm = ref({
-  bank: null,
-  accountNumber: '',
-  accountName: ''
+const cardForm = ref({
+  cardNumber: '',
+  expiryDate: '',
+  cvv: '',
+  cardholderName: ''
+})
+const upiForm = ref({
+  upiId: ''
 })
 
-const bankOptions = ref([
-  'Chase Bank',
-  'Bank of America',
-  'Wells Fargo',
-  'Citibank',
-  'US Bank'
+// Payment methods
+const availablePaymentMethods = ref([
+  { id: 'card', name: 'Credit/Debit Card', icon: 'credit_card' },
+  { id: 'wallet', name: 'Digital Wallet', icon: 'account_balance_wallet' },
+  { id: 'upi', name: 'UPI', icon: 'qr_code' }
 ])
 
-// Computed properties
-const isBankFormValid = computed(() => {
-  return bankForm.value.bank && 
-         bankForm.value.accountNumber && 
-         bankForm.value.accountName
+const walletOptions = ref([
+  { id: 'paytm', name: 'Paytm', icon: 'account_balance_wallet' },
+  { id: 'phonepe', name: 'PhonePe', icon: 'account_balance_wallet' },
+  { id: 'gpay', name: 'Google Pay', icon: 'account_balance_wallet' }
+])
+
+// Computed
+const totalAmount = computed(() => {
+  return orderDetails.value.reduce((sum, item) => sum + (item.price * item.qty), 0)
 })
 
 // Methods
+const goBack = () => {
+  router.go(-1)
+}
+
 const onBrandingLoaded = (branding) => {
   merchantInfo.value = branding
 }
 
 const onPaymentMethodSelected = (method) => {
   selectedPaymentMethod.value = method
+  error.value = ''
 }
 
-const onCardValidationChange = (validation) => {
-  // Handle card validation changes
-  console.log('Card validation:', validation)
+const onCardValidationChange = () => {
+  // Handle card validation
 }
 
 const selectWallet = (walletId) => {
   selectedWallet.value = walletId
 }
 
-const getMerchantId = () => route.query.merchant || route.params.merchant || route.query.merchantId
-
-const processCardPayment = async (cardData) => {
-  await processPayment('card', { cardData })
+const processCardPayment = async () => {
+  await processPayment({
+    method: 'card',
+    card_details: cardForm.value
+  })
 }
 
 const processWalletPayment = async () => {
-  if (!selectedWallet.value) return
-  await processPayment('wallet', { wallet: selectedWallet.value })
+  await processPayment({
+    method: 'wallet',
+    wallet_id: selectedWallet.value
+  })
 }
 
-const processBankPayment = async () => {
-  if (!isBankFormValid.value) return
-  await processPayment('bank', { bankData: bankForm.value })
-}
-
-const processPayment = async (method, data) => {
-  processing.value = true
-  
-  // Set processing message and steps based on method
-  switch (method) {
-    case 'card':
-      processingMessage.value = 'Processing card payment...'
-      processingSteps.value = [
-        'Validating card details...',
-        'Processing payment...',
-        'Confirming transaction...'
-      ]
-      break
-    case 'wallet':
-      processingMessage.value = `Processing ${getWalletName(selectedWallet.value)} payment...`
-      processingSteps.value = [
-        'Connecting to wallet...',
-        'Authorizing payment...',
-        'Processing transaction...'
-      ]
-      break
-    case 'bank':
-      processingMessage.value = 'Initiating bank transfer...'
-      processingSteps.value = [
-        'Validating account details...',
-        'Initiating transfer...',
-        'Processing payment...'
-      ]
-      break
+const processUpiPayment = async () => {
+  if (!upiForm.value.upiId) {
+    error.value = 'Please enter UPI ID'
+    return
   }
   
+  await processPayment({
+    method: 'upi',
+    upi_id: upiForm.value.upiId
+  })
+}
+
+const processPayment = async (paymentData) => {
   try {
-    // Simulate API call
-    const processingTime = method === 'bank' ? 4000 : method === 'wallet' ? 2500 : 3000
-    await new Promise(resolve => setTimeout(resolve, processingTime))
+    processing.value = true
+    error.value = ''
     
-    // Redirect to success page
-    router.push({
-      path: '/payment-status',
-      query: {
-        status: 'success',
-        amount: paymentDetails.value.amount,
-        method: method,
-        merchantId: getMerchantId(),
-        merchantName: merchantInfo.value?.name || 'Merchant',
-        ...data
+    const payload = {
+      merchant_id: route.params.merchantId || 1,
+      amount: totalAmount.value,
+      currency: paymentDetails.value.currency,
+      method: paymentData.method,
+      customer: {
+        name: 'John Doe', // Get from form
+        email: 'customer@example.com', // Get from form
+        phone: '+15555555555' // Get from form
+      },
+      cart: orderDetails.value,
+      return_url_success: `${window.location.origin}/payment/success`,
+      return_url_failure: `${window.location.origin}/payment/failure`,
+      ...paymentData
+    }
+    
+    const response = await api.post('/api/payments/checkout', payload)
+    
+    if (response.data.success) {
+      Notify.create({
+        type: 'positive',
+        message: 'Payment processed successfully!',
+        position: 'top'
+      })
+      
+      // Redirect to success page or handle response
+      if (response.data.redirect_url) {
+        window.location.href = response.data.redirect_url
       }
-    })
-  } catch {
-    Notify.create({
-      type: 'negative',
-      message: 'Payment failed. Please try again.',
-      position: 'bottom-right',
-      actions: [{ label: 'Retry', color: 'white', handler: () => processPayment(method, data) }],
-    })
+    } else {
+      error.value = response.data.message || 'Payment failed'
+    }
+    
+  } catch (err) {
+    console.error('Payment error:', err)
+    error.value = err.response?.data?.message || 'Payment processing failed. Please try again.'
   } finally {
     processing.value = false
   }
 }
 
-const getWalletName = (walletId) => {
-  const wallet = walletOptions.value.find(w => w.id === walletId)
-  return wallet ? wallet.name : 'Wallet'
-}
-
-const goBack = () => {
-  Dialog.create({
-    title: 'Leave Checkout?',
-    message: 'Are you sure you want to leave? Your payment details will be lost.',
-    cancel: true,
-    persistent: true
-  }).onOk(() => {
-    // Go back to merchant site or previous page
-    if (route.query.returnUrl) {
-      window.location.href = route.query.returnUrl
-    } else {
-      router.go(-1)
-    }
-  })
-}
-
-const initializeCheckout = async () => {
+const loadCheckoutData = async () => {
   try {
     loading.value = true
     
-    // Get checkout parameters from route
-    const amount = route.query.amount || 99.99
-    const merchantId = getMerchantId()
-    const orderId = route.query.orderId
+    // Load merchant info
+    if (route.params.merchantId) {
+      const merchantResponse = await api.get(`/api/merchant/${route.params.merchantId}`)
+      merchantInfo.value = merchantResponse.data
+    }
     
-    paymentDetails.value.amount = parseFloat(amount)
-    paymentDetails.value.description = route.query.description || 'Payment'
-    
-    // Set available payment methods
-    availablePaymentMethods.value = [
-      { id: 'card', name: 'Credit/Debit Card', icon: 'credit_card', available: true },
-      { id: 'wallet', name: 'Digital Wallet', icon: 'account_balance_wallet', available: true },
-      { id: 'bank', name: 'Bank Transfer', icon: 'account_balance', available: true }
+    // Load order details (this would come from your cart/order system)
+    orderDetails.value = [
+      { product: 'T-Shirt', qty: 2, price: 2000 },
+      { product: 'Cap', qty: 1, price: 1000 }
     ]
     
-    // Fetch merchant information
-    if (merchantId) {
-      try {
-        const response = await api.get(`/merchants/${merchantId}`)
-        merchantInfo.value = response.data
-      } catch (error) {
-        console.error('Failed to fetch merchant info:', error)
-        // Use fallback merchant info
-        merchantInfo.value = {
-          name: 'Merchant',
-          logo: 'https://placehold.co/48x48/121018/bdf000?text=M',
-          primaryColor: '#bdf000'
-        }
-      }
-    }
+    paymentDetails.value.amount = totalAmount.value
     
-    // Fetch order details if orderId is provided
-    if (orderId) {
-      try {
-        const response = await api.get(`/orders/${orderId}`)
-        orderDetails.value = response.data
-      } catch (error) {
-        console.error('Failed to fetch order details:', error)
-      }
-    }
-    
-  } catch (error) {
-    console.error('Failed to initialize checkout:', error)
-    Notify.create({
-      type: 'negative',
-      message: 'Failed to load checkout. Please refresh the page.',
-      position: 'bottom-right'
-    })
+  } catch (err) {
+    console.error('Error loading checkout data:', err)
+    error.value = 'Failed to load checkout information'
   } finally {
     loading.value = false
   }
@@ -440,11 +323,7 @@ const initializeCheckout = async () => {
 
 // Lifecycle
 onMounted(() => {
-  initializeCheckout()
-})
-
-onBeforeUnmount(() => {
-  // Cleanup if needed
+  loadCheckoutData()
 })
 </script>
 

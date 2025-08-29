@@ -1,6 +1,12 @@
 <template>
   <div class="merchant-dashboard">
-    <!-- Welcome Section -->
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-overlay">
+      <q-spinner-dots color="lime" size="50px" />
+      <p class="loading-text">Loading your dashboard...</p>
+    </div>
+
+    <!-- Welcome Section with Logout -->
     <div class="welcome-section q-mb-xl animate-fade-in">
       <div class="welcome-content">
         <div class="welcome-text">
@@ -12,13 +18,25 @@
           </p>
         </div>
         <div class="welcome-actions">
+          <!-- Add Business Button -->
           <q-btn
+            v-if="!profile.business_name"
+            color="lime"
+            icon="add_business"
+            label="Add Business"
+            class="action-btn btn-primary"
+            @click="addBusiness"
+          />
+          <!-- New Transaction Button -->
+          <q-btn
+            v-else
             color="lime"
             icon="add"
             label="New Transaction"
             class="action-btn btn-primary"
             @click="createTransaction"
           />
+          <!-- Settings Button -->
           <q-btn
             flat
             color="lime"
@@ -26,6 +44,15 @@
             label="Settings"
             class="action-btn btn-outline"
             @click="openSettings"
+          />
+          <!-- Logout Button -->
+          <q-btn
+            flat
+            color="red"
+            icon="logout"
+            label="Logout"
+            class="action-btn btn-danger"
+            @click="logout"
           />
         </div>
       </div>
@@ -63,8 +90,8 @@
             </div>
             
             <div class="profile-details">
-              <h4 class="business-name">{{ profile.business_name || 'Business Name' }}</h4>
-              <p class="business-email">{{ profile.email || 'business@example.com' }}</p>
+              <h4 class="business-name">{{ profile.business_name || 'No Business Added' }}</h4>
+              <p class="business-email">{{ profile.email || user.email || 'business@example.com' }}</p>
               <p class="business-website">{{ profile.website || 'No website' }}</p>
               
               <div class="profile-stats">
@@ -82,6 +109,14 @@
                 </div>
               </div>
             </div>
+          </div>
+          
+          <!-- Add Business CTA if no business -->
+          <div v-if="!profile.business_name" class="add-business-cta">
+            <q-icon name="store" size="48px" color="lime" />
+            <h4>Start Your Business Journey</h4>
+            <p>Add your business details to get started with payments</p>
+            <q-btn color="lime" label="Add Business Now" @click="addBusiness" />
           </div>
         </div>
       </div>
@@ -102,16 +137,34 @@
           </div>
         </div>
 
+        <!-- Transaction Methods Chart -->
+        <div class="chart-card animate-fade-in" style="animation-delay: 0.5s">
+          <div class="card-header">
+            <h3 class="card-title">Payment Methods</h3>
+            <div class="chart-actions">
+              <q-btn flat round dense icon="refresh" color="lime" @click="refreshMethodsChart" class="refresh-btn" />
+            </div>
+          </div>
+          <div class="chart-container">
+            <MethodsChart :data="methodsData" />
+          </div>
+        </div>
+
         <!-- Recent Transactions -->
-        <div class="transactions-card animate-fade-in" style="animation-delay: 0.5s">
+        <div class="transactions-card animate-fade-in" style="animation-delay: 0.6s">
           <div class="card-header">
             <h3 class="card-title">Recent Transactions</h3>
             <q-btn flat round dense icon="visibility" color="lime" @click="viewAllTransactions" class="view-all-btn" />
           </div>
           <div class="transactions-list">
-            <div v-for="transaction in recentTransactions" :key="transaction.id" class="transaction-item">
+            <div v-if="recentTransactions.length === 0" class="no-transactions">
+              <q-icon name="receipt" size="48px" color="grey-5" />
+              <p>No transactions yet</p>
+              <q-btn v-if="profile.business_name" color="lime" label="Create First Transaction" @click="createTransaction" />
+            </div>
+            <div v-else v-for="transaction in recentTransactions" :key="transaction.id" class="transaction-item">
               <div class="transaction-info">
-                <div class="customer-name">{{ transaction.customer_name }}</div>
+                <div class="customer-name">{{ transaction.customer_name || 'Customer' }}</div>
                 <div class="transaction-date">{{ formatDate(transaction.created_at) }}</div>
               </div>
               <div class="transaction-amount">
@@ -124,64 +177,248 @@
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="quick-actions animate-fade-in" style="animation-delay: 0.6s">
-      <h3 class="section-title">Quick Actions</h3>
-      <div class="actions-grid">
-        <q-card class="action-card" @click="generateInvoice">
-          <div class="action-icon">
-            <q-icon name="receipt" size="32px" color="lime" />
+    <!-- Additional Charts Section -->
+    <div class="charts-section q-mt-xl animate-fade-in" style="animation-delay: 0.7s">
+      <h3 class="section-title">Business Analytics</h3>
+      <div class="charts-grid">
+        <!-- Customer Growth Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Customer Growth</h3>
           </div>
-          <div class="action-text">Generate Invoice</div>
-        </q-card>
-        
-        <q-card class="action-card" @click="exportData">
-          <div class="action-icon">
-            <q-icon name="download" size="32px" color="lime" />
+          <div class="chart-container">
+            <CustomerGrowthChart :data="customerData" />
           </div>
-          <div class="action-text">Export Data</div>
-        </q-card>
-        
-        <q-card class="action-card" @click="contactSupport">
-          <div class="action-icon">
-            <q-icon name="support_agent" size="32px" color="lime" />
+        </div>
+
+        <!-- Transaction Trends Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Transaction Trends</h3>
           </div>
-          <div class="action-text">Contact Support</div>
-        </q-card>
-        
-        <q-card class="action-card" @click="viewAnalytics">
-          <div class="action-icon">
-            <q-icon name="analytics" size="32px" color="lime" />
+          <div class="chart-container">
+            <TransactionTrendsChart :data="trendsData" />
           </div>
-          <div class="action-text">View Analytics</div>
-        </q-card>
+        </div>
+
+        <!-- Geographic Distribution Chart -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Geographic Distribution</h3>
+          </div>
+          <div class="chart-container">
+            <GeographyChart :data="geographyData" />
+          </div>
+        </div>
+
+        <!-- Checkout Time Analysis -->
+        <div class="chart-card">
+          <div class="card-header">
+            <h3 class="card-title">Checkout Time Analysis</h3>
+          </div>
+          <div class="chart-container">
+            <CheckoutTimeChart :data="checkoutTimeData" />
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Quick Actions Grid -->
+    <div class="actions-section q-mt-xl animate-fade-in" style="animation-delay: 0.8s">
+      <h3 class="section-title">Quick Actions</h3>
+      <div class="actions-grid">
+        <div class="action-item" @click="viewAnalytics">
+          <div class="action-icon">
+            <q-icon name="analytics" size="24px" color="lime" />
+          </div>
+          <div class="action-content">
+            <h4 class="action-title">View Analytics</h4>
+            <p class="action-description">Check your business performance metrics</p>
+          </div>
+          <q-icon name="arrow_forward" class="action-arrow" color="lime" />
+        </div>
+
+        <div class="action-item" @click="generateInvoice">
+          <div class="action-icon">
+            <q-icon name="receipt_long" size="24px" color="lime" />
+          </div>
+          <div class="action-content">
+            <h4 class="action-title">Generate Invoice</h4>
+            <p class="action-description">Create professional invoices for customers</p>
+          </div>
+          <q-icon name="arrow_forward" class="action-arrow" color="lime" />
+        </div>
+
+        <div class="action-item" @click="exportData">
+          <div class="action-icon">
+            <q-icon name="download" size="24px" color="lime" />
+          </div>
+          <div class="action-content">
+            <h4 class="action-title">Export Data</h4>
+            <p class="action-description">Download your business reports</p>
+          </div>
+          <q-icon name="arrow_forward" class="action-arrow" color="lime" />
+        </div>
+
+        <div class="action-item" @click="contactSupport">
+          <div class="action-icon">
+            <q-icon name="support_agent" size="24px" color="lime" />
+          </div>
+          <div class="action-content">
+            <h4 class="action-title">Get Support</h4>
+            <p class="action-description">Contact our support team</p>
+          </div>
+          <q-icon name="arrow_forward" class="action-arrow" color="lime" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-if="error" class="error-message q-mt-lg">
+      <q-banner class="text-white bg-negative">
+        {{ error }}
+        <template v-slot:action>
+          <q-btn flat color="white" label="Retry" @click="loadDashboardData" />
+        </template>
+      </q-banner>
+    </div>
+
+    <!-- Add Business Dialog -->
+    <q-dialog v-model="showAddBusinessDialog" persistent>
+      <q-card class="add-business-dialog">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Add Your Business</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit="submitBusiness" class="q-gutter-md">
+            <q-input
+              v-model="newBusiness.business_name"
+              label="Business Name *"
+              filled
+              required
+              :rules="[val => !!val || 'Business name is required']"
+            />
+            
+            <q-input
+              v-model="newBusiness.website"
+              label="Website"
+              filled
+              type="url"
+              hint="Optional: Your business website"
+            />
+            
+            <q-input
+              v-model="newBusiness.bank_account_name"
+              label="Bank Account Name *"
+              filled
+              required
+              :rules="[val => !!val || 'Bank account name is required']"
+            />
+            
+            <q-input
+              v-model="newBusiness.bank_account_number"
+              label="Bank Account Number *"
+              filled
+              required
+              :rules="[val => !!val || 'Bank account number is required']"
+            />
+            
+            <q-input
+              v-model="newBusiness.bank_name"
+              label="Bank Name *"
+              filled
+              required
+              :rules="[val => !!val || 'Bank name is required']"
+            />
+            
+            <q-input
+              v-model="newBusiness.bank_routing_number"
+              label="Bank Routing Number *"
+              filled
+              required
+              :rules="[val => !!val || 'Bank routing number is required']"
+            />
+            
+            <q-input
+              v-model="newBusiness.business_address"
+              label="Business Address"
+              filled
+              type="textarea"
+              hint="Optional: Your business address"
+            />
+            
+            <q-input
+              v-model="newBusiness.business_phone"
+              label="Business Phone"
+              filled
+              hint="Optional: Your business phone number"
+            />
+          </q-form>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn color="lime" label="Add Business" @click="submitBusiness" :loading="submittingBusiness" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from '../../store/auth'
-import { useMerchantStore } from '../../store/merchant'
+import { useMerchantsStore } from '../../store/merchants'
 import { useTransactionsStore } from '../../store/transactions'
+import { useStatsStore } from '../../store/stats'
 import { pinia } from '../../store/pinia'
 import TopKpiCards from '../stats/TopKpiCards.vue'
 import MerchantStatusCard from './MerchantStatusCard.vue'
 import RevenueChart from '../stats/charts/RevenueChart.vue'
+import MethodsChart from '../stats/charts/MethodsCharts.vue'
+import CustomerGrowthChart from '../stats/charts/CustomerGrowthChart.vue'
+import TransactionTrendsChart from '../stats/charts/TransactionTrendsChart.vue'
+import GeographyChart from '../stats/charts/GeographyChart.vue'
+import CheckoutTimeChart from '../stats/charts/CheckoutTimeChart.vue'
 
 const router = useRouter()
+const $q = useQuasar()
 const auth = useAuthStore(pinia)
-const merchant = useMerchantStore(pinia)
+const merchants = useMerchantsStore(pinia)
 const transactions = useTransactionsStore(pinia)
+const stats = useStatsStore(pinia)
 
 // Reactive data
 const loading = ref(false)
+const error = ref('')
 const profile = ref({})
 const profileStats = ref({})
 const revenueData = ref([])
+const methodsData = ref([])
+const customerData = ref([])
+const trendsData = ref([])
+const geographyData = ref([])
+const checkoutTimeData = ref([])
 const recentTransactions = ref([])
+
+// Add Business Dialog
+const showAddBusinessDialog = ref(false)
+const submittingBusiness = ref(false)
+const newBusiness = ref({
+  business_name: '',
+  website: '',
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_name: '',
+  bank_routing_number: '',
+  business_address: '',
+  business_phone: ''
+})
 
 // Computed properties
 const user = computed(() => auth.user || {})
@@ -196,32 +433,32 @@ const kpiData = computed(() => [
   {
     title: 'Total Revenue',
     value: formatCurrency(profileStats.value.total_revenue || 0),
-    change: '+12.5%',
-    trend: 'up',
+    change: profileStats.value.revenue_change || '+0%',
+    trend: profileStats.value.revenue_trend || 'neutral',
     icon: 'trending_up',
     color: 'lime'
   },
   {
     title: 'Transactions',
     value: profileStats.value.transactions || 0,
-    change: '+8.2%',
-    trend: 'up',
+    change: profileStats.value.transactions_change || '+0%',
+    trend: profileStats.value.transactions_trend || 'neutral',
     icon: 'receipt',
     color: 'blue'
   },
   {
     title: 'Success Rate',
     value: `${profileStats.value.success_rate || 0}%`,
-    change: '+2.1%',
-    trend: 'up',
+    change: profileStats.value.success_rate_change || '+0%',
+    trend: profileStats.value.success_rate_trend || 'neutral',
     icon: 'check_circle',
     color: 'green'
   },
   {
     title: 'Active Customers',
     value: profileStats.value.customers || 0,
-    change: '+15.3%',
-    trend: 'up',
+    change: profileStats.value.customers_change || '+0%',
+    trend: profileStats.value.customers_trend || 'neutral',
     icon: 'people',
     color: 'purple'
   }
@@ -233,27 +470,126 @@ const placeholderLogo = 'https://dummyimage.com/200x200/121018/bdf000.png&text=L
 const loadDashboardData = async () => {
   try {
     loading.value = true
+    error.value = ''
+    
+    console.log('Loading dashboard data...')
     
     // Load merchant profile
-    const profileData = await merchant.getBusinessInfo()
-    profile.value = profileData || {}
+    try {
+      const profileResponse = await merchants.getMerchantProfile()
+      if (profileResponse.success) {
+        profile.value = profileResponse.merchant || {}
+        console.log('Profile loaded:', profile.value)
+      }
+    } catch (profileError) {
+      console.error('Profile load error:', profileError)
+    }
     
     // Load transactions
-    const transactionsData = await transactions.fetchForMerchant()
-    recentTransactions.value = transactionsData.slice(0, 5)
+    try {
+      const transactionsResponse = await transactions.loadTransactions({ limit: 5 })
+      if (transactionsResponse.success) {
+        recentTransactions.value = transactionsResponse.transactions || []
+        console.log('Recent transactions loaded:', recentTransactions.value)
+      }
+    } catch (transactionsError) {
+      console.error('Transactions load error:', transactionsError)
+      recentTransactions.value = []
+    }
     
-    // Load stats
-    const statsData = await merchant.getStats()
-    profileStats.value = statsData || {}
-    
-    // Load revenue data
-    const revenueResponse = await merchant.getRevenueData()
-    revenueData.value = revenueResponse || []
+    // Load all stats
+    try {
+      await stats.loadAllStats()
+      profileStats.value = stats.getComputedStats()
+      revenueData.value = stats.revenueData
+      methodsData.value = stats.methodsData
+      customerData.value = stats.customersData
+      trendsData.value = stats.trendsData
+      geographyData.value = stats.geographyData
+      checkoutTimeData.value = stats.checkoutTimeData
+      
+      console.log('All stats loaded:', profileStats.value)
+    } catch (statsError) {
+      console.error('Stats load error:', statsError)
+      // Use fallback stats
+      profileStats.value = {
+        total_revenue: 0,
+        transactions: recentTransactions.value.length,
+        success_rate: 0,
+        customers: 0,
+        revenue_change: '+0%',
+        transactions_change: '+0%',
+        success_rate_change: '+0%',
+        customers_change: '+0%'
+      }
+      
+      // Calculate real stats from transactions if available
+      if (recentTransactions.value.length > 0) {
+        const totalAmount = recentTransactions.value.reduce((sum, t) => sum + (t.amount || 0), 0)
+        const successfulTransactions = recentTransactions.value.filter(t => t.status === 'completed').length
+        
+        profileStats.value.total_revenue = totalAmount
+        profileStats.value.success_rate = Math.round((successfulTransactions / recentTransactions.value.length) * 100)
+        profileStats.value.transactions = recentTransactions.value.length
+        profileStats.value.customers = new Set(recentTransactions.value.map(t => t.customer_email)).size
+      }
+    }
     
   } catch (error) {
     console.error('Error loading dashboard data:', error)
+    error.value = 'Failed to load dashboard data. Please try again.'
   } finally {
     loading.value = false
+  }
+}
+
+const addBusiness = () => {
+  showAddBusinessDialog.value = true
+}
+
+const submitBusiness = async () => {
+  try {
+    submittingBusiness.value = true
+    
+    const response = await merchants.registerBusiness({
+      ...newBusiness.value,
+      logo_url: profile.value.logo_url || null
+    })
+    
+    if (response.success) {
+      $q.notify({
+        type: 'positive',
+        message: 'Business added successfully!',
+        position: 'top'
+      })
+      
+      showAddBusinessDialog.value = false
+      await loadDashboardData() // Reload data
+      
+      // Reset form
+      newBusiness.value = {
+        business_name: '',
+        website: '',
+        bank_account_name: '',
+        bank_account_number: '',
+        bank_name: '',
+        bank_routing_number: '',
+        business_address: '',
+        business_phone: ''
+      }
+    } else {
+      throw new Error(response.message || 'Failed to add business')
+    }
+    
+  } catch (error) {
+    console.error('Business registration error:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'Failed to add business. Please try again.',
+      position: 'top'
+    })
+  } finally {
+    submittingBusiness.value = false
   }
 }
 
@@ -273,18 +609,28 @@ const refreshChart = () => {
   loadDashboardData()
 }
 
+const refreshMethodsChart = () => {
+  stats.loadMethodsStats()
+}
+
 const viewAllTransactions = () => {
   router.push('/transactions')
 }
 
 const generateInvoice = () => {
-  // Implement invoice generation
-  console.log('Generate invoice')
+  $q.notify({
+    type: 'info',
+    message: 'Invoice generation coming soon!',
+    position: 'top'
+  })
 }
 
 const exportData = () => {
-  // Implement data export
-  console.log('Export data')
+  $q.notify({
+    type: 'info',
+    message: 'Data export coming soon!',
+    position: 'top'
+  })
 }
 
 const contactSupport = () => {
@@ -295,23 +641,40 @@ const viewAnalytics = () => {
   router.push('/stats')
 }
 
+const logout = async () => {
+  try {
+    await auth.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    router.push('/login')
+  }
+}
+
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
-  }).format(amount / 100)
+  }).format(amount / 100) // Assuming amount is in cents
 }
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString()
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
 }
 
 const getStatusColor = (status) => {
   const colors = {
-    success: 'green',
+    completed: 'green',
     pending: 'orange',
     failed: 'red',
-    refunded: 'grey'
+    processing: 'blue',
+    refunded: 'purple'
   }
   return colors[status] || 'grey'
 }
@@ -329,251 +692,189 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-.welcome-section {
-  background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
-  border-radius: 20px;
-  padding: 32px;
-  border: 1px solid rgba(189, 240, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-}
-
-.welcome-section::before {
-  content: '';
-  position: absolute;
+.loading-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 80%, rgba(189, 240, 0, 0.15) 0%, transparent 50%);
-  opacity: 0.6;
+  background: rgba(10, 10, 10, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-text {
+  color: #bdf000;
+  margin-top: 16px;
+  font-size: 1.1rem;
+}
+
+.welcome-section {
+  background: linear-gradient(135deg, rgba(189, 240, 0, 0.1) 0%, rgba(189, 240, 0, 0.05) 100%);
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid rgba(189, 240, 0, 0.2);
+  backdrop-filter: blur(10px);
 }
 
 .welcome-content {
-  position: relative;
-  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.welcome-text {
-  flex: 1;
+  flex-wrap: wrap;
+  gap: 24px;
 }
 
 .welcome-title {
   font-size: 2.5rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #ffffff;
-  margin: 0 0 12px 0;
-  line-height: 1.2;
-  background: linear-gradient(135deg, #ffffff 0%, #bdf000 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 0;
 }
 
 .highlight {
-  background: linear-gradient(135deg, #bdf000, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 30px rgba(189, 240, 0, 0.5);
+  color: #bdf000;
 }
 
 .welcome-subtitle {
   font-size: 1.1rem;
   color: #ccc;
-  margin: 0;
-  opacity: 0.9;
+  margin: 8px 0 0 0;
 }
 
 .welcome-actions {
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #bdf000, #a0d000);
+  background: #bdf000;
   color: #09050d;
-  font-weight: 700;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(189, 240, 0, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(189, 240, 0, 0.4);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
 }
 
 .btn-outline {
-  border: 2px solid rgba(189, 240, 0, 0.3);
+  border: 2px solid #bdf000;
   color: #bdf000;
-  border-radius: 12px;
-  padding: 12px 24px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  background: rgba(189, 240, 0, 0.1);
+}
+
+.btn-danger {
+  border: 2px solid #ff4444;
+  color: #ff4444;
+}
+
+.btn-danger:hover {
+  background: #ff4444;
+  color: #ffffff;
 }
 
 .btn-outline:hover {
-  border-color: #bdf000;
-  background: rgba(189, 240, 0, 0.2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(189, 240, 0, 0.2);
+  background: #bdf000;
+  color: #09050d;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 28px;
-  margin-bottom: 32px;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.left-column {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
+.left-column,
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
 }
 
 .profile-card,
 .chart-card,
-.activity-card {
+.transactions-card {
   background: rgba(18, 18, 18, 0.95);
-  border-radius: 20px;
-  padding: 28px;
+  border-radius: 16px;
+  padding: 24px;
   border: 1px solid rgba(189, 240, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .profile-card:hover,
 .chart-card:hover,
-.activity-card:hover {
-  border-color: rgba(189, 240, 0, 0.3);
-  transform: translateY(-4px);
-  box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(189, 240, 0, 0.2),
-    0 0 30px rgba(189, 240, 0, 0.15);
-}
-
-.profile-card::before,
-.chart-card::before,
-.activity-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(189, 240, 0, 0.5), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.profile-card:hover::before,
-.chart-card:hover::before,
-.activity-card:hover::before {
-  opacity: 1;
+.transactions-card:hover {
+  border-color: rgba(189, 240, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .card-title {
   font-size: 1.3rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #ffffff;
   margin: 0;
 }
 
 .edit-btn,
-.refresh-btn {
+.refresh-btn,
+.view-all-btn {
+  border-radius: 8px;
   transition: all 0.3s ease;
-}
-
-.edit-btn:hover,
-.refresh-btn:hover {
-  transform: rotate(15deg) scale(1.1);
-  background: rgba(189, 240, 0, 0.1);
-}
-
-.chart-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .profile-content {
   display: flex;
+  gap: 20px;
   align-items: center;
-  gap: 24px;
 }
 
 .profile-avatar {
   position: relative;
-  width: 80px;
-  height: 80px;
 }
 
 .avatar-image {
-  border: 2px solid rgba(189, 240, 0, 0.3);
-  border-radius: 16px;
+  border: 2px solid rgba(189, 240, 0.3);
   transition: all 0.3s ease;
-}
-
-.profile-avatar:hover .avatar-image {
-  border-color: rgba(189, 240, 0, 0.6);
-  transform: scale(1.05);
 }
 
 .avatar-ring {
   position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  border: 2px solid transparent;
-  border-radius: 20px;
-  background: linear-gradient(45deg, #bdf000, #ffffff, #bdf000);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  animation: rotate 3s linear infinite paused;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid rgba(189, 240, 0.2);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
 }
 
-.profile-avatar:hover .avatar-ring {
-  opacity: 0.8;
-  animation-play-state: running;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -582,218 +883,151 @@ onMounted(() => {
 }
 
 .business-name {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: #ffffff;
   margin: 0 0 8px 0;
-  transition: all 0.3s ease;
-}
-
-.profile-card:hover .business-name {
-  color: #bdf000;
 }
 
 .business-email,
 .business-website {
-  font-size: 0.95rem;
   color: #ccc;
-  margin: 0 0 6px 0;
-  transition: all 0.3s ease;
-}
-
-.profile-card:hover .business-email,
-.profile-card:hover .business-website {
-  color: #e0e0e0;
+  margin: 4px 0;
+  font-size: 0.9rem;
 }
 
 .profile-stats {
   display: flex;
-  gap: 24px;
-  margin-top: 20px;
+  gap: 20px;
+  margin-top: 16px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-  min-width: 80px;
-}
-
-.stat-item:hover {
-  background: rgba(189, 240, 0, 0.1);
-  border-color: rgba(189, 240, 0, 0.3);
-  transform: translateY(-2px);
 }
 
 .stat-value {
   display: block;
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: #bdf000;
-  margin-bottom: 4px;
 }
 
 .stat-label {
-  display: block;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #999;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+.add-business-cta {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 20px;
+}
+
+.add-business-cta h4 {
+  color: #bdf000;
+  margin: 16px 0 8px 0;
+  font-size: 1.2rem;
+}
+
+.add-business-cta p {
+  color: #ccc;
+  margin: 0 0 20px 0;
+  font-size: 0.9rem;
+}
+
 .chart-container {
   height: 300px;
-  position: relative;
-}
-
-.activity-list {
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(189, 240, 0, 0.3) rgba(255, 255, 255, 0.1);
-}
-
-.activity-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.activity-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
-}
-
-.activity-list::-webkit-scrollbar-thumb {
-  background: rgba(189, 240, 0, 0.3);
-  border-radius: 3px;
-}
-
-.activity-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(189, 240, 0, 0.5);
-}
-
-.activity-item {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  margin: 4px 0;
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-}
-
-.activity-item:hover {
-  background: rgba(189, 240, 0, 0.1);
-  transform: translateX(8px);
-  border-color: transparent;
-}
-
-.activity-green:hover {
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
-}
-
-.activity-blue:hover {
-  box-shadow: 0 0 20px rgba(33, 150, 243, 0.3);
-}
-
-.activity-orange:hover {
-  box-shadow: 0 0 20px rgba(255, 152, 0, 0.3);
-}
-
-.activity-red:hover {
-  box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
-}
-
-.activity-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(189, 240, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
-  transition: all 0.3s ease;
 }
 
-.activity-item:hover .activity-icon {
-  background: rgba(189, 240, 0, 0.2);
-  transform: scale(1.1);
+.transactions-list {
+  max-height: 300px;
+  overflow-y: auto;
 }
 
-.activity-content {
-  flex: 1;
-}
-
-.activity-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.activity-time {
-  font-size: 0.85rem;
+.no-transactions {
+  text-align: center;
+  padding: 40px 20px;
   color: #999;
 }
 
-.activity-amount {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #bdf000;
-  padding: 6px 12px;
-  background: rgba(189, 240, 0, 0.1);
+.no-transactions p {
+  margin: 16px 0;
+  font-size: 1.1rem;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.transaction-item:hover {
+  background: rgba(189, 240, 0, 0.05);
   border-radius: 8px;
-  border: 1px solid rgba(189, 240, 0, 0.2);
-  transition: all 0.3s ease;
 }
 
-.activity-item:hover .activity-amount {
-  background: rgba(189, 240, 0, 0.2);
-  border-color: rgba(189, 240, 0, 0.3);
-  transform: scale(1.05);
+.transaction-item:last-child {
+  border-bottom: none;
 }
 
-.activity-footer {
-  margin-top: 20px;
-  text-align: center;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+.customer-name {
+  font-weight: 500;
+  color: #ffffff;
 }
 
-.view-all-btn {
+.transaction-date {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+.transaction-amount {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.amount {
   font-weight: 600;
-  transition: all 0.3s ease;
+  color: #bdf000;
 }
 
-.view-all-btn:hover {
-  transform: translateY(-2px);
-}
-
-.quick-actions {
-  margin-top: 40px;
+.charts-section {
+  margin-top: 48px;
 }
 
 .section-title {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #ffffff;
   margin: 0 0 24px 0;
   text-align: center;
 }
 
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.actions-section {
+  margin-top: 48px;
+}
+
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .action-item {
@@ -903,6 +1137,48 @@ onMounted(() => {
   transform: translateX(0);
 }
 
+/* Add Business Dialog Styles */
+.add-business-dialog {
+  min-width: 500px;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.add-business-dialog .q-card-section {
+  padding: 24px;
+}
+
+.add-business-dialog .text-h6 {
+  color: #bdf000;
+  font-weight: 600;
+}
+
+.add-business-dialog .q-input {
+  margin-bottom: 16px;
+}
+
+.add-business-dialog .q-input__control {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.add-business-dialog .q-field__control {
+  background: transparent;
+}
+
+.add-business-dialog .q-field__native {
+  color: #ffffff;
+}
+
+.add-business-dialog .q-field__label {
+  color: #bdf000;
+}
+
+.add-business-dialog .q-btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
 /* Animation Classes */
 .animate-fade-in {
   opacity: 0;
@@ -930,6 +1206,10 @@ onMounted(() => {
   
   .right-column {
     order: 1;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -976,6 +1256,11 @@ onMounted(() => {
   .action-item {
     padding: 20px;
   }
+  
+  .add-business-dialog {
+    min-width: 90vw;
+    margin: 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -985,7 +1270,7 @@ onMounted(() => {
   
   .profile-card,
   .chart-card,
-  .activity-card {
+  .transactions-card {
     padding: 20px;
     border-radius: 16px;
   }
@@ -1000,7 +1285,7 @@ onMounted(() => {
     align-self: flex-end;
   }
   
-  .activity-item {
+  .transaction-item {
     padding: 12px;
   }
   
@@ -1020,12 +1305,13 @@ onMounted(() => {
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .action-item,
-  .activity-item,
+  .transaction-item,
   .profile-card,
   .chart-card,
-  .activity-card,
+  .transactions-card,
   .btn-primary,
   .btn-outline,
+  .btn-danger,
   .edit-btn,
   .refresh-btn,
   .avatar-ring,
@@ -1041,17 +1327,17 @@ onMounted(() => {
   }
   
   .action-item:hover,
-  .activity-item:hover,
+  .transaction-item:hover,
   .profile-card:hover,
   .chart-card:hover,
-  .activity-card:hover {
+  .transactions-card:hover {
     transform: none;
   }
 }
 
 /* Enhanced focus states */
 .action-item:focus-visible,
-.activity-item:focus-visible {
+.transaction-item:focus-visible {
   outline: 2px solid rgba(189, 240, 0, 0.5);
   outline-offset: 2px;
   transform: translateY(-2px);
@@ -1064,10 +1350,10 @@ onMounted(() => {
 
 /* Performance optimizations */
 .action-item,
-.activity-item,
+.transaction-item,
 .profile-card,
 .chart-card,
-.activity-card {
+.transactions-card {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -1075,5 +1361,9 @@ onMounted(() => {
 .action-icon,
 .avatar-ring {
   will-change: transform;
+}
+
+.error-message {
+  margin-top: 24px;
 }
 </style>

@@ -408,11 +408,11 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useMerchantStore } from '../../store/merchant'
+import { useMerchantsStore } from '../../store/merchants'
 import { pinia } from '../../store/pinia'
 
 const $q = useQuasar()
-const store = useMerchantStore(pinia)
+const store = useMerchantsStore(pinia)
 
 // Reactive data
 const step = ref(1)
