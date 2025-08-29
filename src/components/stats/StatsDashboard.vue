@@ -86,8 +86,9 @@
 </template>
 
 <script setup>
-import { ref, watch, toRefs, onMounted } from 'vue'
-import api from '../../boot/axios'
+import { ref, watch, toRefs, onMounted, computed } from 'vue'
+import { useStatsStore } from '../../store/stats'
+import { pinia } from '../../store/pinia'
 import RevenueChart from './charts/RevenueChart.vue'
 import MethodsDistributionCharts from './charts/MethodsDistributionCharts.vue'
 import TransactionTrendsChart from './charts/TransactionTrendsChart.vue'
@@ -102,139 +103,32 @@ const props = defineProps({
   } 
 })
 
-// Reactive data
-const loading = ref(false)
-const revenueData = ref([])
-const methodsData = ref([])
-const trendsData = ref([])
-const checkoutTimeData = ref([])
-const checkoutTimeLabels = ref([])
-const geographyData = ref([])
-const geographyLabels = ref([])
+// Store
+const stats = useStatsStore(pinia)
+
+// Reactive/computed bindings from store
+const loading = computed(() => stats.loading)
+const revenueData = computed(() => stats.revenue)
+const methodsData = computed(() => stats.methods)
+const trendsData = computed(() => stats.transactions)
+const checkoutTimeData = computed(() => stats.checkoutTime.values)
+const checkoutTimeLabels = computed(() => stats.checkoutTime.labels)
+const geographyData = computed(() => stats.geography.values)
+const geographyLabels = computed(() => stats.geography.labels)
 
 // Destructure props for watchers
 const { filters } = toRefs(props)
 
 // Methods
-const loadRevenueData = async () => {
-  try {
-    const { data } = await api.get('/api/stats/revenue', { params: filters.value })
-    revenueData.value = data.data || []
-  } catch (error) {
-    console.error('Error loading revenue data:', error)
-    revenueData.value = generateMockRevenueData()
-  }
-}
-
-const loadMethodsData = async () => {
-  try {
-    const { data } = await api.get('/api/stats/methods', { params: filters.value })
-    methodsData.value = data.data || []
-  } catch (error) {
-    console.error('Error loading methods data:', error)
-    methodsData.value = generateMockMethodsData()
-  }
-}
-
-const loadTrendsData = async () => {
-  try {
-    const { data } = await api.get('/api/stats/transactions', { params: filters.value })
-    trendsData.value = data.data || []
-  } catch (error) {
-    console.error('Error loading trends data:', error)
-    trendsData.value = generateMockTrendsData()
-  }
-}
-
-const loadCheckoutTimeData = async () => {
-  try {
-    const { data } = await api.get('/api/stats/checkout-time', { params: filters.value })
-    checkoutTimeData.value = data.data || []
-    checkoutTimeLabels.value = data.labels || []
-  } catch (error) {
-    console.error('Error loading checkout time data:', error)
-    const mockData = generateMockCheckoutTimeData()
-    checkoutTimeData.value = mockData.data
-    checkoutTimeLabels.value = mockData.labels
-  }
-}
-
-const loadGeographyData = async () => {
-  try {
-    const { data } = await api.get('/api/stats/geography', { params: filters.value })
-    geographyData.value = data.data || []
-    geographyLabels.value = data.labels || []
-  } catch (error) {
-    console.error('Error loading geography data:', error)
-    const mockData = generateMockGeographyData()
-    geographyData.value = mockData.data
-    geographyLabels.value = mockData.labels
-  }
-}
-
 const loadAllData = async () => {
-  loading.value = true
-  try {
-    await Promise.all([
-      loadRevenueData(),
-      loadMethodsData(),
-      loadTrendsData(),
-      loadCheckoutTimeData(),
-      loadGeographyData()
-    ])
-  } catch (error) {
-    console.error('Error loading stats data:', error)
-  } finally {
-    loading.value = false
-  }
+  await stats.loadAll(filters.value)
 }
 
 const refreshData = () => {
   loadAllData()
 }
 
-// Mock data generators for development
-const generateMockRevenueData = () => {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-  return months.map(month => ({
-    month,
-    revenue: Math.floor(Math.random() * 50000) + 10000,
-    transactions: Math.floor(Math.random() * 1000) + 200
-  }))
-}
-
-const generateMockMethodsData = () => [
-  { method: 'Card', percentage: 65, count: 1300 },
-  { method: 'Bank Transfer', percentage: 20, count: 400 },
-  { method: 'Wallet', percentage: 10, count: 200 },
-  { method: 'UPI', percentage: 5, count: 100 }
-]
-
-const generateMockTrendsData = () => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  return days.map(day => ({
-    day,
-    successful: Math.floor(Math.random() * 100) + 50,
-    failed: Math.floor(Math.random() * 20) + 5,
-    pending: Math.floor(Math.random() * 30) + 10
-  }))
-}
-
-const generateMockCheckoutTimeData = () => {
-  const timeRanges = ['0-30s', '30-60s', '1-2m', '2-5m', '5m+']
-  return {
-    data: timeRanges.map(() => Math.floor(Math.random() * 100) + 20),
-    labels: timeRanges
-  }
-}
-
-const generateMockGeographyData = () => {
-  const countries = ['USA', 'UK', 'Canada', 'Germany', 'France', 'India', 'Australia']
-  return {
-    data: countries.map(() => Math.floor(Math.random() * 1000) + 100),
-    labels: countries
-  }
-}
+// Mock generators removed; store already handles fallbacks if needed
 
 // Watchers
 watch(filters, () => {

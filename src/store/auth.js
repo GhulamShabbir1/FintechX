@@ -46,9 +46,17 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (data?.user) {
         setUser(data.user)
+      } else {
+        // Some backends return only token; fetch profile to populate user
+        try {
+          const profile = await getProfile()
+          if (profile?.user) setUser(profile.user)
+        } catch (e) {
+          // swallow; user will remain null if profile fails
+        }
       }
       
-      return data
+      return { ...data, user: user.value }
     } finally {
       loading.value = false
     }
@@ -67,9 +75,17 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (data?.user) {
         setUser(data.user)
+      } else {
+        // If only token is returned, load the profile to get user details
+        try {
+          const profile = await getProfile()
+          if (profile?.user) setUser(profile.user)
+        } catch (e) {
+          // swallow; user will remain null if profile fails
+        }
       }
       
-      return data
+      return { ...data, user: user.value }
     } finally {
       loading.value = false
     }
