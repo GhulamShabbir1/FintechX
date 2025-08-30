@@ -62,16 +62,16 @@
     </div>
   </q-page>
 </template>
+
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
 import { useAuthStore } from '../store/auth'
-import { pinia } from '../store/pinia'
 
 const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore(pinia)
+const auth = useAuthStore()
 
 const email = ref('')
 const password = ref('')
@@ -88,20 +88,18 @@ const onSubmit = async () => {
 
     // Call the login method from auth store
     const response = await auth.login({ email: email.value, password: password.value })
-    console.log("Login API response:", response)
+    
+    // Get the user data from the response
+    const user = response.user || response.data?.user || auth.user
+    
+    if (!user) {
+      throw new Error('No user data received from login')
+    }
 
-    // ✅ Extract token from backend response
-    const token = response.access_token || response.token || response.data?.access_token
-    if (!token) throw new Error('No token received from login')
-
-    // Save token
-    localStorage.setItem('token', token)
-
-    // ✅ Since backend does not return user/role, infer role from email (fallback logic)
-    let role = 'merchant'
-    if (email.value.includes('admin')) role = 'admin'
-    localStorage.setItem('role', role)
-
+    // Extract role from user object
+    const role = String(user.role || '').toLowerCase()
+    
+    // Check if there's a redirect query parameter
     const redirect = route.query.redirect
 
     if (role === 'admin') {
@@ -121,7 +119,6 @@ const onSubmit = async () => {
   }
 }
 </script>
-
 
 <style scoped>
 .fintech-bg {
