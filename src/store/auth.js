@@ -1,13 +1,13 @@
-// src/stores/auth.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '../boot/axios'
+import { api } from '../boot/axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  // ---------------- State ----------------
+  // State
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
   const loading = ref(false)
+  const businessRegistered = ref(false)
 
   // ---------------- Getters ----------------
   const isAuthenticated = () => !!token.value
@@ -30,13 +30,9 @@ export const useAuthStore = defineStore('auth', () => {
     if (userData) {
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
-      if (userData?.role) {
-        localStorage.setItem('role', String(userData.role).toLowerCase())
-      }
     } else {
       user.value = null
       localStorage.removeItem('user')
-      localStorage.removeItem('role')
     }
   }
 
@@ -49,25 +45,14 @@ export const useAuthStore = defineStore('auth', () => {
         email: userData.email,
         password: userData.password,
         password_confirmation: userData.password_confirmation,
-        role: userData.role || 'merchant'
+        role: userData.role || 'merchant' // default to merchant if not specified
       })
 
-      if (data?.token) setToken(data.token)
+      // ✅ Save user info if backend returns it
+      if (data?.user) setUser(data.user)
 
-      if (data?.user) {
-        setUser(data.user)
-        console.log('👤 User data set from register:', data.user)
-      } else {
-        const fallbackUser = {
-          email: userData.email,
-          role: 'merchant',
-          name: userData.name || userData.email.split('@')[0]
-        }
-        setUser(fallbackUser)
-        console.log('👤 Fallback user set from register:', fallbackUser)
-      }
-
-      return { success: true, ...data, user: user.value }
+      // ❌ Do NOT set token here — token is only generated at login
+      return { success: true, ...data }
     } catch (error) {
       console.error('❌ Registration error:', error)
       return {
@@ -82,37 +67,41 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials) => {
     loading.value = true
     try {
-      console.log('🔑 Attempting login with:', credentials.email)
-
-      const { data } = await api.post('/api/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email: credentials.email,
         password: credentials.password
       })
 
-      console.log('✅ Login response:', data)
+      // ✅ Handle access_token properly
+      if (!response.data?.access_token) {
+        throw new Error('Invalid response format - No access token received')
+      }
 
-      if (data?.token) setToken(data.token)
+      // Set the token first
+      setToken(response.data.access_token)
 
-      if (data?.user) {
-        setUser(data.user)
-        console.log('👤 User data set from login:', data.user)
-      } else {
-        const fallbackUser = {
-          email: credentials.email,
-          role: 'merchant',
-          name: data?.name || credentials.email.split('@')[0]
+      // Fetch user data after successful login
+      const userResponse = await api.get('/api/user')
+
+      if (!userResponse.data?.user) {
+        throw new Error('Failed to fetch user data')
+      }
+
+      // Set user data
+      setUser(userResponse.data.user)
+
+      return {
+        success: true,
+        data: {
+          user: userResponse.data.user,
+          token: response.data.access_token
         }
-        setUser(fallbackUser)
-        console.log('👤 Fallback user set from login:', fallbackUser)
       }
-
-      if (!user.value) {
-        throw new Error('Failed to retrieve user information after login')
-      }
-
-      return { success: true, ...data, user: user.value }
     } catch (error) {
       console.error('❌ Login error:', error)
+      // Clean up any partially set data
+      setToken(null)
+      setUser(null)
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Login failed'
@@ -128,10 +117,64 @@ export const useAuthStore = defineStore('auth', () => {
         await api.post('/api/logout')
       }
     } catch (error) {
-      console.warn('⚠️ Logout API error (ignored):', error)
+      console.warn('⚠️ Logout error:', error)
     } finally {
       setToken(null)
       setUser(null)
+    }
+  }
+
+  const getProfile = async () => {
+    try {
+      const { data } = await api.get('/api/user')
+      if (data?.user) {
+        setUser(data.user)
+        return { success: true, user: data.user }
+      }
+      throw new Error('Invalid response format')
+    } catch (error) {
+      console.error('❌ Profile error:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch profile'
+      }
+    }
+  }
+
+  // ---------------- Business Registration ----------------
+  const registerBusiness = async (businessData) => {
+    loading.value = true
+    try {
+      const formData = new FormData()
+
+      Object.keys(businessData).forEach(key => {
+        if (key === 'logo' && businessData[key] instanceof File) {
+          formData.append('logo', businessData[key])
+        } else if (key === 'payout_preferences' && Array.isArray(businessData[key])) {
+          businessData[key].forEach((pref, index) => {
+            formData.append(`payout_preferences[${index}]`, pref)
+          })
+        } else {
+          formData.append(key, businessData[key])
+        }
+      })
+
+      const { data } = await api.post('/api/merchant/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      businessRegistered.value = true
+      return { success: true, ...data }
+    } catch (error) {
+      console.error('❌ Business registration error:', error)
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Business registration failed'
+      }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -143,9 +186,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (storedToken) setToken(storedToken)
     if (storedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser)
-        setUser(parsedUser)
-        console.log('💾 Stored user data loaded:', parsedUser)
+        setUser(JSON.parse(storedUser))
       } catch (error) {
         console.error('Error parsing stored user:', error)
         localStorage.removeItem('user')
@@ -155,12 +196,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   loadStoredData()
 
-  // ---------------- Expose Store ----------------
   return {
     // State
     user,
     token,
     loading,
+    businessRegistered,
 
     // Getters
     isAuthenticated,
@@ -171,8 +212,9 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     login,
     logout,
+    getProfile,
+    registerBusiness,
     setToken,
-    setUser,
-    loadStoredData
+    setUser
   }
 })

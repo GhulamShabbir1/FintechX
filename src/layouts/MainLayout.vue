@@ -6,9 +6,9 @@
         <q-btn v-if="isAuthed" flat round dense icon="menu" @click="drawerOpen = !drawerOpen" class="q-mr-sm lt-md" />
         <q-toolbar-title class="row items-center no-wrap header-title">
           <div class="logo-container">
-            <q-img :src="appLogo" alt="FinteckX Logo" width="32px" height="32px" fit="contain" class="app-logo"
+            <q-img :src="appLogo" alt="FintechX Logo" width="32px" height="32px" fit="contain" class="app-logo"
               @error="onLogoError" />
-            <span class="text-weight-bold text-lime brand-text">FinteckX</span>
+            <span class="text-weight-bold text-lime brand-text">FintechX</span>
           </div>
         </q-toolbar-title>
 
@@ -23,8 +23,9 @@
 
         <q-space />
         <div class="header-actions">
-          <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started" to="/register" />
-          <q-btn rounded dense class="btn-secondary" to="/login" icon="login" label="Access" />
+          <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started"
+            @click="navigateToRegister" />
+          <q-btn rounded dense class="btn-secondary" icon="login" label="Access" @click="navigateToLogin" />
         </div>
       </q-toolbar>
     </q-header>
@@ -36,13 +37,15 @@
         <section class="hero-section row items-center">
           <div class="col-12 col-md-6 q-pa-xl hero-content">
             <div class="hero-badge">Next Generation Platform</div>
-            <h1 class="text-h2 text-lime text-bold hero-title">Next-Gen Payments <span class="text-white">with FinteckX</span></h1>
+            <h1 class="text-h2 text-lime text-bold hero-title">Next-Gen Payments <span class="text-white">with
+                FintechX</span></h1>
             <p class="text-subtitle1 q-mt-md hero-description">
               Secure. Fast. Scalable. Empowering merchants and users with future-ready payment infrastructure.
             </p>
             <div class="q-mt-xl hero-actions">
-              <q-btn rounded class="btn-primary q-mr-md" icon="rocket_launch" label="Get Started" to="/register" />
-              <q-btn flat rounded class="btn-outline" icon="play_circle" label="Watch Demo" to="/" />
+              <q-btn rounded class="btn-primary q-mr-md" icon="rocket_launch" label="Get Started"
+                @click="navigateToRegister" />
+              <q-btn flat rounded class="btn-outline" icon="play_circle" label="Watch Demo" />
             </div>
             <div class="q-mt-xl hero-stats">
               <div class="stat-item">
@@ -69,10 +72,10 @@
         <!-- Advantages Section - Left and Right Cards -->
         <section id="advantages" class="section-advantages q-px-xl q-pt-xl q-pb-lg">
           <div class="text-center q-mb-xl section-header">
-            <div class="text-h4 text-lime text-bold">Why Choose FinteckX</div>
+            <div class="text-h4 text-lime text-bold">Why Choose FintechX</div>
             <p class="text-subtitle2 section-subtitle">Powerful features designed for growth</p>
           </div>
-          
+
           <!-- First Advantage: Left Card, Right Image -->
           <div class="row items-center q-mb-xl advantage-item">
             <div class="col-12 col-md-6 advantage-content">
@@ -82,23 +85,24 @@
                 </div>
                 <div class="text-h5 text-lime text-bold q-mt-md">Global Reach</div>
                 <p class="q-mt-sm advantage-description">
-                  Expand your business with our cross-border payment solutions trusted by thousands of merchants worldwide.
+                  Expand your business with our cross-border payment solutions trusted by thousands of merchants
+                  worldwide.
                 </p>
                 <div class="text-h3 text-lime q-mt-lg">+200K</div>
                 <div class="text-caption advantage-stat-label">Active Merchants</div>
               </q-card>
             </div>
             <div class="col-12 col-md-6 text-center advantage-visual">
-              <q-img :src="reachImg" alt="Global Reach" class="advantage-img floating slide-in-right" fit="contain" ratio="16/10"
-                @error="onImgError('reach')" />
+              <q-img :src="reachImg" alt="Global Reach" class="advantage-img floating slide-in-right" fit="contain"
+                ratio="16/10" @error="onImgError('reach')" />
             </div>
           </div>
 
           <!-- Second Advantage: Left Image, Right Card -->
           <div class="row items-center q-mb-xl advantage-item advantage-reverse">
             <div class="col-12 col-md-6 text-center advantage-visual">
-              <q-img :src="securityImg" alt="Security" class="advantage-img floating slide-in-left" fit="contain" ratio="16/10"
-                @error="onImgError('security')" />
+              <q-img :src="securityImg" alt="Security" class="advantage-img floating slide-in-left" fit="contain"
+                ratio="16/10" @error="onImgError('security')" />
             </div>
             <div class="col-12 col-md-6 advantage-content">
               <q-card class="advantage-card card-glass lime-glow slide-in-right">
@@ -107,7 +111,8 @@
                 </div>
                 <div class="text-h5 text-lime text-bold q-mt-md">Bank-Grade Security</div>
                 <p class="q-mt-sm advantage-description">
-                  Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and customers.
+                  Transactions are encrypted with multi-layer authentication, giving peace of mind to merchants and
+                  customers.
                 </p>
                 <div class="text-h3 text-lime q-mt-lg">99.99%</div>
                 <div class="text-caption advantage-stat-label">System Uptime</div>
@@ -131,8 +136,8 @@
               </q-card>
             </div>
             <div class="col-12 col-md-6 text-center advantage-visual">
-              <q-img :src="analyticsImg" alt="Analytics" class="advantage-img floating slide-in-right" fit="contain" ratio="16/10"
-                @error="onImgError('analytics')" />
+              <q-img :src="analyticsImg" alt="Analytics" class="advantage-img floating slide-in-right" fit="contain"
+                ratio="16/10" @error="onImgError('analytics')" />
             </div>
           </div>
         </section>
@@ -141,15 +146,17 @@
         <section id="services" class="section-services q-px-xl q-py-lg">
           <div class="text-center q-mb-xl section-header">
             <div class="text-h4 text-lime text-bold">Our Services</div>
-            <p class="text-subtitle2 section-subtitle">All-in-one fintech platform for payments, analytics, and growth</p>
+            <p class="text-subtitle2 section-subtitle">All-in-one fintech platform for payments, analytics, and growth
+            </p>
           </div>
           <div class="row q-col-gutter-xl">
             <div class="col-12 col-md-4" v-for="(service, index) in services" :key="index">
-              <q-card class="service-card card-glass text-center hover-lift" :class="{'lime-glow': index === 1}">
+              <q-card class="service-card card-glass text-center hover-lift" :class="{ 'lime-glow': index === 1 }">
                 <div class="service-icon">
                   <q-icon :name="service.icon" size="40px" :class="index === 1 ? 'text-lime' : 'text-white'" />
                 </div>
-                <div class="text-h6 text-bold q-mt-md" :class="index === 1 ? 'text-lime' : 'text-white'">{{ service.title }}</div>
+                <div class="text-h6 text-bold q-mt-md" :class="index === 1 ? 'text-lime' : 'text-white'">{{
+                  service.title }}</div>
                 <p class="q-mt-sm service-description">{{ service.description }}</p>
                 <q-btn flat :color="index === 1 ? 'lime' : 'white'" label="Learn more" class="q-mt-md" />
               </q-card>
@@ -172,7 +179,7 @@
                   </q-avatar>
                 </div>
                 <div class="review-rating q-mt-md">
-                  <q-icon v-for="star in 5" :key="star" name="star" size="20px" 
+                  <q-icon v-for="star in 5" :key="star" name="star" size="20px"
                     :class="star <= review.rating ? 'text-yellow' : 'text-grey-6'" />
                 </div>
                 <div class="text-h6 text-bold q-mt-md text-white">{{ review.name }}</div>
@@ -187,13 +194,14 @@
         <section id="how-it-works" class="section-how-it-works q-px-xl q-py-lg">
           <div class="text-center q-mb-xl section-header">
             <div class="text-h4 text-lime text-bold">How It Works</div>
-            <p class="text-subtitle2 section-subtitle">From onboarding to growth — start accepting payments in minutes</p>
+            <p class="text-subtitle2 section-subtitle">From onboarding to growth — start accepting payments in minutes
+            </p>
           </div>
           <div class="row q-col-gutter-xl">
             <div class="col-12 col-md-4" v-for="(step, index) in howItWorks" :key="index">
               <q-card class="how-card card-glass text-center hover-lift">
                 <div class="step-number">{{ index + 1 }}</div>
-                <q-img :src="step.image" ratio="1" fit="contain" class="q-mb-md floating-slow" 
+                <q-img :src="step.image" ratio="1" fit="contain" class="q-mb-md floating-slow"
                   @error="onHowImgError(index + 1)" />
                 <div class="text-h6 text-lime text-bold">{{ step.title }}</div>
                 <p class="q-mt-sm how-description">{{ step.description }}</p>
@@ -250,12 +258,13 @@
           <q-card class="cta-card card-glass lime-glow">
             <div class="row items-center">
               <div class="col-12 col-md-8">
-                <div class="text-h5 text-lime text-bold">Ready to scale with FinteckX?</div>
+                <div class="text-h5 text-lime text-bold">Ready to scale with FintechX?</div>
                 <div class="q-mt-sm cta-description">Onboard in minutes and start accepting secure payments.</div>
               </div>
               <div class="col-12 col-md-4 text-right">
-                <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started" to="/register" />
-                <q-btn flat rounded class="btn-outline" icon="info" label="Talk to Sales" to="/" />
+                <q-btn rounded class="btn-primary q-mr-sm" icon="rocket_launch" label="Get Started"
+                  @click="navigateToRegister" />
+                <q-btn flat rounded class="btn-outline" icon="info" label="Talk to Sales" />
               </div>
             </div>
           </q-card>
@@ -271,11 +280,12 @@
       <div class="row q-col-gutter-xl">
         <div class="col-12 col-md-4">
           <div class="footer-brand">
-            <q-img :src="appLogo" alt="FinteckX Logo" width="40px" height="40px" fit="contain" class="q-mr-sm footer-logo"
-              @error="onLogoError" />
-            <h5 class="text-lime">FinteckX</h5>
+            <q-img :src="appLogo" alt="FintechX Logo" width="40px" height="40px" fit="contain"
+              class="q-mr-sm footer-logo" @error="onLogoError" />
+            <h5 class="text-lime">FintechX</h5>
           </div>
-          <p class="q-mt-md footer-description">A complete fintech ecosystem designed to scale your payments securely and globally.</p>
+          <p class="q-mt-md footer-description">A complete fintech ecosystem designed to scale your payments securely
+            and globally.</p>
           <div class="row q-gutter-sm q-mt-md">
             <q-btn round flat icon="facebook" class="social-btn" />
             <q-btn round flat icon="code" class="social-btn" />
@@ -290,266 +300,307 @@
         </div>
       </div>
       <div class="text-center q-mt-xl text-caption footer-copyright">
-        © {{ new Date().getFullYear() }} FinteckX. All Rights Reserved.
+        © {{ new Date().getFullYear() }} FintechX. All Rights Reserved.
       </div>
     </footer>
   </q-layout>
 </template>
 
-<script setup>
+<script>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
-const route = useRoute()
-const isAuthed = ref(false)
-const drawerOpen = ref(false)
-const isHome = computed(() => route.path === '/' || route.name === 'home')
+export default {
+  name: 'MainLayout',
 
-// Data for dynamic content
-const services = ref([
-  {
-    icon: 'credit_card',
-    title: 'Smart Checkout',
-    description: 'Fast and seamless checkout experience with multiple payment methods.'
-  },
-  {
-    icon: 'stacked_bar_chart',
-    title: 'Analytics',
-    description: 'Track and optimize your performance with real-time insights and reporting tools.'
-  },
-  {
-    icon: 'support',
-    title: '24/7 Support',
-    description: 'Always-on support system to resolve issues instantly and keep business running.'
-  }
-])
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
 
-const reviews = ref([
-  {
-    name: 'Sarah Johnson',
-    position: 'CEO, TechStart Inc.',
-    rating: 5,
-    comment: 'FinteckX transformed our payment processing. The analytics helped us increase revenue by 40% in just 3 months.',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    name: 'Michael Chen',
-    position: 'Founder, GlobalCommerce',
-    rating: 5,
-    comment: 'The global reach and security features are unmatched. Our customers trust us more than ever.',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    name: 'Emma Rodriguez',
-    position: 'CTO, PaymentFlow',
-    rating: 5,
-    comment: 'Integration was seamless and the support team is incredibly responsive. Highly recommended!',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-  }
-])
+    const isAuthed = ref(false)
+    const drawerOpen = ref(false)
+    const isHome = computed(() => route.path === '/' || route.name === 'home')
 
-const features = ref([
-  {
-    icon: 'api',
-    title: 'REST API',
-    description: 'Powerful API for custom integrations and automation.'
-  },
-  {
-    icon: 'webhook',
-    title: 'Webhooks',
-    description: 'Real-time notifications for all payment events.'
-  },
-  {
-    icon: 'shield',
-    title: 'Fraud Protection',
-    description: 'Advanced AI-powered fraud detection system.'
-  },
-  {
-    icon: 'language',
-    title: 'Multi-language',
-    description: 'Support for 15+ languages and local currencies.'
-  },
-  {
-    icon: 'mobile_friendly',
-    title: 'Mobile First',
-    description: 'Optimized for all devices and screen sizes.'
-  },
-  {
-    icon: 'sync',
-    title: 'Real-time Sync',
-    description: 'Instant synchronization across all platforms.'
-  },
-  {
-    icon: 'backup',
-    title: 'Auto Backup',
-    description: 'Automatic data backup and disaster recovery.'
-  },
-  {
-    icon: 'speed',
-    title: 'High Performance',
-    description: 'Lightning-fast processing with 99.99% uptime.'
-  }
-])
+    // Navigation functions
+    const navigateToRegister = () => {
+      router.push('/register')
+    }
 
-const howItWorks = ref([
-  {
-    image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
-    title: 'Sign Up',
-    description: 'Create your merchant profile and upload required documents.'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-    title: 'Integrate',
-    description: 'Use our hosted checkout or API to start processing securely.'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
-    title: 'Grow',
-    description: 'Analyze performance and scale with insights and automation.'
-  }
-])
+    const navigateToLogin = () => {
+      router.push('/login')
+    }
 
-const metrics = ref([
-  { value: '120K+', label: 'Users' },
-  { value: '48', label: 'Countries' },
-  { value: '$2.3B', label: 'Amount Processed' },
-  { value: '99.98%', label: 'Uptime' }
-])
+    // Data for dynamic content
+    const services = ref([
+      {
+        icon: 'credit_card',
+        title: 'Smart Checkout',
+        description: 'Fast and seamless checkout experience with multiple payment methods.'
+      },
+      {
+        icon: 'stacked_bar_chart',
+        title: 'Analytics',
+        description: 'Track and optimize your performance with real-time insights and reporting tools.'
+      },
+      {
+        icon: 'support',
+        title: '24/7 Support',
+        description: 'Always-on support system to resolve issues instantly and keep business running.'
+      }
+    ])
 
-const footerLinks = ref([
-  {
-    title: 'Company',
-    links: [
-      { label: 'About Us', url: '#' },
-      { label: 'Careers', url: '#' },
-      { label: 'Newsroom', url: '#' }
+    const reviews = ref([
+      {
+        name: 'Sarah Johnson',
+        position: 'CEO, TechStart Inc.',
+        rating: 5,
+        comment: 'FintechX transformed our payment processing. The analytics helped us increase revenue by 40% in just 3 months.',
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        name: 'Michael Chen',
+        position: 'Founder, GlobalCommerce',
+        rating: 5,
+        comment: 'The global reach and security features are unmatched. Our customers trust us more than ever.',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        name: 'Emma Rodriguez',
+        position: 'CTO, PaymentFlow',
+        rating: 5,
+        comment: 'Integration was seamless and the support team is incredibly responsive. Highly recommended!',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+      }
+    ])
+
+    const features = ref([
+      {
+        icon: 'api',
+        title: 'REST API',
+        description: 'Powerful API for custom integrations and automation.'
+      },
+      {
+        icon: 'webhook',
+        title: 'Webhooks',
+        description: 'Real-time notifications for all payment events.'
+      },
+      {
+        icon: 'shield',
+        title: 'Fraud Protection',
+        description: 'Advanced AI-powered fraud detection system.'
+      },
+      {
+        icon: 'language',
+        title: 'Multi-language',
+        description: 'Support for 15+ languages and local currencies.'
+      },
+      {
+        icon: 'mobile_friendly',
+        title: 'Mobile First',
+        description: 'Optimized for all devices and screen sizes.'
+      },
+      {
+        icon: 'sync',
+        title: 'Real-time Sync',
+        description: 'Instant synchronization across all platforms.'
+      },
+      {
+        icon: 'backup',
+        title: 'Auto Backup',
+        description: 'Automatic data backup and disaster recovery.'
+      },
+      {
+        icon: 'speed',
+        title: 'High Performance',
+        description: 'Lightning-fast processing with 99.99% uptime.'
+      }
+    ])
+
+    const howItWorks = ref([
+      {
+        image: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+        title: 'Sign Up',
+        description: 'Create your merchant profile and upload required documents.'
+      },
+      {
+        image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+        title: 'Integrate',
+        description: 'Use our hosted checkout or API to start processing securely.'
+      },
+      {
+        image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+        title: 'Grow',
+        description: 'Analyze performance and scale with insights and automation.'
+      }
+    ])
+
+    const metrics = ref([
+      { value: '120K+', label: 'Users' },
+      { value: '48', label: 'Countries' },
+      { value: '$2.3B', label: 'Amount Processed' },
+      { value: '99.98%', label: 'Uptime' }
+    ])
+
+    const footerLinks = ref([
+      {
+        title: 'Company',
+        links: [
+          { label: 'About Us', url: '#' },
+          { label: 'Careers', url: '#' },
+          { label: 'Newsroom', url: '#' }
+        ]
+      },
+      {
+        title: 'Resources',
+        links: [
+          { label: 'Help Center', url: '#' },
+          { label: 'API Docs', url: '#' },
+          { label: 'Blog', url: '#' }
+        ]
+      },
+      {
+        title: 'Legal',
+        links: [
+          { label: 'Privacy', url: '#' },
+          { label: 'Terms', url: '#' },
+          { label: 'Cookies', url: '#' }
+        ]
+      }
+    ])
+
+    // Fixed image sources using reliable CDNs
+    const imageSources = {
+      hero: [
+        'https://images.unsplash.com/photo-1556742400-b5d3f1b2a9f9?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80',
+        'https://dummyimage.com/1200x675/121018/bdf000.png&text=FintechX+Payments'
+      ],
+      reach: [
+        'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
+        'https://dummyimage.com/1200x675/121018/bdf000.png&text=Global+Reach'
+      ],
+      security: [
+        'https://images.unsplash.com/photo-1605901309584-818e25960a8b?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
+        'https://dummyimage.com/1200x675/121018/bdf000.png&text=Bank+Grade+Security'
+      ],
+      analytics: [
+        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80',
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
+        'https://dummyimage.com/1200x675/121018/bdf000.png&text=Smart+Analytics'
+      ]
+    }
+
+    const heroImg = ref(imageSources.hero[0])
+    const reachImg = ref(imageSources.reach[0])
+    const securityImg = ref(imageSources.security[0])
+    const analyticsImg = ref(imageSources.analytics[0])
+
+    const appLogo = ref('https://dummyimage.com/200x200/121018/bdf000.png&text=FX')
+
+    const imageRefs = {
+      hero: heroImg,
+      reach: reachImg,
+      security: securityImg,
+      analytics: analyticsImg
+    }
+
+    const onImgError = (key) => {
+      const srcList = imageSources[key] || []
+      const currentRef = imageRefs[key]
+      if (!currentRef) return
+      const currentIdx = srcList.indexOf(currentRef.value)
+      const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
+      if (nextIdx < srcList.length) {
+        currentRef.value = srcList[nextIdx]
+      }
+    }
+
+    const onHowImgError = (index) => {
+      // Fallback image sources for how it works section
+      const howSources = {
+        1: [
+          'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+          'https://dummyimage.com/800x800/121018/bdf000.png&text=Sign+Up'
+        ],
+        2: [
+          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+          'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+          'https://dummyimage.com/800x800/121018/bdf000.png&text=Integrate'
+        ],
+        3: [
+          'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+          'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+          'https://dummyimage.com/800x800/121018/bdf000.png&text=Grow'
+        ]
+      }
+
+      const list = howSources[index] || []
+      const map = { 1: howItWorks.value[0], 2: howItWorks.value[1], 3: howItWorks.value[2] }
+      const currentRef = map[index]
+      if (!currentRef) return
+      const currentIdx = list.indexOf(currentRef.image)
+      const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
+      if (nextIdx < list.length) {
+        currentRef.image = list[nextIdx]
+      }
+    }
+
+    const onAvatarError = (index) => {
+      reviews.value[index].avatar = 'https://dummyimage.com/150x150/121018/bdf000.png&text=User'
+    }
+
+    const onLogoError = () => {
+      appLogo.value = 'https://dummyimage.com/200x200/121018/bdf000.png&text=F'
+    }
+
+    const logos = [
+      'https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png',
+      'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
+      'https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png',
+      'https://upload.wikimedia.org/wikipedia/commons/2/2a/Stripe_Logo%2C_revised_2016.svg',
+      'https://upload.wikimedia.org/wikipedia/commons/5/57/Binance_Logo.png'
     ]
-  },
-  {
-    title: 'Resources',
-    links: [
-      { label: 'Help Center', url: '#' },
-      { label: 'API Docs', url: '#' },
-      { label: 'Blog', url: '#' }
-    ]
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Privacy', url: '#' },
-      { label: 'Terms', url: '#' },
-      { label: 'Cookies', url: '#' }
-    ]
-  }
-])
+    const doubleLogos = computed(() => [...logos, ...logos])
 
-// Fixed image sources using reliable CDNs
-const imageSources = {
-  hero: [
-    'https://images.unsplash.com/photo-1556742400-b5d3f1b2a9f9?auto=format&fit=crop&w=1400&q=80',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=FinteckX+Payments'
-  ],
-  reach: [
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1400&q=80',
-    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Global+Reach'
-  ],
-  security: [
-    'https://images.unsplash.com/photo-1605901309584-818e25960a8b?auto=format&fit=crop&w=1400&q=80',
-    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Bank+Grade+Security'
-  ],
-  analytics: [
-    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80',
-    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
-    'https://dummyimage.com/1200x675/121018/bdf000.png&text=Smart+Analytics'
-  ]
-}
+    const scrollTo = (id) => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
 
-const heroImg = ref(imageSources.hero[0])
-const reachImg = ref(imageSources.reach[0])
-const securityImg = ref(imageSources.security[0])
-const analyticsImg = ref(imageSources.analytics[0])
+    const refreshAuth = () => { isAuthed.value = !!localStorage.getItem('token') }
+    onMounted(refreshAuth)
+    watch(() => route.fullPath, refreshAuth)
 
-const appLogo = ref('https://dummyimage.com/200x200/121018/bdf000.png&text=FX')
-
-const imageRefs = {
-  hero: heroImg,
-  reach: reachImg,
-  security: securityImg,
-  analytics: analyticsImg
-}
-
-const onImgError = (key) => {
-  const srcList = imageSources[key] || []
-  const currentRef = imageRefs[key]
-  if (!currentRef) return
-  const currentIdx = srcList.indexOf(currentRef.value)
-  const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
-  if (nextIdx < srcList.length) {
-    currentRef.value = srcList[nextIdx]
+    return {
+      isAuthed,
+      drawerOpen,
+      isHome,
+      services,
+      reviews,
+      features,
+      howItWorks,
+      metrics,
+      footerLinks,
+      heroImg,
+      reachImg,
+      securityImg,
+      analyticsImg,
+      appLogo,
+      doubleLogos,
+      onImgError,
+      onHowImgError,
+      onAvatarError,
+      onLogoError,
+      scrollTo,
+      navigateToRegister,
+      navigateToLogin
+    }
   }
 }
-
-const onHowImgError = (index) => {
-  // Fallback image sources for how it works section
-  const howSources = {
-    1: [
-      'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-      'https://dummyimage.com/800x800/121018/bdf000.png&text=Sign+Up'
-    ],
-    2: [
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
-      'https://dummyimage.com/800x800/121018/bdf000.png&text=Integrate'
-    ],
-    3: [
-      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
-      'https://dummyimage.com/800x800/121018/bdf000.png&text=Grow'
-    ]
-  }
-  
-  const list = howSources[index] || []
-  const map = { 1: howItWorks.value[0], 2: howItWorks.value[1], 3: howItWorks.value[2] }
-  const currentRef = map[index]
-  if (!currentRef) return
-  const currentIdx = list.indexOf(currentRef.image)
-  const nextIdx = currentIdx >= 0 ? currentIdx + 1 : 1
-  if (nextIdx < list.length) {
-    currentRef.image = list[nextIdx]
-  }
-}
-
-const onAvatarError = (index) => {
-  reviews.value[index].avatar = 'https://dummyimage.com/150x150/121018/bdf000.png&text=User'
-}
-
-const onLogoError = () => {
-  appLogo.value = 'https://dummyimage.com/200x200/121018/bdf000.png&text=F'
-}
-
-const logos = [
-  'https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png',
-  'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png',
-  'https://upload.wikimedia.org/wikipedia/commons/2/2a/Stripe_Logo%2C_revised_2016.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/5/57/Binance_Logo.png'
-]
-const doubleLogos = computed(() => [...logos, ...logos])
-
-const scrollTo = (id) => {
-  const el = document.getElementById(id)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-const refreshAuth = () => { isAuthed.value = !!localStorage.getItem('auth_token') }
-onMounted(refreshAuth)
-watch(() => route.fullPath, refreshAuth)
 </script>
-
 <style scoped>
 /* Global Styles */
 .fintech-layout {
@@ -971,6 +1022,7 @@ watch(() => route.fullPath, refreshAuth)
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -1064,9 +1116,12 @@ watch(() => route.fullPath, refreshAuth)
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
+
   50% {
     transform: translateY(-20px) rotate(2deg);
   }
@@ -1086,6 +1141,7 @@ watch(() => route.fullPath, refreshAuth)
     opacity: 0;
     transform: translateX(-50px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -1097,6 +1153,7 @@ watch(() => route.fullPath, refreshAuth)
     opacity: 0;
     transform: translateX(50px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -1108,46 +1165,47 @@ watch(() => route.fullPath, refreshAuth)
   .hero-title {
     font-size: 2.5rem;
   }
-  
+
   .hero-stats {
     gap: 20px;
   }
-  
+
   .stat-value {
     font-size: 2rem;
   }
-  
-  .advantage-item, .advantage-reverse {
+
+  .advantage-item,
+  .advantage-reverse {
     flex-direction: column;
   }
-  
+
   .advantage-content {
     order: 2;
     margin-bottom: 40px;
   }
-  
+
   .advantage-visual {
     order: 1;
     margin-bottom: 30px;
   }
-  
+
   .metric-item {
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 20px;
     padding-bottom: 30px;
   }
-  
+
   .metric-item:last-child {
     border-bottom: none;
     margin-bottom: 0;
   }
-  
+
   .cta-card .row {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .cta-card .text-right {
     text-align: left !important;
   }
@@ -1158,12 +1216,12 @@ watch(() => route.fullPath, refreshAuth)
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .hero-stats {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .track img {
     height: 30px;
   }

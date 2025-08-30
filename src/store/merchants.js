@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '../boot/axios'
+import { api } from '../boot/axios'
 
 export const useMerchantsStore = defineStore('merchants', () => {
   // State
@@ -19,11 +19,11 @@ export const useMerchantsStore = defineStore('merchants', () => {
     try {
       loading.value = true
       const response = await api.get('/api/admin/merchants', { params: filters })
-      
+
       if (response.data.success) {
         merchants.value = response.data.merchants || []
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error loading merchants:', error)
@@ -35,14 +35,14 @@ export const useMerchantsStore = defineStore('merchants', () => {
 
   const loadPendingApprovals = async () => {
     try {
-      const response = await api.get('/api/admin/merchants', { 
-        params: { status: 'pending' } 
+      const response = await api.get('/api/admin/merchants', {
+        params: { status: 'pending' }
       })
-      
+
       if (response.data.success) {
         pendingApprovals.value = response.data.merchants || []
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error loading pending approvals:', error)
@@ -53,18 +53,18 @@ export const useMerchantsStore = defineStore('merchants', () => {
   const approveMerchant = async (merchantId) => {
     try {
       const response = await api.post(`/api/admin/approve-merchant/${merchantId}`)
-      
+
       if (response.data.success) {
         // Update local state
         const merchant = merchants.value.find(m => m.id === merchantId)
         if (merchant) {
           merchant.status = 'verified'
         }
-        
+
         // Remove from pending
         pendingApprovals.value = pendingApprovals.value.filter(m => m.id !== merchantId)
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error approving merchant:', error)
@@ -75,18 +75,18 @@ export const useMerchantsStore = defineStore('merchants', () => {
   const rejectMerchant = async (merchantId, reason) => {
     try {
       const response = await api.post(`/api/admin/reject-merchant/${merchantId}`, { reason })
-      
+
       if (response.data.success) {
         // Update local state
         const merchant = merchants.value.find(m => m.id === merchantId)
         if (merchant) {
           merchant.status = 'rejected'
         }
-        
+
         // Remove from pending
         pendingApprovals.value = pendingApprovals.value.filter(m => m.id !== merchantId)
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error rejecting merchant:', error)
@@ -97,7 +97,7 @@ export const useMerchantsStore = defineStore('merchants', () => {
   const updateMerchant = async (merchantId, data) => {
     try {
       const response = await api.patch(`/api/merchants/${merchantId}`, data)
-      
+
       if (response.data.success) {
         // Update local state
         const merchant = merchants.value.find(m => m.id === merchantId)
@@ -105,7 +105,7 @@ export const useMerchantsStore = defineStore('merchants', () => {
           Object.assign(merchant, response.data.merchant)
         }
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error updating merchant:', error)
@@ -116,7 +116,7 @@ export const useMerchantsStore = defineStore('merchants', () => {
   const registerBusiness = async (businessData) => {
     try {
       loading.value = true
-      
+
       const formData = new FormData()
       Object.keys(businessData).forEach(key => {
         if (businessData[key] !== null && businessData[key] !== undefined) {
@@ -129,17 +129,17 @@ export const useMerchantsStore = defineStore('merchants', () => {
           }
         }
       })
-      
+
       const response = await api.post('/api/merchant/register', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       })
-      
+
       if (response.data.success) {
         currentMerchant.value = response.data.merchant
       }
-      
+
       return response.data
     } catch (error) {
       console.error('Error registering business:', error)
@@ -151,16 +151,15 @@ export const useMerchantsStore = defineStore('merchants', () => {
 
   const getMerchantProfile = async () => {
     try {
-      const response = await api.get('/api/merchant/profile')
-      
-      if (response.data.success) {
-        currentMerchant.value = response.data.merchant
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading merchant profile:', error)
-      throw error
+      loading.value = true
+      const response = await api.get('/merchant/profile')
+      currentMerchant.value = response.data
+      return { success: true, merchant: response.data }
+    } catch (err) {
+      console.error('Error loading merchant profile:', err)
+      return { success: false, message: err.message }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -170,12 +169,12 @@ export const useMerchantsStore = defineStore('merchants', () => {
     currentMerchant,
     loading,
     pendingApprovals,
-    
+
     // Getters
     getMerchantById,
     getPendingCount,
     getApprovedMerchants,
-    
+
     // Actions
     loadMerchants,
     loadPendingApprovals,

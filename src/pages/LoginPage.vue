@@ -22,13 +22,13 @@
 
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
               <q-form @submit.prevent="onSubmit" class="q-gutter-md">
-                <q-input v-model="email" type="email" label="Email" filled dense required class="custom-input"
+                <q-input v-model="loginData.email" type="email" label="Email" filled dense required class="custom-input"
                   label-color="grey-4" color="lime-7">
                   <template v-slot:prepend><q-icon name="mail" color="grey-4" /></template>
                 </q-input>
 
-                <q-input v-model="password" type="password" label="Password" filled dense required class="custom-input"
-                  label-color="grey-4" color="lime-7">
+                <q-input v-model="loginData.password" type="password" label="Password" filled dense required
+                  class="custom-input" label-color="grey-4" color="lime-7">
                   <template v-slot:prepend><q-icon name="lock" color="grey-4" /></template>
                 </q-input>
 
@@ -63,98 +63,85 @@
   </q-page>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { Notify } from 'quasar'
+<script>
+import { ref, defineComponent } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { pinia } from '../store/pinia'
+import { Notify } from 'quasar'
 
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore(pinia)
+export default defineComponent({
+  name: 'LoginPage',
 
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
-const error = ref(null)
+  setup() {
+    const router = useRouter()
+    const authStore = useAuthStore()
+    const loading = ref(false)
+    const error = ref(null)
 
-const illustration = ref('https://source.unsplash.com/900x700/?fintech,3d,payments')
-const onImgError = () => { illustration.value = 'https://placehold.co/900x700/121018/bdf000?text=FinteckX' }
-
-const onSubmit = async () => {
-  try {
-    error.value = null
-    loading.value = true
-
-    console.log('Login attempt for:', email.value)
-
-    const response = await auth.login({ email: email.value, password: password.value })
-    console.log('Login response:', response)
-    
-    if (!response.success) {
-      throw new Error(response.message || 'Login failed')
-    }
-
-    let user = response.user || auth.user
-    if (!user) {
-      throw new Error('No user data received from login')
-    }
-
-    // ✅ Determine role manually
-    let role = 'merchant'
-    if (email.value === 'admin@example.com' && password.value === 'password123') {
-      role = 'admin'
-    }
-
-    console.log('Detected role:', role)
-
-    const redirect = route.query.redirect
-
-    if (role === 'admin') {
-      Notify.create({ 
-        type: 'positive', 
-        message: 'Welcome, Admin!', 
-        position: 'top',
-        timeout: 2000 
-      })
-      console.log('Redirecting to admin-dashboard...')
-      await router.push(redirect || '/admin-dashboard')   // 👈 switched to push
-    } else {
-      Notify.create({ 
-        type: 'positive', 
-        message: 'Welcome to Dashboard!', 
-        position: 'top',
-        timeout: 2000 
-      })
-      console.log('Redirecting to dashboard...')
-      await router.push(redirect || '/dashboard')
-    }
-
-  } catch (e) {
-    console.error('Login error:', e)
-    
-    if (e.response?.data?.message) {
-      error.value = e.response.data.message
-    } else if (e.response?.data?.error) {
-      error.value = e.response.data.error
-    } else if (e.message) {
-      error.value = e.message
-    } else {
-      error.value = 'Login failed. Please try again.'
-    }
-    
-    Notify.create({ 
-      type: 'negative', 
-      message: error.value,
-      position: 'top',
-      timeout: 3000 
+    const loginData = ref({
+      email: '',
+      password: ''
     })
-    
-  } finally {
-    loading.value = false
+
+    const onSubmit = async () => {
+      try {
+        loading.value = true
+        error.value = null
+        console.log('Login attempt for:', loginData.value.email)
+
+        // Call login from auth store
+        const response = await authStore.login(loginData.value)
+        console.log('Login response:', response)
+
+        if (!response.success) {
+          throw new Error(response.message || 'Login failed')
+        }
+
+        // Access user data from auth store instead of response
+        const userData = authStore.user
+        if (!userData) {
+          throw new Error('User data not available')
+        }
+
+        // Show success notification
+        Notify.create({
+          type: 'positive',
+          message: 'Login successful!',
+          position: 'top',
+          timeout: 2000
+        })
+
+        // Redirect based on role
+        if (userData.role === 'admin') {
+          router.push('/admin-dashboard')
+        } else {
+          router.push('/dashboard')
+        }
+
+      } catch (err) {
+        console.error('Login error:', err)
+        error.value = err.message
+
+        // Show error notification
+        Notify.create({
+          type: 'negative',
+          message: error.value,
+          position: 'top',
+          timeout: 3000
+        })
+      } finally {
+        loading.value = false
+      }
+    }
+
+    return {
+      loginData,
+      loading,
+      error,
+      onSubmit
+    }
   }
-}
+})
 </script>
 
 

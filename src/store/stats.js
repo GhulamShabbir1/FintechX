@@ -1,209 +1,116 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '../boot/axios'
+import { api } from '../boot/axios'
 
 export const useStatsStore = defineStore('stats', () => {
   // State
-  const revenueData = ref([])
-  const methodsData = ref([])
-  const trendsData = ref([])
-  const checkoutTimeData = ref([])
-  const geographyData = ref([])
-  const customersData = ref([])
-  const loading = ref(false)
-  const filters = ref({
-    dateRange: '30d',
-    merchantId: null,
-    startDate: null,
-    endDate: null
+  const stats = ref({
+    revenue: null,
+    methods: null,
+    checkoutTime: null,
+    geography: null,
+    customers: null
   })
 
-  // Getters
-  const getTotalRevenue = () => {
-    return revenueData.value.reduce((sum, item) => sum + (item.revenue || 0), 0)
-  }
+  const loading = ref(false)
+  const error = ref(null)
 
-  const getSuccessRate = () => {
-    if (trendsData.value.length === 0) return 0
-    const total = trendsData.value.reduce((sum, item) => sum + (item.transactions || 0), 0)
-    const successful = trendsData.value.reduce((sum, item) => sum + (item.successful_transactions || 0), 0)
-    return total > 0 ? Math.round((successful / total) * 100) : 0
-  }
-
-  const getAverageCheckoutTime = () => {
-    if (checkoutTimeData.value.length === 0) return 0
-    const total = checkoutTimeData.value.reduce((sum, time) => sum + time, 0)
-    return Math.round(total / checkoutTimeData.value.length * 10) / 10
+  // Computed stats getter
+  const getComputedStats = () => {
+    return {
+      total_revenue: stats.value.revenue?.total || 0,
+      transactions: stats.value.revenue?.count || 0,
+      success_rate: stats.value.checkoutTime?.success_rate || 0,
+      customers: stats.value.customers?.total || 0
+    }
   }
 
   // Actions
   const loadRevenueStats = async () => {
     try {
-      const response = await api.get('/api/stats/revenue', { params: filters.value })
-      
-      if (response.data.success) {
-        revenueData.value = response.data.data || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading revenue stats:', error)
-      throw error
+      const { data } = await api.get('/merchant/stats/revenue')
+      stats.value.revenue = data
+      return data
+    } catch (err) {
+      console.error('Error loading revenue stats:', err)
+      throw err
     }
   }
 
   const loadMethodsStats = async () => {
     try {
-      const response = await api.get('/api/stats/methods', { params: filters.value })
-      
-      if (response.data.success) {
-        methodsData.value = response.data.data || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading methods stats:', error)
-      throw error
-    }
-  }
-
-  const loadTrendsStats = async () => {
-    try {
-      const response = await api.get('/api/stats/transactions', { params: filters.value })
-      
-      if (response.data.success) {
-        trendsData.value = response.data.data || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading trends stats:', error)
-      throw error
+      const { data } = await api.get('/merchant/stats/methods')
+      stats.value.methods = data
+      return data
+    } catch (err) {
+      console.error('Error loading methods stats:', err)
+      throw err
     }
   }
 
   const loadCheckoutTimeStats = async () => {
     try {
-      const response = await api.get('/api/stats/checkout-time', { params: filters.value })
-      
-      if (response.data.success) {
-        const data = response.data.data || {}
-        checkoutTimeData.value = data.values || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading checkout time stats:', error)
-      throw error
+      const { data } = await api.get('/merchant/stats/checkout-time')
+      stats.value.checkoutTime = data
+      return data
+    } catch (err) {
+      console.error('Error loading checkout time stats:', err)
+      throw err
     }
   }
 
   const loadGeographyStats = async () => {
     try {
-      const response = await api.get('/api/stats/geography', { params: filters.value })
-      
-      if (response.data.success) {
-        const data = response.data.data || {}
-        geographyData.value = data.values || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading geography stats:', error)
-      throw error
+      const { data } = await api.get('/merchant/stats/geography')
+      stats.value.geography = data
+      return data
+    } catch (err) {
+      console.error('Error loading geography stats:', err)
+      throw err
     }
   }
 
   const loadCustomersStats = async () => {
     try {
-      const response = await api.get('/api/stats/customers', { params: filters.value })
-      
-      if (response.data.success) {
-        const data = response.data.data || {}
-        customersData.value = data.values || []
-      }
-      
-      return response.data
-    } catch (error) {
-      console.error('Error loading customers stats:', error)
-      throw error
+      const { data } = await api.get('/merchant/stats/customers')
+      stats.value.customers = data
+      return data
+    } catch (err) {
+      console.error('Error loading customers stats:', err)
+      throw err
     }
   }
 
   const loadAllStats = async () => {
+    loading.value = true
+    error.value = null
+
     try {
-      loading.value = true
-      
-      await Promise.all([
+      await Promise.allSettled([
         loadRevenueStats(),
         loadMethodsStats(),
-        loadTrendsStats(),
         loadCheckoutTimeStats(),
         loadGeographyStats(),
         loadCustomersStats()
       ])
-      
-    } catch (error) {
-      console.error('Error loading all stats:', error)
-      throw error
+    } catch (err) {
+      error.value = err.message
+      console.error('Error loading all stats:', err)
     } finally {
       loading.value = false
     }
   }
 
-  const updateFilters = (newFilters) => {
-    filters.value = { ...filters.value, ...newFilters }
-  }
-
-  const exportStats = async (format = 'csv') => {
-    try {
-      const response = await api.get('/api/stats/export', {
-        params: { ...filters.value, format },
-        responseType: 'blob'
-      })
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `stats-${new Date().toISOString().split('T')[0]}.${format}`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-      
-      return true
-    } catch (error) {
-      console.error('Error exporting stats:', error)
-      throw error
-    }
-  }
-
   return {
-    // State
-    revenueData,
-    methodsData,
-    trendsData,
-    checkoutTimeData,
-    geographyData,
-    customersData,
+    stats,
     loading,
-    filters,
-    
-    // Getters
-    getTotalRevenue,
-    getSuccessRate,
-    getAverageCheckoutTime,
-    
-    // Actions
+    error,
+    getComputedStats,
     loadRevenueStats,
     loadMethodsStats,
-    loadTrendsStats,
     loadCheckoutTimeStats,
     loadGeographyStats,
     loadCustomersStats,
-    loadAllStats,
-    updateFilters,
-    exportStats
+    loadAllStats
   }
 })

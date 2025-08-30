@@ -2,161 +2,55 @@
   <q-page class="q-pa-md flex flex-center fintech-bg">
     <q-card class="onboarding-card glass-surface elevate-on-hover">
       <div class="row items-stretch full-height">
-        <!-- Left Pane - Illustration -->
+        <!-- Left side illustration -->
         <div class="col-12 col-md-6 left-pane q-pa-xl flex flex-center">
           <div class="illustration-container">
             <q-img :src="illustration" alt="Onboarding Illustration" fit="contain" ratio="1"
               class="floating hero-illustration" @error="onImgError" />
             <div class="text-content text-center">
-              <div class="text-h4 text-bold text-white">Join FinteckX</div>
+              <div class="text-h4 text-bold text-white">Join FintechX</div>
               <div class="text-subtitle1 q-mt-md text-soft">Start your journey to financial innovation</div>
             </div>
           </div>
         </div>
 
-        <!-- Right Pane - Registration Form -->
+        <!-- Right side registration form -->
         <div class="col-12 col-md-6 right-pane q-pa-xl flex flex-center">
           <div class="form-container">
             <div class="text-center q-mb-lg">
-              <div class="text-h4 text-bold text-lime heading-animate">Create account</div>
-              <div class="text-subtitle1 q-mt-sm text-soft">Quick registration to get you started</div>
+              <div class="text-h4 text-bold text-lime heading-animate">Create Account</div>
+              <div class="text-subtitle1 q-mt-sm text-soft">Register as a merchant</div>
             </div>
 
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
               <q-form @submit.prevent="onSubmit" class="q-gutter-md">
-                <!-- User Registration Fields -->
-                <div class="text-subtitle2 text-lime q-mb-sm">Account Information</div>
-                <q-input 
-                  v-model="userData.name" 
-                  label="Full Name" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Name is required']" 
-                />
-                <q-input 
-                  v-model="userData.email" 
-                  type="email" 
-                  label="Email" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[
-    v => !!v || 'Email is required',
-    v => /.+@.+\..+/.test(v) || 'Enter a valid email'
-  ]" 
-                />
-                <q-input 
-                  v-model="userData.password" 
-                  type="password" 
-                  label="Password" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Password is required', v => String(v || '').length >= 6 || 'Min 6 characters']" 
-                />
-                <q-input 
-                  v-model="confirmPassword" 
-                  type="password" 
-                  label="Confirm Password" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Please confirm password', v => v === userData.password || 'Passwords do not match']" 
-                />
+                <q-input v-model="userData.name" label="Full Name" outlined dense required class="custom-input"
+                  :rules="nameRules" />
 
-                <!-- Business Information Fields -->
-                <div class="text-subtitle2 text-lime q-mt-lg q-mb-sm">Business Information</div>
-                <q-input 
-                  v-model="businessData.business_name" 
-                  label="Business Name" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Business name is required']" 
-                />
-                <q-input 
-                  v-model="businessData.bank_account_name" 
-                  label="Bank Account Holder Name" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Bank account holder name is required']" 
-                />
-                <q-input 
-                  v-model="businessData.bank_account_number" 
-                  label="Bank Account Number" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Bank account number is required']" 
-                />
-                <q-input 
-                  v-model="businessData.bank_ifsc_swift" 
-                  label="Bank IFSC/SWIFT Code" 
-                  outlined 
-                  dense 
-                  required
-                  class="custom-input"
-                  :rules="[v => !!v || 'Bank IFSC/SWIFT code is required']" 
-                />
+                <q-input v-model="userData.email" type="email" label="Email" outlined dense required
+                  class="custom-input" :rules="emailRules" />
 
-                <!-- Logo Upload -->
-                <div class="q-mt-md">
-                  <q-file
-                    v-model="businessData.logo"
-                    label="Business Logo (Optional)"
-                    outlined
-                    dense
-                    accept=".jpg,.jpeg,.png,.gif"
-                    class="custom-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="image" />
-                    </template>
-                  </q-file>
-                </div>
+                <!-- Hidden role selection - defaults to merchant -->
+                <q-input v-model="userData.role" type="hidden" />
 
-                <!-- Payout Preferences -->
-                <div class="q-mt-md">
-                  <q-select
-                    v-model="businessData.payout_preferences"
-                    :options="payoutOptions"
-                    label="Payout Preferences"
-                    outlined
-                    dense
-                    multiple
-                    use-chips
-                    class="custom-input"
-                    :rules="[v => v && v.length > 0 || 'Please select at least one payout preference']"
-                  />
-                </div>
+                <q-input v-model="userData.password" type="password" label="Password" outlined dense required
+                  class="custom-input" :rules="passwordRules" />
 
-                <q-btn 
-                  type="submit" 
-                  class="btn-lime full-width q-mt-lg" 
-                  label="Create Account & Register Business" 
-                  :loading="loading" 
-                  no-caps 
-                  size="lg"
-                />
+                <q-input v-model="confirmPassword" type="password" label="Confirm Password" outlined dense required
+                  class="custom-input" :rules="[
+                    val => !!val || 'Confirm password is required',
+                    val => val === userData.password || 'Passwords must match'
+                  ]" />
+
+                <q-btn type="submit" class="btn-lime full-width q-mt-lg" label="Create Account" :loading="loading"
+                  no-caps size="lg" />
               </q-form>
             </div>
 
             <div class="q-mt-xl text-center">
               <div class="text-caption text-grey-5 q-mb-sm">Already have an account?</div>
-              <q-btn outline class="btn-lime-outline" label="Login to your account" @click="$router.push('/login')"
-                no-caps />
+              <q-btn outline class="btn-lime-outline" label="Login here" @click="$router.push('/login')" no-caps />
             </div>
-
-            <div v-if="error" class="q-mt-md text-negative text-center">{{ error }}</div>
           </div>
         </div>
       </div>
@@ -173,210 +67,174 @@
   </q-page>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
+<script>
+import { ref, reactive, defineComponent } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
-import { useMerchantsStore } from '../store/merchants'
-import { pinia } from '../store/pinia'
 
-const router = useRouter()
-const auth = useAuthStore(pinia)
-const merchants = useMerchantsStore(pinia)
+export default defineComponent({
+  name: 'RegisterPage',
 
-// User registration data
-const userData = reactive({
-  name: '',
-  email: '',
-  password: '',
-  role: 'merchant' // Always merchant for business registration
+  setup() {
+    const router = useRouter()
+    const authStore = useAuthStore()
+
+    // User registration data only
+    const userData = reactive({
+      name: '',
+      email: '',
+      password: '',
+      role: 'merchant' // Default role
+    })
+
+    const confirmPassword = ref('')
+    const loading = ref(false)
+    const error = ref(null)
+
+    const illustrationSources = [
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
+      'https://placehold.co/900x700/121018/bdf000?text=FintechX+Onboarding',
+    ]
+    const illustration = ref(illustrationSources[0])
+    let imgErrorCount = 0
+    const onImgError = () => {
+      imgErrorCount++
+      if (imgErrorCount < illustrationSources.length) {
+        illustration.value = illustrationSources[imgErrorCount]
+      }
+    }
+
+    // Validation rules (moved outside of template to fix slot warnings)
+    const nameRules = [
+      val => !!val || 'Name is required',
+      val => val.length >= 2 || 'Name must be at least 2 characters'
+    ]
+
+    const emailRules = [
+      val => !!val || 'Email is required',
+      val => /.+@.+\..+/.test(val) || 'Enter a valid email'
+    ]
+
+    const passwordRules = [
+      val => !!val || 'Password is required',
+      val => val.length >= 6 || 'Password must be at least 6 characters'
+    ]
+
+    const confirmPasswordRules = [
+      val => !!val || 'Please confirm password',
+      val => val === userData.password || 'Passwords do not match'
+    ]
+
+    const validateForm = () => {
+      // Check if all required fields are filled
+      if (!userData.name || !userData.email || !userData.password || !confirmPassword.value) {
+        error.value = 'Please fill in all required fields'
+        return false
+      }
+
+      if (userData.password !== confirmPassword.value) {
+        error.value = 'Passwords do not match'
+        return false
+      }
+
+      if (userData.password.length < 6) {
+        error.value = 'Password must be at least 6 characters long'
+        return false
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(userData.email)) {
+        error.value = 'Please enter a valid email address'
+        return false
+      }
+
+      error.value = null
+      return true
+    }
+
+    const onSubmit = async () => {
+      try {
+        error.value = null
+        loading.value = true
+
+        // Validate form data
+        if (!validateForm()) {
+          return
+        }
+
+        // Register user account using the auth store
+        Notify.create({
+          type: 'info',
+          message: 'Creating your account...',
+          position: 'top',
+          timeout: 2000
+        })
+
+        const registerResponse = await authStore.register({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          password_confirmation: userData.password
+          // No role parameter - backend will handle it
+        })
+
+        if (!registerResponse.success) {
+          throw new Error(registerResponse.message || 'User registration failed')
+        }
+
+        // Success and redirect to login
+        Notify.create({
+          type: 'positive',
+          message: 'Account created successfully! Please login.',
+          position: 'top',
+          timeout: 4000
+        })
+
+        // Redirect to login page
+        setTimeout(() => {
+          router.push('/login')
+        }, 1000)
+
+      } catch (e) {
+        console.error('Registration error:', e)
+
+        // Handle different types of errors
+        if (e.message) {
+          error.value = e.message
+        } else {
+          error.value = 'Registration failed. Please try again.'
+        }
+
+        Notify.create({
+          type: 'negative',
+          message: error.value,
+          position: 'top',
+          timeout: 5000
+        })
+
+      } finally {
+        loading.value = false
+      }
+    }
+
+    return {
+      userData,
+      confirmPassword,
+      loading,
+      error,
+      illustration,
+      onImgError,
+      onSubmit,
+      nameRules,
+      emailRules,
+      passwordRules,
+      confirmPasswordRules
+    }
+  }
 })
-
-// Business registration data
-const businessData = reactive({
-  business_name: '',
-  logo: null,
-  bank_account_name: '',
-  bank_account_number: '',
-  bank_ifsc_swift: '',
-  payout_preferences: []
-})
-
-const confirmPassword = ref('')
-const loading = ref(false)
-const error = ref(null)
-
-// Payout preference options
-const payoutOptions = [
-  { label: 'Bank Transfer', value: 'bank_transfer' },
-  { label: 'UPI', value: 'upi' },
-  { label: 'PayPal', value: 'paypal' },
-  { label: 'Stripe', value: 'stripe' }
-]
-
-const illustrationSources = [
-  'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=900&h=700&q=80',
-  'https://placehold.co/900x700/121018/bdf000?text=FinteckX+Onboarding',
-]
-const illustration = ref(illustrationSources[0])
-let imgErrorCount = 0
-const onImgError = () => {
-  imgErrorCount++
-  if (imgErrorCount < illustrationSources.length) {
-    illustration.value = illustrationSources[imgErrorCount]
-  }
-}
-
-const onSubmit = async () => {
-  try {
-    error.value = null
-    loading.value = true
-
-    // Validate form data
-    if (!validateForm()) {
-      return
-    }
-
-    // Step 1: Register user account
-    Notify.create({ 
-      type: 'info', 
-      message: 'Creating your account...', 
-      position: 'top',
-      timeout: 2000 
-    })
-
-    const registerResponse = await auth.register({
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
-      password_confirmation: userData.password,
-      role: userData.role
-    })
-
-    if (!registerResponse.success && !registerResponse.token) {
-      throw new Error(registerResponse.message || 'User registration failed')
-    }
-
-    // Step 2: Login to get authentication token
-    Notify.create({ 
-      type: 'info', 
-      message: 'Logging you in...', 
-      position: 'top',
-      timeout: 2000 
-    })
-
-    const loginResponse = await auth.login({
-      email: userData.email,
-      password: userData.password
-    })
-
-    if (!loginResponse.success && !loginResponse.token) {
-      throw new Error(loginResponse.message || 'Login failed after registration')
-    }
-
-    // Step 3: Register business with the authenticated user
-    Notify.create({ 
-      type: 'info', 
-      message: 'Registering your business...', 
-      position: 'top',
-      timeout: 2000 
-    })
-
-    const businessResponse = await merchants.registerBusiness({
-      business_name: businessData.business_name,
-      logo: businessData.logo,
-      bank_account_name: businessData.bank_account_name,
-      bank_account_number: businessData.bank_account_number,
-      bank_ifsc_swift: businessData.bank_ifsc_swift,
-      payout_preferences: businessData.payout_preferences
-    })
-
-    if (!businessResponse.success) {
-      throw new Error(businessResponse.message || 'Business registration failed')
-    }
-
-    // Step 4: Success and redirect
-    Notify.create({ 
-      type: 'positive', 
-      message: 'Account and business registered successfully! Approval pending.', 
-      position: 'top',
-      timeout: 4000 
-    })
-
-    // Redirect to merchant dashboard with approval pending status
-    setTimeout(() => {
-      router.push({ 
-        name: 'dashboard', 
-        query: { approval: 'pending' } 
-      })
-    }, 1000)
-
-  } catch (e) {
-    console.error('Registration error:', e)
-    
-    // Handle different types of errors
-    if (e.response?.data?.message) {
-      error.value = e.response.data.message
-    } else if (e.response?.data?.error) {
-      error.value = e.response.data.error
-    } else if (e.message) {
-      error.value = e.message
-    } else {
-      error.value = 'Registration failed. Please try again.'
-    }
-    
-    Notify.create({ 
-      type: 'negative', 
-      message: error.value,
-      position: 'top',
-      timeout: 5000 
-    })
-    
-  } finally {
-    loading.value = false
-  }
-}
-
-const validateForm = () => {
-  // Check if all required fields are filled
-  if (!userData.name || !userData.email || !userData.password || !confirmPassword.value) {
-    error.value = 'Please fill in all required fields'
-    return false
-  }
-
-  if (userData.password !== confirmPassword.value) {
-    error.value = 'Passwords do not match'
-    return false
-  }
-
-  if (userData.password.length < 6) {
-    error.value = 'Password must be at least 6 characters long'
-    return false
-  }
-
-  if (!businessData.business_name || !businessData.bank_account_name || 
-      !businessData.bank_account_number || !businessData.bank_ifsc_swift) {
-    error.value = 'Please fill in all business information'
-    return false
-  }
-
-  if (businessData.payout_preferences.length === 0) {
-    error.value = 'Please select at least one payout preference'
-    return false
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(userData.email)) {
-    error.value = 'Please enter a valid email address'
-    return false
-  }
-
-  error.value = null
-  return true
-}
 </script>
 
 <style scoped>

@@ -1,46 +1,40 @@
 // src/boot/axios.js
+import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 
-// Use your local backend URL from Postman collection
-const baseURL = import.meta?.env?.VITE_API_BASE || 'http://13.51.167.136'
-
+// Create axios instance
 const api = axios.create({
-  baseURL,
-  timeout: 30000,
+  baseURL: 'http://13.51.167.136/api',
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    'Accept': 'application/json'
   },
+  withCredentials: true // Enable CORS credentials
 })
 
-// Attach token if available
-api.interceptors.request.use((config) => {
+// Request interceptor
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  console.log('API Request:', config.method?.toUpperCase(), config.url, config.data)
   return config
 })
 
-// Handle API responses and errors
+// Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.status, response.config.url, response.data)
-    return response
-  },
-  (error) => {
-    console.error('API Error:', error.response?.status, error.config?.url, error.response?.data)
-    
+  response => response,
+  error => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      localStorage.removeItem('role')
       window.location.href = '/login'
     }
     return Promise.reject(error)
   }
 )
 
-export default api
+export default boot(({ app }) => {
+  app.config.globalProperties.$api = api
+})
+
+export { api }
