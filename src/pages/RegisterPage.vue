@@ -103,13 +103,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
-const auth = useAuthStore()
+
+// Initialize auth store safely
+let auth = null
 
 // User registration data
 const userData = reactive({
@@ -130,6 +132,7 @@ const illustrationSources = [
 ]
 const illustration = ref(illustrationSources[0])
 let imgErrorCount = 0
+
 const onImgError = () => {
   imgErrorCount++
   if (imgErrorCount < illustrationSources.length) {
@@ -137,7 +140,23 @@ const onImgError = () => {
   }
 }
 
+// Initialize store after component is mounted
+onMounted(async () => {
+  try {
+    await nextTick()
+    auth = useAuthStore()
+  } catch (err) {
+    console.error('Failed to initialize auth store:', err)
+    error.value = 'Failed to initialize application. Please refresh the page.'
+  }
+})
+
 const onSubmit = async () => {
+  if (!auth) {
+    error.value = 'Application not ready. Please wait a moment and try again.'
+    return
+  }
+
   try {
     error.value = null
     loading.value = true
@@ -195,6 +214,27 @@ const onSubmit = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Handle potential MetaMask/Web3 wallet interference
+if (typeof window !== 'undefined') {
+  // Prevent MetaMask from auto-connecting
+  window.addEventListener('load', () => {
+    if (window.ethereum) {
+      // Disable automatic connection
+      window.ethereum.autoRefreshOnNetworkChange = false
+    }
+  })
+
+  // Handle any unhandled promise rejections from wallet extensions
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.message?.includes('MetaMask') || 
+        event.reason?.message?.includes('extension not found')) {
+      // Prevent the error from showing in console for MetaMask issues
+      event.preventDefault()
+      console.warn('Wallet extension error suppressed:', event.reason?.message)
+    }
+  })
 }
 </script>
 
