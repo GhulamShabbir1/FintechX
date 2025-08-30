@@ -221,16 +221,14 @@ if (typeof window !== 'undefined') {
   // Prevent MetaMask from auto-connecting
   window.addEventListener('load', () => {
     if (window.ethereum) {
-      // Disable automatic connection
       window.ethereum.autoRefreshOnNetworkChange = false
     }
   })
 
-  // Handle any unhandled promise rejections from wallet extensions
+  // Handle unhandled promise rejections from wallet extensions
   window.addEventListener('unhandledrejection', (event) => {
     if (event.reason?.message?.includes('MetaMask') || 
         event.reason?.message?.includes('extension not found')) {
-      // Prevent the error from showing in console for MetaMask issues
       event.preventDefault()
       console.warn('Wallet extension error suppressed:', event.reason?.message)
     }
@@ -239,7 +237,6 @@ if (typeof window !== 'undefined') {
 </script>
 
 <style scoped>
-/* Your existing styles remain the same */
 .fintech-bg {
   background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   min-height: 100vh;
