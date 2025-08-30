@@ -99,7 +99,7 @@ export const useMerchantStore = defineStore('merchant', () => {
       loading.value = true
       error.value = null
       
-      const { data } = await api.get('/api/merchant/business')
+      const { data } = await api.get('/api/admin/merchants')
       businessInfo.value = data
       return data
     } catch (error) {

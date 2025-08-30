@@ -1,15 +1,13 @@
 // src/boot/axios.js
 import axios from 'axios'
 
-// Create axios instance with ONLY the base domain
 const api = axios.create({
-  baseURL: ' http://192.168.12.204:8000',
+  baseURL: 'http://13.51.167.136', 
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Optional: automatically attach token if available
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -19,4 +17,3 @@ api.interceptors.request.use((config) => {
 })
 
 export default api
-

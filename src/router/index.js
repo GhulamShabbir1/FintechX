@@ -1,6 +1,5 @@
 // PATH: src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-
 // Pages
 import LandingPage from '../pages/LandingPage.vue'
 import Login from '../pages/LoginPage.vue'
@@ -50,24 +49,24 @@ const router = createRouter({
   routes,
 })
 
-// router.beforeEach((to, from, next) => {
-//   if (to.meta.title) document.title = to.meta.title
+router.beforeEach((to, from, next) => {
+  if (to.meta.title) document.title = to.meta.title
 
-//   if (to.meta.requiresAuth) {
-//     const token = localStorage.getItem('token')
-//     if (!token) return next({ name: 'login', query: { redirect: to.fullPath } })
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('token')
+    if (!token) return next({ name: 'login', query: { redirect: to.fullPath } })
 
-//     if (to.meta.role) {
-//       const userRole = (localStorage.getItem('role') || '').toLowerCase()
-//       if (userRole !== to.meta.role) {
-//         if (userRole === 'admin') return next({ name: 'admin-dashboard' })
-//         if (userRole === 'merchant') return next({ name: 'dashboard' })
-//         return next({ name: 'login' })
-//       }
-//     }
-//   }
+    if (to.meta.role) {
+      const userRole = (localStorage.getItem('role') || '').toLowerCase()
+      if (userRole !== to.meta.role) {
+        if (userRole === 'admin') return next({ name: 'admin-dashboard' })
+        if (userRole === 'merchant') return next({ name: 'dashboard' })
+        return next({ name: 'login' })
+      }
+    }
+  }
 
-//   next()
-// })
+  next()
+})
 
 export default router
