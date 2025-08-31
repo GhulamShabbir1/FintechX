@@ -43,8 +43,10 @@ const routes = [
   { path: '/admin/settings', name: 'admin-settings', component: AdminSettingsPage, meta: { title: 'Admin Settings - FinteckX', requiresAuth: true, role: 'admin' } },
   { path: '/admin/support', name: 'admin-support', component: AdminSupportPage, meta: { title: 'Admin Support - FinteckX', requiresAuth: true, role: 'admin' } },
   
-  // ✅ Add missing business route
-  { path: '/business', name: 'business', redirect: '/dashboard' }
+  // ✅ Add missing routes
+  { path: '/business', name: 'business', redirect: '/dashboard' },
+  { path: '/admin/transactions', name: 'admin-transactions', redirect: '/admin/activity' },
+  { path: '/admin/analytics', name: 'admin-analytics', redirect: '/admin/activity' }
 ]
 
 const router = createRouter({
