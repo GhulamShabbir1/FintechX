@@ -5,7 +5,7 @@ import LandingPage from '../pages/LandingPage.vue'
 import Login from '../pages/LoginPage.vue'
 import Register from '../pages/RegisterPage.vue'
 import Checkout from '../pages/CheckoutPage.vue'
-import MerchantDashboard from '../pages/MerchantDashboardPage.vue'
+import MerchantDashboard from '../pages/SimpleMerchantDashboard.vue'
 import HostedCheckout from '../pages/HostedCheckout.vue'
 import TransactionsPage from '../pages/TransactionsPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
@@ -41,7 +41,10 @@ const routes = [
   { path: '/admin/merchants', name: 'admin-merchants', component: AdminMerchantsPage, meta: { title: 'Merchant Management - FinteckX', requiresAuth: true, role: 'admin' } },
   { path: '/admin/profile', name: 'admin-profile', component: AdminProfilePage, meta: { title: 'Admin Profile - FinteckX', requiresAuth: true, role: 'admin' } },
   { path: '/admin/settings', name: 'admin-settings', component: AdminSettingsPage, meta: { title: 'Admin Settings - FinteckX', requiresAuth: true, role: 'admin' } },
-  { path: '/admin/support', name: 'admin-support', component: AdminSupportPage, meta: { title: 'Admin Support - FinteckX', requiresAuth: true, role: 'admin' } }
+  { path: '/admin/support', name: 'admin-support', component: AdminSupportPage, meta: { title: 'Admin Support - FinteckX', requiresAuth: true, role: 'admin' } },
+  
+  // ✅ Add missing business route
+  { path: '/business', name: 'business', redirect: '/dashboard' }
 ]
 
 const router = createRouter({
