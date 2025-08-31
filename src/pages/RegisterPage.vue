@@ -103,22 +103,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../store/auth'
+import { api } from '../boot/axios'
 
 const router = useRouter()
-
-// Initialize auth store safely
-let auth = null
 
 // User registration data
 const userData = reactive({
   name: '',
   email: '',
   password: '',
-  role: 'merchant' // Always merchant for business registration
+  role: 'merchant' // Default role for business registration
 })
 
 const confirmPassword = ref('')
@@ -140,28 +137,12 @@ const onImgError = () => {
   }
 }
 
-// Initialize store after component is mounted
-onMounted(async () => {
-  try {
-    await nextTick()
-    auth = useAuthStore()
-  } catch (err) {
-    console.error('Failed to initialize auth store:', err)
-    error.value = 'Failed to initialize application. Please refresh the page.'
-  }
-})
-
 const onSubmit = async () => {
-  if (!auth) {
-    error.value = 'Application not ready. Please wait a moment and try again.'
-    return
-  }
-
   try {
     error.value = null
     loading.value = true
 
-    // Register user account
+    // Show registration progress
     Notify.create({ 
       type: 'info', 
       message: 'Creating your account...', 
@@ -169,7 +150,8 @@ const onSubmit = async () => {
       timeout: 2000 
     })
 
-    await auth.register({
+    // ✅ Register with AWS backend
+    const response = await api.post('/api/auth/register', {
       name: userData.name,
       email: userData.email,
       password: userData.password,
@@ -177,40 +159,63 @@ const onSubmit = async () => {
       role: userData.role
     })
 
-    // Success and redirect to login
-    Notify.create({ 
-      type: 'positive', 
-      message: 'Account created successfully! Please login.', 
-      position: 'top',
-      timeout: 4000 
-    })
+    console.log('Registration response:', response.data)
 
-    // Redirect to login page
-    setTimeout(() => {
-      router.push('/login')
-    }, 1000)
+    // ✅ Registration successful - user stored in database
+    if (response.data) {
+      Notify.create({ 
+        type: 'positive', 
+        message: 'Account created successfully! Please login with your credentials.', 
+        position: 'top',
+        timeout: 4000 
+      })
+
+      // Clear form
+      userData.name = ''
+      userData.email = ''
+      userData.password = ''
+      confirmPassword.value = ''
+
+      // Redirect to login page after 1.5 seconds
+      setTimeout(() => {
+        router.push('/login')
+      }, 1500)
+    } else {
+      throw new Error('Registration failed - no response data')
+    }
 
   } catch (e) {
     console.error('Registration error:', e)
     
-    // Handle different types of errors
-    if (e.response?.data?.message) {
-      error.value = e.response.data.message
+    let errorMessage = 'Registration failed. Please try again.'
+    
+    // ✅ Handle different error types for AWS backend
+    if (e.code === 'ERR_NETWORK') {
+      errorMessage = 'Cannot connect to AWS server. Please check your internet connection.'
+    } else if (e.code === 'ECONNABORTED') {
+      errorMessage = 'Request timeout. Please try again.'
+    } else if (e.response?.status === 422) {
+      errorMessage = e.response.data?.message || 'Validation error. Please check your input.'
+    } else if (e.response?.status === 409) {
+      errorMessage = 'Email already exists. Please use a different email or login.'
+    } else if (e.response?.status === 500) {
+      errorMessage = 'AWS server error. Please try again later.'
+    } else if (e.response?.data?.message) {
+      errorMessage = e.response.data.message
     } else if (e.response?.data?.error) {
-      error.value = e.response.data.error
+      errorMessage = e.response.data.error
     } else if (e.message) {
-      error.value = e.message
-    } else {
-      error.value = 'Registration failed. Please try again.'
+      errorMessage = e.message
     }
+    
+    error.value = errorMessage
     
     Notify.create({ 
       type: 'negative', 
-      message: error.value,
+      message: errorMessage,
       position: 'top',
       timeout: 5000 
     })
-    
   } finally {
     loading.value = false
   }
@@ -218,19 +223,9 @@ const onSubmit = async () => {
 
 // Handle potential MetaMask/Web3 wallet interference
 if (typeof window !== 'undefined') {
-  // Prevent MetaMask from auto-connecting
-  window.addEventListener('load', () => {
-    if (window.ethereum) {
-      // Disable automatic connection
-      window.ethereum.autoRefreshOnNetworkChange = false
-    }
-  })
-
-  // Handle any unhandled promise rejections from wallet extensions
   window.addEventListener('unhandledrejection', (event) => {
     if (event.reason?.message?.includes('MetaMask') || 
         event.reason?.message?.includes('extension not found')) {
-      // Prevent the error from showing in console for MetaMask issues
       event.preventDefault()
       console.warn('Wallet extension error suppressed:', event.reason?.message)
     }
@@ -239,7 +234,6 @@ if (typeof window !== 'undefined') {
 </script>
 
 <style scoped>
-/* Your existing styles remain the same */
 .fintech-bg {
   background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   min-height: 100vh;

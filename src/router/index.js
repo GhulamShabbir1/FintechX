@@ -58,9 +58,30 @@ router.beforeEach((to, from, next) => {
 
     if (to.meta.role) {
       const userRole = (localStorage.getItem('role') || '').toLowerCase()
-      if (userRole !== to.meta.role) {
-        if (userRole === 'admin') return next({ name: 'admin-dashboard' })
-        if (userRole === 'merchant') return next({ name: 'dashboard' })
+      const storedUser = localStorage.getItem('user')
+      let userEmail = ''
+      
+      // ✅ Get user email for admin detection
+      try {
+        const user = JSON.parse(storedUser || '{}')
+        userEmail = user.email || ''
+      } catch (e) {
+        console.warn('Could not parse stored user')
+      }
+      
+      // ✅ Admin detection - check both role and email
+      const isAdmin = userRole === 'admin' || userEmail === 'admin@example.com'
+      const isMerchant = userRole === 'merchant' && userEmail !== 'admin@example.com'
+      
+      if (to.meta.role === 'admin' && !isAdmin) {
+        // Non-admin trying to access admin route
+        if (isMerchant) return next({ name: 'dashboard' })
+        return next({ name: 'login' })
+      }
+      
+      if (to.meta.role === 'merchant' && !isMerchant) {
+        // Non-merchant trying to access merchant route
+        if (isAdmin) return next({ name: 'admin-dashboard' })
         return next({ name: 'login' })
       }
     }
