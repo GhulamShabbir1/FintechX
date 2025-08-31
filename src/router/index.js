@@ -5,7 +5,7 @@ import LandingPage from '../pages/LandingPage.vue'
 import Login from '../pages/LoginPage.vue'
 import Register from '../pages/RegisterPage.vue'
 import Checkout from '../pages/CheckoutPage.vue'
-import MerchantDashboard from '../pages/MerchantDashboardPage.vue'
+import MerchantDashboard from '../pages/SimpleMerchantDashboard.vue'
 import HostedCheckout from '../pages/HostedCheckout.vue'
 import TransactionsPage from '../pages/TransactionsPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
@@ -41,7 +41,13 @@ const routes = [
   { path: '/admin/merchants', name: 'admin-merchants', component: AdminMerchantsPage, meta: { title: 'Merchant Management - FinteckX', requiresAuth: true, role: 'admin' } },
   { path: '/admin/profile', name: 'admin-profile', component: AdminProfilePage, meta: { title: 'Admin Profile - FinteckX', requiresAuth: true, role: 'admin' } },
   { path: '/admin/settings', name: 'admin-settings', component: AdminSettingsPage, meta: { title: 'Admin Settings - FinteckX', requiresAuth: true, role: 'admin' } },
-  { path: '/admin/support', name: 'admin-support', component: AdminSupportPage, meta: { title: 'Admin Support - FinteckX', requiresAuth: true, role: 'admin' } }
+  { path: '/admin/support', name: 'admin-support', component: AdminSupportPage, meta: { title: 'Admin Support - FinteckX', requiresAuth: true, role: 'admin' } },
+  
+  // ✅ Add missing routes
+  { path: '/business', name: 'business', redirect: '/dashboard' },
+  { path: '/admin/transactions', name: 'admin-transactions', redirect: '/admin/activity' },
+  { path: '/admin/analytics', name: 'admin-analytics', redirect: '/admin/activity' },
+  { path: '/admin/security', name: 'admin-security', redirect: '/admin/settings' }
 ]
 
 const router = createRouter({
@@ -58,9 +64,30 @@ router.beforeEach((to, from, next) => {
 
     if (to.meta.role) {
       const userRole = (localStorage.getItem('role') || '').toLowerCase()
-      if (userRole !== to.meta.role) {
-        if (userRole === 'admin') return next({ name: 'admin-dashboard' })
-        if (userRole === 'merchant') return next({ name: 'dashboard' })
+      const storedUser = localStorage.getItem('user')
+      let userEmail = ''
+      
+      // ✅ Get user email for admin detection
+      try {
+        const user = JSON.parse(storedUser || '{}')
+        userEmail = user.email || ''
+      } catch (e) {
+        console.warn('Could not parse stored user')
+      }
+      
+      // ✅ Admin detection - check both role and email
+      const isAdmin = userRole === 'admin' || userEmail === 'admin@example.com'
+      const isMerchant = userRole === 'merchant' && userEmail !== 'admin@example.com'
+      
+      if (to.meta.role === 'admin' && !isAdmin) {
+        // Non-admin trying to access admin route
+        if (isMerchant) return next({ name: 'dashboard' })
+        return next({ name: 'login' })
+      }
+      
+      if (to.meta.role === 'merchant' && !isMerchant) {
+        // Non-merchant trying to access merchant route
+        if (isAdmin) return next({ name: 'admin-dashboard' })
         return next({ name: 'login' })
       }
     }

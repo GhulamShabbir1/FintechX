@@ -64,14 +64,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
 import { useAuthStore } from '../store/auth'
 
 const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
+
+// Initialize auth store safely
+let auth = null
 
 const email = ref('')
 const password = ref('')

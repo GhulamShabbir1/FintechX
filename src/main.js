@@ -22,11 +22,6 @@ app.use(Quasar, {
   iconSet: quasarIconSet
 })
 
-// Bootstrap auth token on app start
-import { useAuthStore } from './store/auth'
-const auth = useAuthStore(pinia)
-auth.loadToken()
-
 // Set brand colors (align with fintech theme)
 setCssVar('primary', '#2563eb')
 setCssVar('secondary', '#06b6d4')
@@ -34,3 +29,16 @@ setCssVar('accent', '#f59e0b')
 setCssVar('dark', '#0b1220')
 
 app.mount('#app')
+
+// ✅ Initialize auth store after app is mounted (optional)
+setTimeout(() => {
+  try {
+    const { useAuthStore } = require('./store/auth')
+    const auth = useAuthStore()
+    if (auth.loadStoredData) {
+      auth.loadStoredData()
+    }
+  } catch (err) {
+    console.log('Auth store initialization deferred')
+  }
+}, 200)
