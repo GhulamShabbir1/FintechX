@@ -46,7 +46,8 @@ const routes = [
   // ✅ Add missing routes
   { path: '/business', name: 'business', redirect: '/dashboard' },
   { path: '/admin/transactions', name: 'admin-transactions', redirect: '/admin/activity' },
-  { path: '/admin/analytics', name: 'admin-analytics', redirect: '/admin/activity' }
+  { path: '/admin/analytics', name: 'admin-analytics', redirect: '/admin/activity' },
+  { path: '/admin/security', name: 'admin-security', redirect: '/admin/settings' }
 ]
 
 const router = createRouter({
