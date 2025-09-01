@@ -1,43 +1,42 @@
-# Quasar App (fintechsystem)
+# FinteckX
 
-A Quasar Project
+A modern fintech platform that enables merchants to process payments, manage business operations, and gives admins full oversight for approvals and system monitoring.
 
-## Install the dependencies
+---
+
+## 🚀 Features
+
+### Merchant Side
+- ✅ Role-based authentication (JWT)
+- ✅ Business profile management
+- ✅ Payment processing system
+- ✅ Transaction history
+- ✅ Revenue analytics dashboard
+- ✅ Responsive UI
+
+### Admin Side
+- ✅ Merchant approval system
+- ✅ System health monitoring
+- ✅ Transaction overview
+- ✅ Export functionality (CSV)
+- ✅ Alerts and notification system
+
+---
+
+## 🛠️ Technology Stack
+- **Frontend Framework:** Vue.js 3  
+- **UI Framework:** Quasar  
+- **State Management:** Pinia  
+- **HTTP Client:** Axios  
+- **Authentication:** JWT Tokens  
+- **Styling:** CSS3   
+
+---
+
+## 📦 Installation
+
+Clone the repository:
 
 ```bash
-yarn
-# or
-npm install
-```
-
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-
-```bash
-quasar dev
-```
-
-### Lint the files
-
-```bash
-yarn lint
-# or
-npm run lint
-```
-
-### Format the files
-
-```bash
-yarn format
-# or
-npm run format
-```
-
-### Build the app for production
-
-```bash
-quasar build
-```
-
-### Customize the configuration
-
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+git clone https://github.com/yourusername/finteckx.git
+cd finteckx
