@@ -27,15 +27,6 @@
             class="action-btn btn-outline"
             @click="openSettings"
           />
-          <!-- Logout Button -->
-          <q-btn
-            flat
-            color="negative"
-            icon="logout"
-            label="Logout"
-            class="action-btn btn-outline logout-btn"
-            @click="handleLogout"
-          />
         </div>
       </div>
     </div>
@@ -166,21 +157,6 @@
         </q-card>
       </div>
     </div>
-
-    <!-- Logout Confirmation Dialog -->
-    <q-dialog v-model="logoutConfirm" persistent>
-      <q-card class="logout-dialog">
-        <q-card-section class="row items-center">
-          <q-avatar icon="logout" color="negative" text-color="white" />
-          <span class="q-ml-sm">Are you sure you want to logout?</span>
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="lime" v-close-popup />
-          <q-btn flat label="Logout" color="negative" @click="confirmLogout" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </div>
 </template>
 
@@ -189,13 +165,16 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/auth'
 import { useMerchantStore } from '../../store/merchant'
+import { useTransactionsStore } from '../../store/transactions'
+import { pinia } from '../../store/pinia'
 import TopKpiCards from '../stats/TopKpiCards.vue'
 import MerchantStatusCard from './MerchantStatusCard.vue'
 import RevenueChart from '../stats/charts/RevenueChart.vue'
 
 const router = useRouter()
-const auth = useAuthStore()
-const merchant = useMerchantStore()
+const auth = useAuthStore(pinia)
+const merchant = useMerchantStore(pinia)
+const transactions = useTransactionsStore(pinia)
 
 // Reactive data
 const loading = ref(false)
@@ -203,7 +182,6 @@ const profile = ref({})
 const profileStats = ref({})
 const revenueData = ref([])
 const recentTransactions = ref([])
-const logoutConfirm = ref(false)
 
 // Computed properties
 const user = computed(() => auth.user || {})
@@ -260,8 +238,8 @@ const loadDashboardData = async () => {
     const profileData = await merchant.getBusinessInfo()
     profile.value = profileData || {}
     
-    // Load transactions - FIXED: Use merchant.fetchForMerchant() instead of transactionsStore
-    const transactionsData = await merchant.fetchForMerchant()
+    // Load transactions
+    const transactionsData = await transactions.fetchForMerchant()
     recentTransactions.value = transactionsData.slice(0, 5)
     
     // Load stats
@@ -285,19 +263,6 @@ const createTransaction = () => {
 
 const openSettings = () => {
   router.push('/settings')
-}
-
-const handleLogout = () => {
-  logoutConfirm.value = true
-}
-
-const confirmLogout = async () => {
-  try {
-    await auth.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
-  }
 }
 
 const editProfile = () => {
@@ -356,6 +321,7 @@ onMounted(() => {
   loadDashboardData()
 })
 </script>
+
 <style scoped>
 .merchant-dashboard {
   padding: 24px;
@@ -464,18 +430,6 @@ onMounted(() => {
   background: rgba(189, 240, 0, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(189, 240, 0, 0.2);
-}
-
-.logout-btn {
-  border: 2px solid rgba(244, 67, 54, 0.3);
-  color: #f44336;
-  background: rgba(244, 67, 54, 0.1);
-}
-
-.logout-btn:hover {
-  border-color: #f44336;
-  background: rgba(244, 67, 54, 0.2);
-  box-shadow: 0 4px 16px rgba(244, 67, 54, 0.2);
 }
 
 .dashboard-grid {
@@ -961,14 +915,6 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Logout Dialog */
-.logout-dialog {
-  background: #121212;
-  color: white;
-  border: 1px solid rgba(189, 240, 0, 0.2);
-  border-radius: 12px;
 }
 
 /* Responsive adjustments */

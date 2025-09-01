@@ -68,10 +68,11 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Notify } from 'quasar'
 import { useAuthStore } from '../store/auth'
+import { pinia } from '../store/pinia'
 
 const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
+const auth = useAuthStore(pinia)
 
 const email = ref('')
 const password = ref('')
@@ -89,8 +90,18 @@ const onSubmit = async () => {
     // Call the login method from auth store
     const response = await auth.login({ email: email.value, password: password.value })
     
-    // Get the user data from the response
-    const user = response.user || response.data?.user || auth.user
+    // Get the user data from the response - handle different response structures
+    let user = null
+    if (response?.user) {
+      user = response.user
+    } else if (response?.data?.user) {
+      user = response.data.user
+    } else if (auth.user) {
+      user = auth.user
+    } else if (response?.data) {
+      // If the response data itself is the user object
+      user = response.data
+    }
     
     if (!user) {
       throw new Error('No user data received from login')
@@ -103,17 +114,68 @@ const onSubmit = async () => {
     const redirect = route.query.redirect
 
     if (role === 'admin') {
-      Notify.create({ type: 'positive', message: 'Welcome, Admin!', position: 'top', timeout: 2000 })
-      setTimeout(() => router.push(redirect || '/admin-dashboard'), 500)
+      // Admin user - redirect to admin dashboard
+      Notify.create({ 
+        type: 'positive', 
+        message: 'Welcome, Admin!', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      // Wait a bit for the notification to show, then redirect
+      setTimeout(() => {
+        router.push(redirect || '/admin-dashboard')
+      }, 500)
+      
+    } else if (role === 'merchant') {
+      // Merchant user - redirect to merchant dashboard
+      Notify.create({ 
+        type: 'positive', 
+        message: 'Welcome, Merchant!', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      // Wait a bit for the notification to show, then redirect
+      setTimeout(() => {
+        router.push(redirect || '/dashboard')
+      }, 500)
+      
     } else {
-      Notify.create({ type: 'positive', message: 'Welcome, Merchant!', position: 'top', timeout: 2000 })
-      setTimeout(() => router.push(redirect || '/dashboard'), 500)
+      // Unknown role - redirect to default dashboard
+      Notify.create({ 
+        type: 'warning', 
+        message: 'Welcome! Redirecting to dashboard...', 
+        position: 'top',
+        timeout: 2000 
+      })
+      
+      setTimeout(() => {
+        router.push(redirect || '/dashboard')
+      }, 500)
     }
 
   } catch (e) {
     console.error('Login error:', e)
-    error.value = e.response?.data?.message || e.message || 'Login failed. Please try again.'
-    Notify.create({ type: 'negative', message: error.value, position: 'top', timeout: 3000 })
+    
+    // Handle different types of errors
+    if (e.response?.data?.message) {
+      error.value = e.response.data.message
+    } else if (e.response?.data?.error) {
+      error.value = e.response.data.error
+    } else if (e.message) {
+      error.value = e.message
+    } else {
+      error.value = 'Login failed. Please try again.'
+    }
+    
+    Notify.create({ 
+      type: 'negative', 
+      message: error.value,
+      position: 'top',
+      timeout: 3000 
+    })
+    
   } finally {
     loading.value = false
   }
@@ -121,6 +183,7 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
+/* keep your existing styles (truncated for brevity) */
 .fintech-bg {
   background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   min-height: 100vh;
