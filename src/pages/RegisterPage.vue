@@ -25,6 +25,7 @@
             <div class="glass-panel q-pa-lg rounded-borders form-inner">
               <q-form @submit.prevent="onSubmit" class="q-gutter-md">
                 <!-- User Registration Fields -->
+                <div class="text-subtitle2 text-lime q-mb-sm">Account Information</div>
                 <q-input 
                   v-model="userData.name" 
                   label="Full Name" 
@@ -43,9 +44,9 @@
                   required
                   class="custom-input"
                   :rules="[
-                    v => !!v || 'Email is required',
-                    v => /.+@.+\..+/.test(v) || 'Enter a valid email'
-                  ]" 
+    v => !!v || 'Email is required',
+    v => /.+@.+\..+/.test(v) || 'Enter a valid email'
+  ]" 
                 />
                 <q-input 
                   v-model="userData.password" 
@@ -68,10 +69,80 @@
                   :rules="[v => !!v || 'Please confirm password', v => v === userData.password || 'Passwords do not match']" 
                 />
 
+                <!-- Business Information Fields -->
+                <div class="text-subtitle2 text-lime q-mt-lg q-mb-sm">Business Information</div>
+                <q-input 
+                  v-model="businessData.business_name" 
+                  label="Business Name" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Business name is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_account_name" 
+                  label="Bank Account Holder Name" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank account holder name is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_account_number" 
+                  label="Bank Account Number" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank account number is required']" 
+                />
+                <q-input 
+                  v-model="businessData.bank_ifsc_swift" 
+                  label="Bank IFSC/SWIFT Code" 
+                  outlined 
+                  dense 
+                  required
+                  class="custom-input"
+                  :rules="[v => !!v || 'Bank IFSC/SWIFT code is required']" 
+                />
+
+                <!-- Logo Upload -->
+                <div class="q-mt-md">
+                  <q-file
+                    v-model="businessData.logo"
+                    label="Business Logo (Optional)"
+                    outlined
+                    dense
+                    accept=".jpg,.jpeg,.png,.gif"
+                    class="custom-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="image" />
+                    </template>
+                  </q-file>
+                </div>
+
+                <!-- Payout Preferences -->
+                <div class="q-mt-md">
+                  <q-select
+                    v-model="businessData.payout_preferences"
+                    :options="payoutOptions"
+                    label="Payout Preferences"
+                    outlined
+                    dense
+                    multiple
+                    use-chips
+                    class="custom-input"
+                    :rules="[v => v && v.length > 0 || 'Please select at least one payout preference']"
+                  />
+                </div>
+
                 <q-btn 
                   type="submit" 
                   class="btn-lime full-width q-mt-lg" 
-                  label="Create Account" 
+                  label="Create Account & Register Business" 
                   :loading="loading" 
                   no-caps 
                   size="lg"
@@ -107,9 +178,12 @@ import { ref, reactive } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
+import { useMerchantStore } from '../store/merchant'
+import { pinia } from '../store/pinia'
 
 const router = useRouter()
-const auth = useAuthStore()
+const auth = useAuthStore(pinia)
+const merchant = useMerchantStore(pinia)
 
 // User registration data
 const userData = reactive({
@@ -119,9 +193,27 @@ const userData = reactive({
   role: 'merchant' // Always merchant for business registration
 })
 
+// Business registration data
+const businessData = reactive({
+  business_name: '',
+  logo: null,
+  bank_account_name: '',
+  bank_account_number: '',
+  bank_ifsc_swift: '',
+  payout_preferences: []
+})
+
 const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref(null)
+
+// Payout preference options
+const payoutOptions = [
+  { label: 'Bank Transfer', value: 'bank_transfer' },
+  { label: 'UPI', value: 'upi' },
+  { label: 'PayPal', value: 'paypal' },
+  { label: 'Stripe', value: 'stripe' }
+]
 
 const illustrationSources = [
   'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&h=700&q=80',
@@ -142,7 +234,7 @@ const onSubmit = async () => {
     error.value = null
     loading.value = true
 
-    // Register user account
+    // Step 1: Register user account
     Notify.create({ 
       type: 'info', 
       message: 'Creating your account...', 
@@ -158,17 +250,50 @@ const onSubmit = async () => {
       role: userData.role
     })
 
-    // Success and redirect to login
+    // Step 2: Login to get authentication token
+    Notify.create({ 
+      type: 'info', 
+      message: 'Logging you in...', 
+      position: 'top',
+      timeout: 2000 
+    })
+
+    await auth.login({
+      email: userData.email,
+      password: userData.password
+    })
+
+    // Step 3: Register business with the authenticated user
+    Notify.create({ 
+      type: 'info', 
+      message: 'Registering your business...', 
+      position: 'top',
+      timeout: 2000 
+    })
+
+    await merchant.registerBusiness({
+      business_name: businessData.business_name,
+      logo: businessData.logo,
+      bank_account_name: businessData.bank_account_name,
+      bank_account_number: businessData.bank_account_number,
+      bank_ifsc_swift: businessData.bank_ifsc_swift,
+      payout_preferences: businessData.payout_preferences
+    })
+
+    // Step 4: Success and redirect
     Notify.create({ 
       type: 'positive', 
-      message: 'Account created successfully! Please login.', 
+      message: 'Account and business registered successfully! Approval pending.', 
       position: 'top',
       timeout: 4000 
     })
 
-    // Redirect to login page
+    // Redirect to merchant dashboard with approval pending status
     setTimeout(() => {
-      router.push('/login')
+      router.push({ 
+        name: 'dashboard', 
+        query: { approval: 'pending' } 
+      })
     }, 1000)
 
   } catch (e) {
@@ -199,7 +324,6 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-/* Your existing styles remain the same */
 .fintech-bg {
   background: linear-gradient(135deg, #0a0a0a 0%, #0f0e12 50%, #121018 100%);
   min-height: 100vh;

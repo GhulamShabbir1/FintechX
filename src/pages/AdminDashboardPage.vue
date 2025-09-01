@@ -1,27 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <!-- Admin Header with Logout Button -->
-    <q-header elevated class="bg-dark text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="admin-logo.png">
-          </q-avatar>
-          Admin Dashboard
-        </q-toolbar-title>
-        
-        <q-space />
-        
-        <!-- Logout Button in Header -->
-        <q-btn 
-          flat 
-          icon="logout" 
-          label="Logout" 
-          color="negative" 
-          @click="handleLogout" 
-        />
-      </q-toolbar>
-    </q-header>
+    <!-- Admin Header -->
+    <AdminHeader />
 
     <!-- Page Content -->
     <q-page-container>
@@ -166,33 +146,17 @@
         </div>
       </q-page>
     </q-page-container>
-
-    <!-- Logout Confirmation Dialog -->
-    <q-dialog v-model="logoutConfirm" persistent>
-      <q-card class="logout-dialog">
-        <q-card-section class="row items-center">
-          <q-avatar icon="logout" color="negative" text-color="white" />
-          <span class="q-ml-sm">Are you sure you want to logout?</span>
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="lime" v-close-popup />
-          <q-btn flat label="Logout" color="negative" @click="confirmLogout" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../store/auth'
+import AdminHeader from '../components/navigation/AdminHeader.vue'
 import AdminOverview from '../components/admin/AdminOverview.vue'
 import api from '../boot/axios'
 
 const router = useRouter()
-const auth = useAuthStore()
 
 const systemHealth = ref({
   api: 99.8,
@@ -203,7 +167,6 @@ const systemHealth = ref({
 
 const recentAlerts = ref([])
 const recentMerchants = ref([])
-const logoutConfirm = ref(false)
 
 const merchantColumns = [
   { name: 'business_name', label: 'Business Name', field: 'business_name', align: 'left', sortable: true },
@@ -247,19 +210,6 @@ const loadRecentMerchants = async () => {
       { id: 2, business_name: 'FoodExpress', email: 'contact@foodexpress.com', status: 'Pending', created_at: new Date(Date.now() - 1000 * 60 * 60 * 4) },
       { id: 3, business_name: 'Digital Solutions', email: 'info@digitalsolutions.com', status: 'Verified', created_at: new Date(Date.now() - 1000 * 60 * 60 * 6) }
     ]
-  }
-}
-
-const handleLogout = () => {
-  logoutConfirm.value = true
-}
-
-const confirmLogout = async () => {
-  try {
-    await auth.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
   }
 }
 
@@ -373,13 +323,5 @@ onMounted(async () => {
 
 .text-lime {
   color: #bdf000;
-}
-
-/* Logout Dialog */
-.logout-dialog {
-  background: #121212;
-  color: white;
-  border: 1px solid rgba(189, 240, 0, 0.2);
-  border-radius: 12px;
 }
 </style>
